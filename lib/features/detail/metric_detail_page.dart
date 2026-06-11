@@ -6,9 +6,7 @@ import '../../data/db/database_provider.dart';
 import '../../data/repositories/detail_repository.dart';
 import '../analysis/analysis_providers.dart';
 import '../shared/calendar_row.dart';
-
-/// GitHub dark-mode neon green (spec 6.4).
-const sparklineColor = Color(0xFF39D353);
+import '../shared/continuous_sparkline.dart';
 
 final detailRepositoryProvider = Provider<DetailRepository>(
     (ref) => DetailRepository(ref.watch(databaseProvider)));
@@ -52,8 +50,9 @@ class MetricDetailPage extends ConsumerWidget {
                   height: 160,
                   child: Center(child: CircularProgressIndicator())),
               error: (e, _) => Text('Error: $e'),
-              data: (data) => Sparkline(
-                series: data,
+              data: (data) => ContinuousSparkline(
+                daysInMonth: data.daysInMonth,
+                values: data.values,
                 selectedDay: int.parse(date.substring(8)),
                 onDayTap: (day) {
                   final candidate =
@@ -96,172 +95,3 @@ class MetricDetailPage extends ConsumerWidget {
   }
 }
 
-/// Month-window sparkline drawn with a CustomPainter; dots are tappable
-/// (spec 6.4).
-class Sparkline extends StatelessWidget {
-  const Sparkline({
-    super.key,
-    required this.series,
-    required this.selectedDay,
-    this.onDayTap,
-  });
-
-  final MonthSeries series;
-  final int selectedDay;
-  final void Function(int day)? onDayTap;
-
-  static const height = 160.0;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) => GestureDetector(
-        key: const ValueKey('sparkline'),
-        onTapUp: (details) {
-          final day = _dayAt(details.localPosition.dx, constraints.maxWidth);
-          if (day != null) onDayTap?.call(day);
-        },
-        child: CustomPaint(
-          size: Size(constraints.maxWidth, height),
-          painter: SparklinePainter(
-            series: series,
-            selectedDay: selectedDay,
-            gridColor:
-                Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
-          ),
-        ),
-      ),
-    );
-  }
-
-  int? _dayAt(double dx, double width) {
-    final days = series.daysInMonth;
-    final step = width / (days - 1);
-    final day = (dx / step).round() + 1;
-    if (day < 1 || day > days) return null;
-    return day;
-  }
-}
-
-class SparklinePainter extends CustomPainter {
-  SparklinePainter({
-    required this.series,
-    required this.selectedDay,
-    required this.gridColor,
-  });
-
-  final MonthSeries series;
-  final int selectedDay;
-  final Color gridColor;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final days = series.daysInMonth;
-    final values = series.values;
-    final maxValue = values.values.isEmpty
-        ? 1.0
-        : values.values.reduce((a, b) => a > b ? a : b);
-    final scale = maxValue == 0 ? 1.0 : maxValue;
-    final step = size.width / (days - 1);
-    final baseY = size.height - 14;
-
-    Offset pointFor(int day, double value) => Offset(
-          (day - 1) * step,
-          baseY - (value / scale) * (size.height - 32),
-        );
-
-    // Faint horizontal grid (quarters) + baseline.
-    final grid = Paint()
-      ..color = gridColor
-      ..strokeWidth = 1;
-    for (var q = 0; q <= 2; q++) {
-      final y = baseY - (size.height - 32) * (q + 1) / 3;
-      canvas.drawLine(Offset(0, y), Offset(size.width, y),
-          grid..color = gridColor.withValues(alpha: 0.35));
-    }
-    canvas.drawLine(Offset(0, baseY), Offset(size.width, baseY),
-        grid..color = gridColor);
-
-    // Build contiguous segments (gaps in data break the line).
-    final sortedDays = values.keys.toList()..sort();
-    final segments = <List<Offset>>[];
-    int? prevDay;
-    for (final day in sortedDays) {
-      final point = pointFor(day, values[day]!);
-      if (prevDay == null || day != prevDay + 1) {
-        segments.add([point]);
-      } else {
-        segments.last.add(point);
-      }
-      prevDay = day;
-    }
-
-    final glow = Paint()
-      ..color = sparklineColor.withValues(alpha: 0.45)
-      ..strokeWidth = 6
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-    final line = Paint()
-      ..color = sparklineColor
-      ..strokeWidth = 2.2
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    for (final segment in segments) {
-      final path = Path()..moveTo(segment.first.dx, segment.first.dy);
-      for (final point in segment.skip(1)) {
-        path.lineTo(point.dx, point.dy);
-      }
-      if (segment.length > 1) {
-        // GitHub-style area fill fading to the baseline.
-        final area = Path.from(path)
-          ..lineTo(segment.last.dx, baseY)
-          ..lineTo(segment.first.dx, baseY)
-          ..close();
-        canvas.drawPath(
-          area,
-          Paint()
-            ..shader = LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                sparklineColor.withValues(alpha: 0.30),
-                sparklineColor.withValues(alpha: 0.02),
-              ],
-            ).createShader(Rect.fromLTWH(0, 0, size.width, size.height)),
-        );
-        canvas.drawPath(path, glow);
-      }
-      canvas.drawPath(path, line);
-    }
-
-    final dot = Paint()..color = sparklineColor;
-    for (final day in sortedDays) {
-      final point = pointFor(day, values[day]!);
-      if (day == selectedDay) {
-        canvas.drawCircle(
-            point,
-            9,
-            Paint()
-              ..color = sparklineColor.withValues(alpha: 0.25)
-              ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3));
-        canvas.drawCircle(point, 5, dot);
-        canvas.drawCircle(
-            point,
-            7,
-            Paint()
-              ..color = sparklineColor
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 1.5);
-      } else {
-        canvas.drawCircle(point, 3, dot);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(SparklinePainter oldDelegate) =>
-      oldDelegate.series != series || oldDelegate.selectedDay != selectedDay;
-}
