@@ -120,13 +120,15 @@ class AnalysisRepository {
       final rule = rules[metric.id];
       if (rule == null) continue;
       values[metric.id] =
-          await _sourceValues(metric, rule.source, startDate, endDate);
+          await sourceValues(metric, rule.source, startDate, endDate);
     }
     return HeatmapMatrix(
         metrics: metrics, dates: dates, values: values, rules: rules);
   }
 
-  Future<Map<String, double>> _sourceValues(
+  /// Day → value for one metric in [startDate, endDate]; days without data
+  /// are absent. Shared by the heatmap and the detail page.
+  Future<Map<String, double>> sourceValues(
     Metric metric,
     HeatmapSource source,
     String startDate,

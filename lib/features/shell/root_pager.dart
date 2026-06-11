@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../analysis/analysis_page.dart';
+import '../detail/metric_detail_page.dart';
 import '../home/home_page.dart';
 
 /// Horizontal PageView: [0] entry ↔ [1] analysis (spec 6.1).
@@ -28,8 +29,12 @@ class _RootPagerState extends State<RootPager> {
       children: [
         const HomePage(),
         AnalysisPage(
-          // Detail navigation arrives in phase 4 (metric) and 5 (money).
-          onMetricTap: null,
+          onMetricTap: (metric) {
+            // Money routes to its own page in phase 5.
+            Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => MetricDetailPage(metric: metric),
+            ));
+          },
         ),
       ],
     );
