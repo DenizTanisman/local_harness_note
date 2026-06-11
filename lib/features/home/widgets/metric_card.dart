@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/db/app_database.dart';
+import '../../money/money_card_body.dart';
 import '../home_providers.dart';
 import 'composite_body.dart';
 import 'input_bodies.dart';
@@ -101,7 +102,7 @@ class MetricCard extends ConsumerWidget {
       case 'composite':
         return CompositeBody(metric: metric, dayEntries: dayEntries);
       case 'money':
-        return const _MoneyPlaceholder();
+        return const MoneyCardBody();
       default:
         return Text('Unsupported input type: ${metric.inputType}');
     }
@@ -199,22 +200,3 @@ class _StarLabelDialogState extends State<_StarLabelDialog> {
   }
 }
 
-/// Replaced by the full Income/Outcome flow in phase 5.
-class _MoneyPlaceholder extends StatelessWidget {
-  const _MoneyPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: OutlinedButton(onPressed: null, child: Text('Income')),
-        ),
-        SizedBox(width: 8),
-        Expanded(
-          child: OutlinedButton(onPressed: null, child: Text('Outcome')),
-        ),
-      ],
-    );
-  }
-}
