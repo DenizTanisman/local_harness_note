@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:workmanager/workmanager.dart';
+
 import 'data/db/database_provider.dart';
+import 'features/backup/backup_worker.dart';
 import 'features/money/money_page.dart';
 import 'features/notifications/notification_service.dart';
 import 'features/shell/root_pager.dart';
@@ -26,6 +29,7 @@ final notificationServiceProvider = Provider<NotificationService>((ref) {
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  Workmanager().initialize(backupCallbackDispatcher);
   final container = ProviderContainer();
   runApp(UncontrolledProviderScope(
     container: container,
