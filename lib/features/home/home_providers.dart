@@ -23,8 +23,26 @@ class DraggingNotifier extends Notifier<bool> {
 final draggingProvider =
     NotifierProvider<DraggingNotifier, bool>(DraggingNotifier.new);
 
-/// v1: the home page always edits TODAY (spec open point #6).
-final homeDateProvider = Provider<String>((ref) => dateKey(DateTime.now()));
+/// Active write date of the home page (CR1-D): defaults to today, may be
+/// moved to any PAST day; the future stays blocked. Never persisted —
+/// every app start and notification tap resets to today.
+class ActiveWriteDateNotifier extends Notifier<String> {
+  @override
+  String build() => dateKey(DateTime.now());
+
+  void select(String date) {
+    if (date.compareTo(dateKey(DateTime.now())) > 0) return;
+    state = date;
+  }
+
+  void resetToToday() => state = dateKey(DateTime.now());
+
+  bool get isToday => state == dateKey(DateTime.now());
+}
+
+final homeDateProvider =
+    NotifierProvider<ActiveWriteDateNotifier, String>(
+        ActiveWriteDateNotifier.new);
 
 /// Auto-save debounce; overridden to zero in widget tests.
 final debounceDurationProvider =
