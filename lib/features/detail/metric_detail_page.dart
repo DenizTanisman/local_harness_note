@@ -163,46 +163,91 @@ class SparklinePainter extends CustomPainter {
         : values.values.reduce((a, b) => a > b ? a : b);
     final scale = maxValue == 0 ? 1.0 : maxValue;
     final step = size.width / (days - 1);
+    final baseY = size.height - 14;
 
     Offset pointFor(int day, double value) => Offset(
           (day - 1) * step,
-          size.height - 12 - (value / scale) * (size.height - 24),
+          baseY - (value / scale) * (size.height - 32),
         );
 
-    // Baseline.
+    // Faint horizontal grid (quarters) + baseline.
     final grid = Paint()
       ..color = gridColor
       ..strokeWidth = 1;
-    canvas.drawLine(Offset(0, size.height - 12),
-        Offset(size.width, size.height - 12), grid);
+    for (var q = 0; q <= 2; q++) {
+      final y = baseY - (size.height - 32) * (q + 1) / 3;
+      canvas.drawLine(Offset(0, y), Offset(size.width, y),
+          grid..color = gridColor.withValues(alpha: 0.35));
+    }
+    canvas.drawLine(Offset(0, baseY), Offset(size.width, baseY),
+        grid..color = gridColor);
 
-    final line = Paint()
-      ..color = sparklineColor
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-    final dot = Paint()..color = sparklineColor;
-
-    // Connect consecutive days with data; gaps break the line.
+    // Build contiguous segments (gaps in data break the line).
     final sortedDays = values.keys.toList()..sort();
-    Path? path;
+    final segments = <List<Offset>>[];
     int? prevDay;
     for (final day in sortedDays) {
       final point = pointFor(day, values[day]!);
-      if (path == null || prevDay == null || day != prevDay + 1) {
-        path?.let((p) => canvas.drawPath(p, line));
-        path = Path()..moveTo(point.dx, point.dy);
+      if (prevDay == null || day != prevDay + 1) {
+        segments.add([point]);
       } else {
-        path.lineTo(point.dx, point.dy);
+        segments.last.add(point);
       }
       prevDay = day;
     }
-    if (path != null) canvas.drawPath(path, line);
 
+    final glow = Paint()
+      ..color = sparklineColor.withValues(alpha: 0.45)
+      ..strokeWidth = 6
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+    final line = Paint()
+      ..color = sparklineColor
+      ..strokeWidth = 2.2
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    for (final segment in segments) {
+      final path = Path()..moveTo(segment.first.dx, segment.first.dy);
+      for (final point in segment.skip(1)) {
+        path.lineTo(point.dx, point.dy);
+      }
+      if (segment.length > 1) {
+        // GitHub-style area fill fading to the baseline.
+        final area = Path.from(path)
+          ..lineTo(segment.last.dx, baseY)
+          ..lineTo(segment.first.dx, baseY)
+          ..close();
+        canvas.drawPath(
+          area,
+          Paint()
+            ..shader = LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                sparklineColor.withValues(alpha: 0.30),
+                sparklineColor.withValues(alpha: 0.02),
+              ],
+            ).createShader(Rect.fromLTWH(0, 0, size.width, size.height)),
+        );
+        canvas.drawPath(path, glow);
+      }
+      canvas.drawPath(path, line);
+    }
+
+    final dot = Paint()..color = sparklineColor;
     for (final day in sortedDays) {
       final point = pointFor(day, values[day]!);
-      canvas.drawCircle(point, day == selectedDay ? 5 : 3, dot);
       if (day == selectedDay) {
+        canvas.drawCircle(
+            point,
+            9,
+            Paint()
+              ..color = sparklineColor.withValues(alpha: 0.25)
+              ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3));
+        canvas.drawCircle(point, 5, dot);
         canvas.drawCircle(
             point,
             7,
@@ -210,6 +255,8 @@ class SparklinePainter extends CustomPainter {
               ..color = sparklineColor
               ..style = PaintingStyle.stroke
               ..strokeWidth = 1.5);
+      } else {
+        canvas.drawCircle(point, 3, dot);
       }
     }
   }
@@ -217,8 +264,4 @@ class SparklinePainter extends CustomPainter {
   @override
   bool shouldRepaint(SparklinePainter oldDelegate) =>
       oldDelegate.series != series || oldDelegate.selectedDay != selectedDay;
-}
-
-extension<T> on T {
-  R let<R>(R Function(T) block) => block(this);
 }

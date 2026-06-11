@@ -10,6 +10,9 @@ const _cellSize = 26.0;
 const _cellGap = 3.0;
 const _rowHeight = _cellSize + _cellGap;
 
+/// Date label band above the grid.
+const _dateBandHeight = 20.0;
+
 /// Heatmap (spec §5): row per starred metric, column per day. Labels fixed
 /// on the left (tap → detail page), grid horizontally scrollable, cell tap
 /// selects that date.
@@ -53,13 +56,14 @@ class _HeatmapWidgetState extends ConsumerState<HeatmapWidget> {
             _scroll.jumpTo(_scroll.position.maxScrollExtent);
           }
         });
-        final height = data.metrics.length * _rowHeight;
+        final height = data.metrics.length * _rowHeight + _dateBandHeight;
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
+                const SizedBox(height: _dateBandHeight),
                 for (final metric in data.metrics)
                   InkWell(
                     key: ValueKey('heatmap-label-${metric.id}'),
@@ -91,6 +95,10 @@ class _HeatmapWidgetState extends ConsumerState<HeatmapWidget> {
                           .colorScheme
                           .outline
                           .withValues(alpha: 0.4),
+                      labelColor: Theme.of(context)
+                          .colorScheme
+                          .onSurfaceVariant,
+                      selectedColor: Theme.of(context).colorScheme.primary,
                     ),
                   ),
                 ),
@@ -110,10 +118,17 @@ class _HeatmapWidgetState extends ConsumerState<HeatmapWidget> {
 }
 
 class HeatmapPainter extends CustomPainter {
-  HeatmapPainter({required this.matrix, required this.emptyBorderColor});
+  HeatmapPainter({
+    required this.matrix,
+    required this.emptyBorderColor,
+    required this.labelColor,
+    required this.selectedColor,
+  });
 
   final HeatmapMatrix matrix;
   final Color emptyBorderColor;
+  final Color labelColor;
+  final Color selectedColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -123,6 +138,35 @@ class HeatmapPainter extends CustomPainter {
       ..strokeWidth = 1
       ..color = emptyBorderColor;
 
+    // Day-of-month labels every other column; '1' marks a new month.
+    // The rightmost column is the selected date (window ends there).
+    final selectedCol = matrix.dates.length - 1;
+    for (var col = 0; col < matrix.dates.length; col++) {
+      final day = matrix.dates[col].substring(8);
+      final isMonthStart = day == '01';
+      if (col % 2 != 0 && !isMonthStart && col != selectedCol) continue;
+      final painter = TextPainter(
+        text: TextSpan(
+          text: isMonthStart ? '1·' : day,
+          style: TextStyle(
+            fontSize: 9,
+            color: col == selectedCol ? selectedColor : labelColor,
+            fontWeight: col == selectedCol || isMonthStart
+                ? FontWeight.bold
+                : FontWeight.normal,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      painter.paint(
+        canvas,
+        Offset(
+          col * _rowHeight + (_cellSize - painter.width) / 2,
+          (_dateBandHeight - painter.height) / 2,
+        ),
+      );
+    }
+
     for (var row = 0; row < matrix.metrics.length; row++) {
       final metric = matrix.metrics[row];
       final rule = matrix.rules[metric.id];
@@ -131,7 +175,7 @@ class HeatmapPainter extends CustomPainter {
         final rect = RRect.fromRectAndRadius(
           Rect.fromLTWH(
             col * _rowHeight,
-            row * _rowHeight,
+            _dateBandHeight + row * _rowHeight,
             _cellSize,
             _cellSize,
           ),
@@ -149,6 +193,23 @@ class HeatmapPainter extends CustomPainter {
         }
       }
     }
+
+    // Selected-day column outline.
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(
+          selectedCol * _rowHeight - 1.5,
+          _dateBandHeight - 1.5,
+          _cellSize + 3,
+          matrix.metrics.length * _rowHeight - _cellGap + 3,
+        ),
+        const Radius.circular(7),
+      ),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5
+        ..color = selectedColor.withValues(alpha: 0.7),
+    );
   }
 
   @override

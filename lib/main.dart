@@ -78,6 +78,18 @@ class DailyTrackerApp extends ConsumerWidget {
         colorSchemeSeed: const Color(0xFF39D353),
         brightness: Brightness.dark,
         useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFF0D1117),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF0D1117),
+          surfaceTintColor: Colors.transparent,
+        ),
+        cardTheme: const CardThemeData(
+          color: Color(0xFF161B22),
+          surfaceTintColor: Colors.transparent,
+        ),
+        drawerTheme: const DrawerThemeData(
+          backgroundColor: Color(0xFF11151C),
+        ),
       ),
       themeMode: themeMode,
       home: const RootPager(),

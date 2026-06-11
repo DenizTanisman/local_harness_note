@@ -268,29 +268,63 @@ class _MoneySparklinePainter extends CustomPainter {
     final line = Paint()
       ..color = gridColor
       ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
+      ..style = PaintingStyle.stroke
+      ..strokeJoin = StrokeJoin.round;
     final sortedDays = values.keys.toList()..sort();
-    Path? path;
+    final baseY = size.height - 12;
+    final segments = <List<Offset>>[];
     int? prev;
     for (final day in sortedDays) {
       final point = pointFor(day, values[day]!.luxury);
-      if (path == null || prev == null || day != prev + 1) {
-        if (path != null) canvas.drawPath(path, line);
-        path = Path()..moveTo(point.dx, point.dy);
+      if (prev == null || day != prev + 1) {
+        segments.add([point]);
       } else {
-        path.lineTo(point.dx, point.dy);
+        segments.last.add(point);
       }
       prev = day;
     }
-    if (path != null) canvas.drawPath(path, line);
+    for (final segment in segments) {
+      final path = Path()..moveTo(segment.first.dx, segment.first.dy);
+      for (final point in segment.skip(1)) {
+        path.lineTo(point.dx, point.dy);
+      }
+      if (segment.length > 1) {
+        final area = Path.from(path)
+          ..lineTo(segment.last.dx, baseY)
+          ..lineTo(segment.first.dx, baseY)
+          ..close();
+        canvas.drawPath(
+          area,
+          Paint()
+            ..shader = LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                _green.withValues(alpha: 0.18),
+                _green.withValues(alpha: 0.02),
+              ],
+            ).createShader(Rect.fromLTWH(0, 0, size.width, size.height)),
+        );
+      }
+      canvas.drawPath(path, line);
+    }
 
     for (final day in sortedDays) {
       final dayPoint = values[day]!;
       final point = pointFor(day, dayPoint.luxury);
+      final color = dayPoint.overBudget ? _red : _green;
+      if (day == selectedDay) {
+        canvas.drawCircle(
+            point,
+            8,
+            Paint()
+              ..color = color.withValues(alpha: 0.3)
+              ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3));
+      }
       canvas.drawCircle(
         point,
         day == selectedDay ? 5 : 3.5,
-        Paint()..color = dayPoint.overBudget ? _red : _green,
+        Paint()..color = color,
       );
     }
   }
