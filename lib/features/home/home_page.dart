@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../settings/export_import_page.dart';
+import '../settings/settings_page.dart';
 import 'home_providers.dart';
 import 'widgets/add_metric_sheet.dart';
 import 'widgets/drag_targets.dart';
@@ -29,9 +31,32 @@ class HomePage extends ConsumerWidget {
           ),
         ],
       ),
-      drawer: const Drawer(
-        // Settings / Export entries arrive in phase 7.
-        child: SafeArea(child: Center(child: Text('Daily Tracker'))),
+      drawer: Drawer(
+        child: SafeArea(
+          child: ListView(
+            children: [
+              const DrawerHeader(child: Text('Daily Tracker')),
+              ListTile(
+                leading: const Icon(Icons.settings),
+                title: const Text('Settings'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(
+                      builder: (_) => const SettingsPage()));
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.import_export),
+                title: const Text('Export / Import'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(
+                      builder: (_) => const ExportImportPage()));
+                },
+              ),
+            ],
+          ),
+        ),
       ),
       body: metrics.when(
         loading: () => const Center(child: CircularProgressIndicator()),
