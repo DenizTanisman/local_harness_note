@@ -61,7 +61,22 @@ class HomePage extends ConsumerWidget {
       body: metrics.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),
-        data: (rows) => ListView(
+        data: (rows) => rows.isEmpty
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('No metrics yet.'),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: () => AddMetricSheet.show(context),
+                      icon: const Icon(Icons.add),
+                      label: const Text('ADD'),
+                    ),
+                  ],
+                ),
+              )
+            : ListView(
           padding: const EdgeInsets.only(top: 6, bottom: 24),
           children: [
             for (var i = 0; i < rows.length; i++) ...[
