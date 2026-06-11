@@ -12,22 +12,36 @@ class ExportService {
   final AppDatabase db;
 
   static const entriesHeader = [
-    'date', 'metric_key', 'num_value', 'text_value', 'selected_options',
+    'date',
+    'metric_key',
+    'num_value',
+    'text_value',
+    'selected_options',
   ];
   static const transactionsHeader = [
-    'date', 'direction', 'category', 'subtype', 'amount', 'note',
+    'date',
+    'direction',
+    'category',
+    'subtype',
+    'amount',
+    'note',
   ];
   static const metricsHeader = [
-    'key', 'title', 'parent_key', 'input_type', 'is_starred',
-    'heatmap_label', 'unit',
+    'key',
+    'title',
+    'parent_key',
+    'input_type',
+    'is_starred',
+    'heatmap_label',
+    'unit',
   ];
 
   static const _csv = CsvEncoder(lineDelimiter: '\n');
 
   Future<String> entriesCsv() async {
-    final rows = await (db.select(db.entries)
-          ..orderBy([(e) => OrderingTerm.asc(e.date)]))
-        .get();
+    final rows = await (db.select(
+      db.entries,
+    )..orderBy([(e) => OrderingTerm.asc(e.date)])).get();
     final metrics = await db.select(db.metrics).get();
     final keyById = {for (final m in metrics) m.id: m.key};
 
@@ -55,20 +69,27 @@ class ExportService {
   }
 
   Future<String> transactionsCsv() async {
-    final rows = await (db.select(db.transactions)
-          ..orderBy([(t) => OrderingTerm.asc(t.date)]))
-        .get();
+    final rows = await (db.select(
+      db.transactions,
+    )..orderBy([(t) => OrderingTerm.asc(t.date)])).get();
     return _csv.convert([
       transactionsHeader,
       for (final t in rows)
-        [t.date, t.direction, t.category, t.subtype ?? '', t.amount, t.note ?? ''],
+        [
+          t.date,
+          t.direction,
+          t.category,
+          t.subtype ?? '',
+          t.amount,
+          t.note ?? '',
+        ],
     ]);
   }
 
   Future<String> metricsCsv() async {
-    final rows = await (db.select(db.metrics)
-          ..orderBy([(m) => OrderingTerm.asc(m.sortOrder)]))
-        .get();
+    final rows = await (db.select(
+      db.metrics,
+    )..orderBy([(m) => OrderingTerm.asc(m.sortOrder)])).get();
     final keyById = {for (final m in rows) m.id: m.key};
     return _csv.convert([
       metricsHeader,
@@ -108,9 +129,9 @@ class ExportService {
   /// "Download sample CSV" template — export format with 3 example rows
   /// (spec 10.2).
   static String sampleCsv() => _csv.convert([
-        entriesHeader,
-        ['2026-06-10', 'software', 45, 'Refactored the parser', ''],
-        ['2026-06-10', 'water', 2.5, '', ''],
-        ['2026-06-10', 'brushing', '', '', 'Morning;Evening'],
-      ]);
+    entriesHeader,
+    ['2026-06-10', 'software', 45, 'Refactored the parser', ''],
+    ['2026-06-10', 'water', 2.5, '', ''],
+    ['2026-06-10', 'brushing', '', '', 'Morning;Evening'],
+  ]);
 }

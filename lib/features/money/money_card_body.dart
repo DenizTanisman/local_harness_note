@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/date_key.dart';
+import '../../theme/pill_buttons.dart';
 import '../home/home_providers.dart';
 import '../home/widgets/input_bodies.dart' show parseNum;
 import 'money_providers.dart';
@@ -59,27 +60,19 @@ class _MoneyCardBodyState extends ConsumerState<MoneyCardBody> {
         Row(
           children: [
             Expanded(
-              child: _direction == 'income'
-                  ? FilledButton(
-                      onPressed: () => _toggle('income'),
-                      child: const Text('Income'),
-                    )
-                  : OutlinedButton(
-                      onPressed: () => _toggle('income'),
-                      child: const Text('Income'),
-                    ),
+              child: PillToggleButton(
+                label: 'Income',
+                selected: _direction == 'income',
+                onTap: () => _toggle('income'),
+              ),
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: _direction == 'outcome'
-                  ? FilledButton(
-                      onPressed: () => _toggle('outcome'),
-                      child: const Text('Outcome'),
-                    )
-                  : OutlinedButton(
-                      onPressed: () => _toggle('outcome'),
-                      child: const Text('Outcome'),
-                    ),
+              child: PillToggleButton(
+                label: 'Outcome',
+                selected: _direction == 'outcome',
+                onTap: () => _toggle('outcome'),
+              ),
             ),
           ],
         ),
@@ -98,8 +91,7 @@ class _MoneyCardBodyState extends ConsumerState<MoneyCardBody> {
           TextField(
             key: const ValueKey('money-amount'),
             controller: _amount,
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
             ],
@@ -155,11 +147,12 @@ class _MoneyCardBodyState extends ConsumerState<MoneyCardBody> {
             ),
           ],
           if (direction == 'outcome' &&
-              ref.watch(homeDateProvider) ==
-                  dateKey(DateTime.now())) ...[
+              ref.watch(homeDateProvider) == dateKey(DateTime.now())) ...[
             const SizedBox(height: 8),
-            Text('Set a reminder?',
-                style: Theme.of(context).textTheme.bodySmall),
+            Text(
+              'Set a reminder?',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
             Wrap(
               spacing: 8,
               children: [
@@ -187,8 +180,7 @@ class _MoneyCardBodyState extends ConsumerState<MoneyCardBody> {
     );
   }
 
-  bool get _canSave =>
-      _category != null && (parseNum(_amount.text) ?? -1) >= 0;
+  bool get _canSave => _category != null && (parseNum(_amount.text) ?? -1) >= 0;
 
   Future<void> _newCategory(String direction) async {
     final name = await showDialog<String>(
@@ -202,14 +194,17 @@ class _MoneyCardBodyState extends ConsumerState<MoneyCardBody> {
 
   Future<void> _save() async {
     final direction = _direction!;
-    await ref.read(moneyRepositoryProvider).addTransaction(
+    await ref
+        .read(moneyRepositoryProvider)
+        .addTransaction(
           date: ref.read(homeDateProvider),
           direction: direction,
           amount: parseNum(_amount.text)!,
           category: _category!,
           subtype: _subtype.text,
-          reminderOffsets:
-              direction == 'outcome' ? _reminders.toList() : const [],
+          reminderOffsets: direction == 'outcome'
+              ? _reminders.toList()
+              : const [],
         );
     setState(() {
       _direction = null;

@@ -16,12 +16,12 @@ void main() {
   tearDown(() => db.close());
 
   Widget app() => ProviderScope(
-        overrides: [
-          databaseProvider.overrideWithValue(db),
-          debounceDurationProvider.overrideWithValue(Duration.zero),
-        ],
-        child: const MaterialApp(home: HomePage()),
-      );
+    overrides: [
+      databaseProvider.overrideWithValue(db),
+      debounceDurationProvider.overrideWithValue(Duration.zero),
+    ],
+    child: const MaterialApp(home: HomePage()),
+  );
 
   // Disposing the ProviderScope makes drift schedule zero-duration timers
   // (StreamQueryStore.markAsClosed); flush them so the test ends cleanly.
@@ -42,15 +42,21 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Finder cardOf(String title) => find
-      .ancestor(of: find.text(title), matching: find.byType(Card))
-      .first;
+  Finder cardOf(String title) =>
+      find.ancestor(of: find.text(title), matching: find.byType(Card)).first;
 
   testWidgets('renders all top-level cards', (tester) async {
     await pumpHome(tester);
     for (final title in [
-      'Software', 'Development', 'Money', 'Extra', 'Instagram',
-      'Sport', 'Brushing', 'Waste', 'Water',
+      'Software',
+      'Development',
+      'Money',
+      'Extra',
+      'Instagram',
+      'Sport',
+      'Brushing',
+      'Waste',
+      'Water',
     ]) {
       expect(find.text(title), findsWidgets, reason: title);
     }
@@ -59,12 +65,15 @@ void main() {
     await closeApp(tester);
   });
 
-  testWidgets('int entry persists across reopen without duplicating',
-      (tester) async {
+  testWidgets('int entry persists across reopen without duplicating', (
+    tester,
+  ) async {
     await pumpHome(tester);
 
     final waterField = find.descendant(
-        of: cardOf('Water'), matching: find.byType(TextField));
+      of: cardOf('Water'),
+      matching: find.byType(TextField),
+    );
     await tester.enterText(waterField, '2.5');
     await tester.pumpAndSettle();
     await tester.enterText(waterField, '3');
@@ -74,27 +83,29 @@ void main() {
     await closeApp(tester);
     await pumpHome(tester);
 
-    final reopened = tester.widget<TextField>(find.descendant(
-        of: cardOf('Water'), matching: find.byType(TextField)));
+    final reopened = tester.widget<TextField>(
+      find.descendant(of: cardOf('Water'), matching: find.byType(TextField)),
+    );
     expect(reopened.controller!.text, '3');
 
-    final water = await (db.select(db.metrics)
-          ..where((m) => m.key.equals('water')))
-        .getSingle();
-    final rows = await (db.select(db.entries)
-          ..where((e) => e.metricId.equals(water.id)))
-        .get();
+    final water = await (db.select(
+      db.metrics,
+    )..where((m) => m.key.equals('water'))).getSingle();
+    final rows = await (db.select(
+      db.entries,
+    )..where((e) => e.metricId.equals(water.id))).get();
     expect(rows, hasLength(1), reason: 'UNIQUE upsert must not duplicate');
     expect(rows.single.numValue, 3);
     await closeApp(tester);
   });
 
-  testWidgets('int_text reveals description only when number > 0',
-      (tester) async {
+  testWidgets('int_text reveals description only when number > 0', (
+    tester,
+  ) async {
     await pumpHome(tester);
 
-    Finder sportFields() => find.descendant(
-        of: cardOf('Sport'), matching: find.byType(TextField));
+    Finder sportFields() =>
+        find.descendant(of: cardOf('Sport'), matching: find.byType(TextField));
     expect(sportFields(), findsOneWidget, reason: 'no text field at 0');
 
     await tester.enterText(sportFields().first, '45');
@@ -107,12 +118,12 @@ void main() {
     await closeApp(tester);
     await pumpHome(tester);
 
-    final sport = await (db.select(db.metrics)
-          ..where((m) => m.key.equals('sport')))
-        .getSingle();
-    final entry = await (db.select(db.entries)
-          ..where((e) => e.metricId.equals(sport.id)))
-        .getSingle();
+    final sport = await (db.select(
+      db.metrics,
+    )..where((m) => m.key.equals('sport'))).getSingle();
+    final entry = await (db.select(
+      db.entries,
+    )..where((e) => e.metricId.equals(sport.id))).getSingle();
     expect(entry.numValue, 45);
     expect(entry.textValue, 'Leg day');
     await closeApp(tester);
@@ -133,10 +144,14 @@ void main() {
     await tester.ensureVisible(find.text('Morning'));
     await tester.pumpAndSettle();
 
-    bool checked(String label) => tester
-            .widget<CheckboxListTile>(find.ancestor(
+    bool checked(String label) =>
+        tester
+            .widget<CheckboxListTile>(
+              find.ancestor(
                 of: find.text(label),
-                matching: find.byType(CheckboxListTile)))
+                matching: find.byType(CheckboxListTile),
+              ),
+            )
             .value ??
         false;
     expect(checked('Morning'), isTrue);
@@ -145,27 +160,28 @@ void main() {
     await closeApp(tester);
   });
 
-  testWidgets('composite child toggle creates and clears entries',
-      (tester) async {
+  testWidgets('composite child toggle creates and clears entries', (
+    tester,
+  ) async {
     await pumpHome(tester);
 
     await tester.tap(find.text('Marketing'));
     await tester.pumpAndSettle();
 
-    final marketing = await (db.select(db.metrics)
-          ..where((m) => m.key.equals('dev_marketing')))
-        .getSingle();
-    var rows = await (db.select(db.entries)
-          ..where((e) => e.metricId.equals(marketing.id)))
-        .get();
+    final marketing = await (db.select(
+      db.metrics,
+    )..where((m) => m.key.equals('dev_marketing'))).getSingle();
+    var rows = await (db.select(
+      db.entries,
+    )..where((e) => e.metricId.equals(marketing.id))).get();
     expect(rows, hasLength(1));
 
     // Chip + text field hint both say 'Marketing'; tap the chip.
     await tester.tap(find.widgetWithText(FilterChip, 'Marketing'));
     await tester.pumpAndSettle();
-    rows = await (db.select(db.entries)
-          ..where((e) => e.metricId.equals(marketing.id)))
-        .get();
+    rows = await (db.select(
+      db.entries,
+    )..where((e) => e.metricId.equals(marketing.id))).get();
     expect(rows, isEmpty);
     await closeApp(tester);
   });
@@ -178,19 +194,20 @@ void main() {
     await tester.tap(find.text('ADD'));
     await tester.pumpAndSettle();
 
-    await tester.enterText(
-        find.widgetWithText(TextField, 'Title'), 'Reading');
+    await tester.enterText(find.widgetWithText(TextField, 'Title'), 'Reading');
     await tester.tap(find.text('Checkbox'));
     await tester.pumpAndSettle();
     await tester.enterText(
-        find.widgetWithText(TextField, 'Option 1'), 'Before bed');
+      find.widgetWithText(TextField, 'Option 1'),
+      'Before bed',
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
-    final reading = await (db.select(db.metrics)
-          ..where((m) => m.key.equals('reading')))
-        .getSingle();
+    final reading = await (db.select(
+      db.metrics,
+    )..where((m) => m.key.equals('reading'))).getSingle();
     expect(reading.inputType, 'checkbox');
     expect(reading.isStarred, isFalse);
 
@@ -205,12 +222,15 @@ void main() {
     await closeApp(tester);
   });
 
-  testWidgets('Del removes metric and history after confirmation',
-      (tester) async {
+  testWidgets('Del removes metric and history after confirmation', (
+    tester,
+  ) async {
     await pumpHome(tester);
 
     final delButton = find.descendant(
-        of: cardOf('Extra'), matching: find.text('Del'));
+      of: cardOf('Extra'),
+      matching: find.text('Del'),
+    );
     await tester.ensureVisible(delButton);
     await tester.pumpAndSettle();
     await tester.tap(delButton);
@@ -220,9 +240,9 @@ void main() {
     await tester.tap(find.text('Delete'));
     await tester.pumpAndSettle();
 
-    final gone = await (db.select(db.metrics)
-          ..where((m) => m.key.equals('extra')))
-        .getSingleOrNull();
+    final gone = await (db.select(
+      db.metrics,
+    )..where((m) => m.key.equals('extra'))).getSingleOrNull();
     expect(gone, isNull);
     await closeApp(tester);
   });

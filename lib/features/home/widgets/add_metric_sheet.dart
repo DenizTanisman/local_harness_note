@@ -117,7 +117,9 @@ class _AddMetricSheetState extends ConsumerState<AddMetricSheet> {
 
   Future<void> _save() async {
     final navigator = Navigator.of(context);
-    await ref.read(entryRepositoryProvider).addMetric(
+    await ref
+        .read(entryRepositoryProvider)
+        .addMetric(
           title: _title.text.trim(),
           inputType: _inputType,
           options: _inputType == 'checkbox'

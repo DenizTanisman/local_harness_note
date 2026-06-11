@@ -54,8 +54,9 @@ class ExportImportPage extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Heads up'),
-        content:
-            const Text('Exported files are NOT encrypted. Keep them safe.'),
+        content: const Text(
+          'Exported files are NOT encrypted. Keep them safe.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -81,14 +82,18 @@ class ExportImportPage extends ConsumerWidget {
     final dir = await _pickDir(context);
     if (dir == null) return;
     final export = ref.read(exportServiceProvider);
-    await File(p.join(dir, 'entries.csv'))
-        .writeAsString(await export.entriesCsv());
-    await File(p.join(dir, 'transactions.csv'))
-        .writeAsString(await export.transactionsCsv());
-    await File(p.join(dir, 'metrics.csv'))
-        .writeAsString(await export.metricsCsv());
+    await File(
+      p.join(dir, 'entries.csv'),
+    ).writeAsString(await export.entriesCsv());
+    await File(
+      p.join(dir, 'transactions.csv'),
+    ).writeAsString(await export.transactionsCsv());
+    await File(
+      p.join(dir, 'metrics.csv'),
+    ).writeAsString(await export.metricsCsv());
     messenger.showSnackBar(
-        SnackBar(content: Text('Exported 3 CSV files to $dir')));
+      SnackBar(content: Text('Exported 3 CSV files to $dir')),
+    );
   }
 
   Future<void> _exportExcel(BuildContext context, WidgetRef ref) async {
@@ -98,8 +103,7 @@ class ExportImportPage extends ConsumerWidget {
     final bytes = await ref.read(exportServiceProvider).excelBytes();
     final file = File(p.join(dir, 'daily_tracker.xlsx'));
     await file.writeAsBytes(bytes);
-    messenger
-        .showSnackBar(SnackBar(content: Text('Exported ${file.path}')));
+    messenger.showSnackBar(SnackBar(content: Text('Exported ${file.path}')));
   }
 
   Future<void> _saveSample(BuildContext context) async {
@@ -113,8 +117,10 @@ class ExportImportPage extends ConsumerWidget {
 
   Future<void> _importCsv(BuildContext context, WidgetRef ref) async {
     final messenger = ScaffoldMessenger.of(context);
-    final picked = await FilePicker.platform
-        .pickFiles(type: FileType.custom, allowedExtensions: ['csv']);
+    final picked = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['csv'],
+    );
     final path = picked?.files.single.path;
     if (path == null) return;
     final text = await File(path).readAsString();
@@ -133,14 +139,16 @@ class ExportImportPage extends ConsumerWidget {
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('Import finished'),
-          content: Text([
-            'Imported: ${report.imported}',
-            'Overwritten: ${report.overwritten}',
-            if (report.skipped.isNotEmpty) ...[
-              'Skipped ${report.skipped.length}:',
-              ...report.skipped.take(10),
-            ],
-          ].join('\n')),
+          content: Text(
+            [
+              'Imported: ${report.imported}',
+              'Overwritten: ${report.overwritten}',
+              if (report.skipped.isNotEmpty) ...[
+                'Skipped ${report.skipped.length}:',
+                ...report.skipped.take(10),
+              ],
+            ].join('\n'),
+          ),
           actions: [
             FilledButton(
               onPressed: () => Navigator.pop(context),
@@ -150,8 +158,9 @@ class ExportImportPage extends ConsumerWidget {
         ),
       );
     } on ImportFormatException catch (e) {
-      messenger.showSnackBar(SnackBar(
-          content: Text('Import rolled back completely: ${e.message}')));
+      messenger.showSnackBar(
+        SnackBar(content: Text('Import rolled back completely: ${e.message}')),
+      );
     }
   }
 }

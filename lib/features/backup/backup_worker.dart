@@ -23,8 +23,9 @@ void backupCallbackDispatcher() {
       if (settings['backup_enabled'] != 'true') return true;
       final dir = settings['backup_dir_uri'];
       if (dir == null) return true;
-      final password =
-          await const FlutterSecureStorage().read(key: _backupPasswordKey);
+      final password = await const FlutterSecureStorage().read(
+        key: _backupPasswordKey,
+      );
       if (password == null) return true;
       await BackupService(db).backupTo(Directory(dir), password);
       return true;
@@ -40,8 +41,9 @@ void backupCallbackDispatcher() {
 class BackupScheduler {
   /// Weekly run anchored to Sunday 03:00 (spec 10.3), battery-friendly.
   static Future<void> register() async {
-    final delay = BackupService.nextWeeklyRun(DateTime.now())
-        .difference(DateTime.now());
+    final delay = BackupService.nextWeeklyRun(
+      DateTime.now(),
+    ).difference(DateTime.now());
     await Workmanager().registerPeriodicTask(
       weeklyBackupTask,
       weeklyBackupTask,

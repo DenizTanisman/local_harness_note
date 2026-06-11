@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/db/app_database.dart';
+import '../../../theme/app_tokens.dart';
 import '../../money/money_card_body.dart';
 import '../home_providers.dart';
 import 'composite_body.dart';
@@ -31,9 +32,11 @@ class MetricCard extends ConsumerWidget {
         borderRadius: BorderRadius.circular(12),
         side: unfilled
             ? BorderSide(
-                color: theme.colorScheme.outline.withValues(alpha: 0.45))
+                color: theme.colorScheme.outline.withValues(alpha: 0.45),
+              )
             : BorderSide(
-                color: theme.colorScheme.primary.withValues(alpha: 0.5)),
+                color: theme.colorScheme.primary.withValues(alpha: 0.5),
+              ),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
@@ -59,6 +62,9 @@ class MetricCard extends ConsumerWidget {
                   child: Text(metric.title, style: theme.textTheme.titleMedium),
                 ),
                 TextButton(
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppTokens.danger,
+                  ),
                   onPressed: () => _confirmDelete(context, ref),
                   child: const Text('Del'),
                 ),
@@ -131,8 +137,9 @@ class MetricCard extends ConsumerWidget {
       builder: (context) => AlertDialog(
         title: Text('Delete ${metric.title}?'),
         content: const Text(
-            'This deletes the metric and ALL of its history. '
-            'This cannot be undone.'),
+          'This deletes the metric and ALL of its history. '
+          'This cannot be undone.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -162,8 +169,9 @@ class _StarLabelDialog extends StatefulWidget {
 }
 
 class _StarLabelDialogState extends State<_StarLabelDialog> {
-  late final TextEditingController _controller =
-      TextEditingController(text: widget.initial);
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initial,
+  );
 
   @override
   void dispose() {
@@ -199,4 +207,3 @@ class _StarLabelDialogState extends State<_StarLabelDialog> {
     );
   }
 }
-

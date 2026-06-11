@@ -41,21 +41,31 @@ void main() {
     final money = MoneyRepository(db);
     final date = daysAgo(1);
     await money.addTransaction(
-        date: date, direction: 'outcome', amount: 150,
-        category: 'Food', subtype: 'campus');
+      date: date,
+      direction: 'outcome',
+      amount: 150,
+      category: 'Food',
+      subtype: 'campus',
+    );
     await money.addTransaction(
-        date: date, direction: 'outcome', amount: 50, category: 'Food');
-    final leadership = await (db.select(db.metrics)
-          ..where((m) => m.key.equals('dev_leadership')))
-        .getSingle();
+      date: date,
+      direction: 'outcome',
+      amount: 50,
+      category: 'Food',
+    );
+    final leadership = await (db.select(
+      db.metrics,
+    )..where((m) => m.key.equals('dev_leadership'))).getSingle();
     await EntryRepository(db).saveEntry(
-        metricId: leadership.id,
-        date: date,
-        textValue: 'Being more precise and consistent');
+      metricId: leadership.id,
+      date: date,
+      textValue: 'Being more precise and consistent',
+    );
   }
 
-  testWidgets('first open: roots + level-1 headers only, nothing expanded',
-      (tester) async {
+  testWidgets('first open: roots + level-1 headers only, nothing expanded', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1080, 3000);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -75,8 +85,9 @@ void main() {
     await closeApp(tester);
   });
 
-  testWidgets('money expands 3 levels: direction → category → subtype',
-      (tester) async {
+  testWidgets('money expands 3 levels: direction → category → subtype', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1080, 3000);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -89,8 +100,7 @@ void main() {
     expect(find.text('Food: 200'), findsOneWidget);
     expect(find.text('Food (campus): 150'), findsNothing);
 
-    await tester
-        .tap(find.byKey(const ValueKey('toggle-money/outcome/Food')));
+    await tester.tap(find.byKey(const ValueKey('toggle-money/outcome/Food')));
     await tester.pumpAndSettle();
     expect(find.text('Food (campus): 150'), findsOneWidget);
 
@@ -102,8 +112,9 @@ void main() {
     await closeApp(tester);
   });
 
-  testWidgets('development note appears only after expanding the child',
-      (tester) async {
+  testWidgets('development note appears only after expanding the child', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1080, 3000);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -113,14 +124,16 @@ void main() {
 
     expect(find.text('Being more precise and consistent'), findsNothing);
     await tester.tap(
-        find.byKey(const ValueKey('toggle-development/dev_leadership')));
+      find.byKey(const ValueKey('toggle-development/dev_leadership')),
+    );
     await tester.pumpAndSettle();
     expect(find.text('Being more precise and consistent'), findsOneWidget);
     await closeApp(tester);
   });
 
-  testWidgets('arrow toggles while title navigates — separate targets',
-      (tester) async {
+  testWidgets('arrow toggles while title navigates — separate targets', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1080, 3000);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -154,8 +167,7 @@ void main() {
 
     expect(find.text('Income (Month): 0'), findsOneWidget);
     expect(find.byKey(const ValueKey('toggle-money/income')), findsNothing);
-    expect(
-        find.byKey(const ValueKey('toggle-money/outcome')), findsOneWidget);
+    expect(find.byKey(const ValueKey('toggle-money/outcome')), findsOneWidget);
     await closeApp(tester);
   });
 }

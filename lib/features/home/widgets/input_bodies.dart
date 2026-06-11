@@ -40,9 +40,7 @@ class _IntBodyState extends ConsumerState<IntBody> {
     return TextField(
       controller: _controller,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      inputFormatters: [
-        FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
-      ],
+      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))],
       decoration: InputDecoration(
         labelText: 'Value',
         suffixText: widget.metric.unit,
@@ -52,7 +50,9 @@ class _IntBodyState extends ConsumerState<IntBody> {
       onChanged: (raw) {
         final value = parseNum(raw);
         _debounce(() {
-          ref.read(entryRepositoryProvider).saveEntry(
+          ref
+              .read(entryRepositoryProvider)
+              .saveEntry(
                 metricId: widget.metric.id,
                 date: ref.read(homeDateProvider),
                 numValue: value,
@@ -66,7 +66,12 @@ class _IntBodyState extends ConsumerState<IntBody> {
 
 /// Free-text body ('text'), e.g. Extra.
 class TextBody extends ConsumerStatefulWidget {
-  const TextBody({super.key, required this.metric, required this.entry, this.hint});
+  const TextBody({
+    super.key,
+    required this.metric,
+    required this.entry,
+    this.hint,
+  });
 
   final Metric metric;
   final Entry? entry;
@@ -107,7 +112,9 @@ class _TextBodyState extends ConsumerState<TextBody> {
       onChanged: (raw) {
         final text = raw.trim().isEmpty ? null : raw;
         _debounce(() {
-          ref.read(entryRepositoryProvider).saveEntry(
+          ref
+              .read(entryRepositoryProvider)
+              .saveEntry(
                 metricId: widget.metric.id,
                 date: ref.read(homeDateProvider),
                 textValue: text,
@@ -170,7 +177,9 @@ class CheckboxBody extends ConsumerWidget {
               title: Text(option.label),
               value: selectedOptionIds.contains(option.id),
               onChanged: (checked) {
-                ref.read(entryRepositoryProvider).setOptionSelected(
+                ref
+                    .read(entryRepositoryProvider)
+                    .setOptionSelected(
                       metricId: metric.id,
                       optionId: option.id,
                       date: ref.read(homeDateProvider),

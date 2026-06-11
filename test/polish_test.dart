@@ -29,8 +29,7 @@ void main() {
       for (var i = 0; i < 365; i++) {
         final date = dateKey(start.add(Duration(days: i)));
         for (final metric in metrics) {
-          if (metric.inputType == 'money' ||
-              metric.inputType == 'composite') {
+          if (metric.inputType == 'money' || metric.inputType == 'composite') {
             continue;
           }
           batch.insert(
@@ -77,39 +76,50 @@ void main() {
     expect(matrix.dates, hasLength(60));
     expect(matrix.values.values.every((v) => v.isNotEmpty), isTrue);
     // Repository load well under a frame budget's order of magnitude.
-    expect(watch.elapsedMilliseconds, lessThan(250),
-        reason: 'heatmap load took ${watch.elapsedMilliseconds}ms');
+    expect(
+      watch.elapsedMilliseconds,
+      lessThan(250),
+      reason: 'heatmap load took ${watch.elapsedMilliseconds}ms',
+    );
   });
 
   test('one year of data: breakdown and month series stay fast', () async {
     await seedYear();
     final analysis = AnalysisRepository(db);
     final detail = DetailRepository(db);
-    final software = await (db.select(db.metrics)
-          ..where((m) => m.key.equals('software')))
-        .getSingle();
+    final software = await (db.select(
+      db.metrics,
+    )..where((m) => m.key.equals('software'))).getSingle();
 
     final watch = Stopwatch()..start();
     await analysis.loadBreakdown(dateKey(DateTime.now()));
     await detail.loadMonthSeries(
-        software, dateKey(DateTime.now()).substring(0, 7));
+      software,
+      dateKey(DateTime.now()).substring(0, 7),
+    );
     await detail.loadStats(software, dateKey(DateTime.now()));
     watch.stop();
-    expect(watch.elapsedMilliseconds, lessThan(500),
-        reason: 'detail pipeline took ${watch.elapsedMilliseconds}ms');
+    expect(
+      watch.elapsedMilliseconds,
+      lessThan(500),
+      reason: 'detail pipeline took ${watch.elapsedMilliseconds}ms',
+    );
   });
 
-  testWidgets('analysis page renders smoothly with a year of data',
-      (tester) async {
+  testWidgets('analysis page renders smoothly with a year of data', (
+    tester,
+  ) async {
     await seedYear();
     final container = ProviderContainer(
       overrides: [databaseProvider.overrideWithValue(db)],
     );
     addTearDown(container.dispose);
-    await tester.pumpWidget(UncontrolledProviderScope(
-      container: container,
-      child: const MaterialApp(home: AnalysisPage()),
-    ));
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: AnalysisPage()),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.byType(HeatmapWidget), findsOneWidget);
@@ -120,17 +130,20 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
   });
 
-  testWidgets('home shows an empty state when every metric is deleted',
-      (tester) async {
+  testWidgets('home shows an empty state when every metric is deleted', (
+    tester,
+  ) async {
     await db.delete(db.metrics).go();
     final container = ProviderContainer(
       overrides: [databaseProvider.overrideWithValue(db)],
     );
     addTearDown(container.dispose);
-    await tester.pumpWidget(UncontrolledProviderScope(
-      container: container,
-      child: const MaterialApp(home: HomePage()),
-    ));
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: HomePage()),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('No metrics yet.'), findsOneWidget);

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/db/app_database.dart';
-import '../../data/heatmap/heat_colors.dart';
+import '../../theme/app_tokens.dart';
+import '../../theme/heat_colors.dart';
 import '../../data/repositories/analysis_repository.dart';
 import 'analysis_providers.dart';
 
@@ -39,7 +40,9 @@ class _HeatmapWidgetState extends ConsumerState<HeatmapWidget> {
     final matrix = ref.watch(heatmapProvider);
     return matrix.when(
       loading: () => const SizedBox(
-          height: 200, child: Center(child: CircularProgressIndicator())),
+        height: 200,
+        child: Center(child: CircularProgressIndicator()),
+      ),
       error: (e, _) => Text('Error: $e'),
       data: (data) {
         if (data.metrics.isEmpty) {
@@ -91,13 +94,11 @@ class _HeatmapWidgetState extends ConsumerState<HeatmapWidget> {
                     size: Size(data.dates.length * _rowHeight, height),
                     painter: HeatmapPainter(
                       matrix: data,
-                      emptyBorderColor: Theme.of(context)
-                          .colorScheme
-                          .outline
-                          .withValues(alpha: 0.4),
-                      labelColor: Theme.of(context)
-                          .colorScheme
-                          .onSurfaceVariant,
+                      emptyBorderColor: AppTokens.surfaceCardBorder,
+                      emptyFillColor: AppTokens.surfaceCard,
+                      labelColor: Theme.of(
+                        context,
+                      ).colorScheme.onSurfaceVariant,
                       selectedColor: Theme.of(context).colorScheme.primary,
                     ),
                   ),
@@ -123,10 +124,12 @@ class HeatmapPainter extends CustomPainter {
     required this.emptyBorderColor,
     required this.labelColor,
     required this.selectedColor,
+    this.emptyFillColor,
   });
 
   final HeatmapMatrix matrix;
   final Color emptyBorderColor;
+  final Color? emptyFillColor;
   final Color labelColor;
   final Color selectedColor;
 
@@ -184,8 +187,14 @@ class HeatmapPainter extends CustomPainter {
         final value = values[matrix.dates[col]];
         final colorName = value == null ? null : rule?.colorFor(value);
         if (colorName == null) {
-          // No data: dashed-look outline, clearly distinct from 'white'
-          // (spec 5.3).
+          // No data: translucent card fill + thin outline — clearly
+          // distinct from the 'white' bucket (spec 5.3, CR1-B rule 2).
+          if (emptyFillColor != null) {
+            canvas.drawRRect(
+              rect.deflate(1.5),
+              Paint()..color = emptyFillColor!,
+            );
+          }
           canvas.drawRRect(rect.deflate(1.5), emptyStroke);
         } else {
           fill.color = HeatColors.of(colorName);

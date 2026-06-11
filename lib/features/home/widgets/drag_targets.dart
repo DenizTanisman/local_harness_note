@@ -58,11 +58,15 @@ class DropOntoCardTarget extends ConsumerWidget {
         final tree = ref.read(treeRepositoryProvider);
         final messenger = ScaffoldMessenger.of(context);
         if (!await tree.canBecomeChildOf(dragged, metric)) {
-          messenger.showSnackBar(SnackBar(
-            content: Text(dragged.inputType == 'composite'
-                ? 'Groups cannot be nested (max 2 levels).'
-                : 'This card cannot be grouped here.'),
-          ));
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(
+                dragged.inputType == 'composite'
+                    ? 'Groups cannot be nested (max 2 levels).'
+                    : 'This card cannot be grouped here.',
+              ),
+            ),
+          );
           return;
         }
         if (!context.mounted) return;
