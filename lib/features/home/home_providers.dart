@@ -4,9 +4,24 @@ import '../../core/date_key.dart';
 import '../../data/db/app_database.dart';
 import '../../data/db/database_provider.dart';
 import '../../data/repositories/entry_repository.dart';
+import '../../data/repositories/tree_repository.dart';
 
 final entryRepositoryProvider = Provider<EntryRepository>(
     (ref) => EntryRepository(ref.watch(databaseProvider)));
+
+final treeRepositoryProvider = Provider<TreeRepository>(
+    (ref) => TreeRepository(ref.watch(databaseProvider)));
+
+/// True while a card is being long-press dragged — gap targets light up.
+class DraggingNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void set(bool value) => state = value;
+}
+
+final draggingProvider =
+    NotifierProvider<DraggingNotifier, bool>(DraggingNotifier.new);
 
 /// v1: the home page always edits TODAY (spec open point #6).
 final homeDateProvider = Provider<String>((ref) => dateKey(DateTime.now()));
