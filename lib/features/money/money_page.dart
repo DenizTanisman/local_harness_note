@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/secure_window.dart';
 import '../../data/db/app_database.dart';
 import '../../data/repositories/analysis_repository.dart' show formatAmount;
 import '../../data/repositories/money_repository.dart';
 import '../analysis/analysis_providers.dart';
+import '../settings/settings_providers.dart';
 import '../shared/calendar_row.dart';
 import 'money_providers.dart';
 
@@ -18,6 +20,27 @@ class MoneyPage extends ConsumerStatefulWidget {
 
 class _MoneyPageState extends ConsumerState<MoneyPage> {
   bool _monthly = false;
+  bool _secured = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // FLAG_SECURE only while a Money page is open (spec §11.6, default off).
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final settings =
+          await ref.read(settingsRepositoryProvider).loadAll();
+      if (mounted && settings['flag_secure'] == 'true') {
+        _secured = true;
+        await SecureWindow.enable();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    if (_secured) SecureWindow.disable();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

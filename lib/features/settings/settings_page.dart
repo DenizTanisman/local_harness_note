@@ -79,6 +79,27 @@ class SettingsPage extends ConsumerWidget {
             ),
           ),
           const Divider(),
+          const _SectionHeader('Appearance & privacy'),
+          ListTile(
+            title: const Text('Theme'),
+            trailing: SegmentedButton<String>(
+              segments: const [
+                ButtonSegment(value: 'system', label: Text('Auto')),
+                ButtonSegment(value: 'dark', label: Text('Dark')),
+                ButtonSegment(value: 'light', label: Text('Light')),
+              ],
+              selected: {settings['theme_mode'] ?? 'system'},
+              onSelectionChanged: (selection) =>
+                  repo.set('theme_mode', selection.first),
+            ),
+          ),
+          SwitchListTile(
+            title: const Text('Block screenshots on Money pages'),
+            subtitle: const Text('FLAG_SECURE, off by default'),
+            value: settings['flag_secure'] == 'true',
+            onChanged: (on) => repo.set('flag_secure', on.toString()),
+          ),
+          const Divider(),
           const _SectionHeader('Backup'),
           ListTile(
             title: const Text('Backup folder'),
