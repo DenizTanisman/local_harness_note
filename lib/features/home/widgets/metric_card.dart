@@ -41,14 +41,19 @@ class MetricCard extends ConsumerWidget {
           children: [
             Row(
               children: [
-                Icon(
-                  metric.isStarred ? Icons.star : Icons.star_border,
-                  size: 20,
-                  color: metric.isStarred
-                      ? Colors.amber
-                      : theme.colorScheme.outline,
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  onPressed: () => _toggleStar(context, ref),
+                  icon: Icon(
+                    metric.isStarred ? Icons.star : Icons.star_border,
+                    size: 20,
+                    color: metric.isStarred
+                        ? Colors.amber
+                        : theme.colorScheme.outline,
+                  ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 4),
                 Expanded(
                   child: Text(metric.title, style: theme.textTheme.titleMedium),
                 ),
@@ -102,6 +107,23 @@ class MetricCard extends ConsumerWidget {
     }
   }
 
+  /// Star flow (spec 6.2): ask for a ≤2-word heatmap label on star;
+  /// unstar drops the metric off the map without touching history.
+  Future<void> _toggleStar(BuildContext context, WidgetRef ref) async {
+    final tree = ref.read(treeRepositoryProvider);
+    if (metric.isStarred) {
+      await tree.unstar(metric.id);
+      return;
+    }
+    final label = await showDialog<String>(
+      context: context,
+      builder: (context) => _StarLabelDialog(initial: metric.title),
+    );
+    if (label != null) {
+      await tree.star(metric, label);
+    }
+  }
+
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -125,6 +147,55 @@ class MetricCard extends ConsumerWidget {
     if (confirmed == true) {
       await ref.read(entryRepositoryProvider).deleteMetric(metric.id);
     }
+  }
+}
+
+/// Owns its controller so the dialog's exit animation can finish safely.
+class _StarLabelDialog extends StatefulWidget {
+  const _StarLabelDialog({required this.initial});
+
+  final String initial;
+
+  @override
+  State<_StarLabelDialog> createState() => _StarLabelDialogState();
+}
+
+class _StarLabelDialogState extends State<_StarLabelDialog> {
+  late final TextEditingController _controller =
+      TextEditingController(text: widget.initial);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Add to heatmap'),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        decoration: const InputDecoration(
+          labelText: 'How should this appear in the heatmap? (max 2 words)',
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            final words = _controller.text.trim().split(RegExp(r'\s+'));
+            final label = words.take(2).join(' ');
+            Navigator.pop(context, label.isEmpty ? null : label);
+          },
+          child: const Text('Star'),
+        ),
+      ],
+    );
   }
 }
 

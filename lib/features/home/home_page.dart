@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'home_providers.dart';
 import 'widgets/add_metric_sheet.dart';
+import 'widgets/drag_targets.dart';
 import 'widgets/metric_card.dart';
 
 /// Home (entry) page — spec 6.2.
@@ -38,13 +39,19 @@ class HomePage extends ConsumerWidget {
         data: (rows) => ListView(
           padding: const EdgeInsets.only(top: 6, bottom: 24),
           children: [
-            for (final metric in rows)
-              MetricCard(
-                key: ValueKey('metric-card-${metric.id}'),
-                metric: metric,
-                dayEntries: entries.value ?? const {},
-                selectedOptions: options.value ?? const {},
+            for (var i = 0; i < rows.length; i++) ...[
+              GapDropTarget(index: i),
+              DraggableMetricCard(
+                key: ValueKey('metric-card-${rows[i].id}'),
+                metric: rows[i],
+                child: MetricCard(
+                  metric: rows[i],
+                  dayEntries: entries.value ?? const {},
+                  selectedOptions: options.value ?? const {},
+                ),
               ),
+            ],
+            GapDropTarget(index: rows.length),
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
               child: OutlinedButton.icon(

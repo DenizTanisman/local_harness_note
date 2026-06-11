@@ -37,18 +37,31 @@ class CompositeBody extends ConsumerWidget {
               spacing: 8,
               children: [
                 for (final child in rows)
-                  FilterChip(
-                    label: Text(child.title),
-                    selected: dayEntries.containsKey(child.id),
-                    onSelected: (selected) {
-                      final repo = ref.read(entryRepositoryProvider);
-                      final date = ref.read(homeDateProvider);
-                      if (selected) {
-                        repo.saveEntry(metricId: child.id, date: date);
-                      } else {
-                        repo.clearEntry(child.id, date);
-                      }
-                    },
+                  // Long-press drag a chip into a list gap to pull the
+                  // sub-item out of the group (spec §7).
+                  LongPressDraggable<Metric>(
+                    data: child,
+                    onDragStarted: () =>
+                        ref.read(draggingProvider.notifier).set(true),
+                    onDragEnd: (_) =>
+                        ref.read(draggingProvider.notifier).set(false),
+                    feedback: Material(
+                      color: Colors.transparent,
+                      child: Chip(label: Text(child.title)),
+                    ),
+                    child: FilterChip(
+                      label: Text(child.title),
+                      selected: dayEntries.containsKey(child.id),
+                      onSelected: (selected) {
+                        final repo = ref.read(entryRepositoryProvider);
+                        final date = ref.read(homeDateProvider);
+                        if (selected) {
+                          repo.saveEntry(metricId: child.id, date: date);
+                        } else {
+                          repo.clearEntry(child.id, date);
+                        }
+                      },
+                    ),
                   ),
               ],
             ),
