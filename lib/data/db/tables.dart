@@ -12,6 +12,10 @@ class Metrics extends Table {
   /// 'int' | 'text' | 'int_text' | 'checkbox' | 'composite' | 'money'
   TextColumn get inputType => text()();
   BoolColumn get isStarred => boolean().withDefault(const Constant(false))();
+
+  /// Epoch ms of the star action — later-starred metrics append below the
+  /// fixed core rows in star order (spec 5.3).
+  IntColumn get starredAt => integer().nullable()();
   TextColumn get heatmapLabel => text().nullable()();
 
   /// JSON bucket rule, see HeatmapRule.
