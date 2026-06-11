@@ -8,6 +8,7 @@ import '../../data/repositories/money_repository.dart';
 import '../analysis/analysis_providers.dart';
 import '../settings/settings_providers.dart';
 import '../shared/calendar_row.dart';
+import '../shared/continuous_sparkline.dart';
 import 'money_providers.dart';
 
 /// Money page (spec 6.5): calendar + General / Monthly switch.
@@ -92,15 +93,30 @@ class _GeneralView extends ConsumerWidget {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _MoneySparkline(
-                general: data,
-                month: date.substring(0, 7),
-                selectedDay: int.parse(date.substring(8)),
-                onDayTap: (day) {
-                  ref.read(selectedDateProvider.notifier).select(
-                      '${date.substring(0, 7)}-${day.toString().padLeft(2, '0')}');
-                },
-              ),
+              child: Builder(builder: (context) {
+                final month = date.substring(0, 7);
+                final parts = month.split('-').map(int.parse).toList();
+                final days = DateTime(parts[0], parts[1] + 1, 0).day;
+                // Same painter as the detail page (CR1-C); only the
+                // per-day color rule differs: over-budget days are red.
+                return KeyedSubtree(
+                  key: const ValueKey('money-sparkline'),
+                  child: ContinuousSparkline(
+                    daysInMonth: days,
+                    values: {
+                      for (final e in data.days.entries)
+                        e.key: e.value.luxury,
+                    },
+                    dayColors: moneyDayColors(days, data),
+                    lineColor: _MoneyColors.green,
+                    selectedDay: int.parse(date.substring(8)),
+                    onDayTap: (day) {
+                      ref.read(selectedDateProvider.notifier).select(
+                          '$month-${day.toString().padLeft(2, '0')}');
+                    },
+                  ),
+                );
+              }),
             ),
             Padding(
               padding: const EdgeInsets.all(16),
@@ -168,171 +184,21 @@ class _CategoryBlock extends StatelessWidget {
   }
 }
 
-/// Red/green daily-luxury sparkline (spec 6.5).
-class _MoneySparkline extends StatelessWidget {
-  const _MoneySparkline({
-    required this.general,
-    required this.month,
-    required this.selectedDay,
-    this.onDayTap,
-  });
 
-  final MoneyGeneral general;
-  final String month;
-  final int selectedDay;
-  final void Function(int day)? onDayTap;
+/// Per-day line colors for the Money sparkline: red when the day's
+/// luxury spend exceeds the daily budget (spec 6.5), green otherwise.
+/// Index 0 unused; 1..N are days.
+List<Color> moneyDayColors(int daysInMonth, MoneyGeneral general) => [
+      _MoneyColors.green,
+      for (var day = 1; day <= daysInMonth; day++)
+        (general.days[day]?.overBudget ?? false)
+            ? _MoneyColors.red
+            : _MoneyColors.green,
+    ];
 
-  int get _daysInMonth {
-    final parts = month.split('-').map(int.parse).toList();
-    return DateTime(parts[0], parts[1] + 1, 0).day;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final days = _daysInMonth;
-    return LayoutBuilder(
-      builder: (context, constraints) => GestureDetector(
-        key: const ValueKey('money-sparkline'),
-        onTapUp: (details) {
-          final step = constraints.maxWidth / (days - 1);
-          final day = (details.localPosition.dx / step).round() + 1;
-          if (day >= 1 && day <= days) onDayTap?.call(day);
-        },
-        child: CustomPaint(
-          size: Size(constraints.maxWidth, 160),
-          painter: _MoneySparklinePainter(
-            general: general,
-            days: days,
-            selectedDay: selectedDay,
-            gridColor:
-                Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MoneySparklinePainter extends CustomPainter {
-  _MoneySparklinePainter({
-    required this.general,
-    required this.days,
-    required this.selectedDay,
-    required this.gridColor,
-  });
-
-  final MoneyGeneral general;
-  final int days;
-  final int selectedDay;
-  final Color gridColor;
-
-  static const _red = Color(0xFFDA3633);
-  static const _green = Color(0xFF2EA043);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final step = size.width / (days - 1);
-    final values = general.days;
-    final maxValue = values.values.isEmpty
-        ? 1.0
-        : values.values
-            .map((p) => p.luxury)
-            .reduce((a, b) => a > b ? a : b);
-    final scale = maxValue == 0 ? 1.0 : maxValue;
-
-    Offset pointFor(int day, double value) => Offset(
-          (day - 1) * step,
-          size.height - 12 - (value / scale) * (size.height - 24),
-        );
-
-    canvas.drawLine(
-      Offset(0, size.height - 12),
-      Offset(size.width, size.height - 12),
-      Paint()
-        ..color = gridColor
-        ..strokeWidth = 1,
-    );
-
-    // Budget line.
-    if (general.dailyBudget > 0 && general.dailyBudget <= scale) {
-      final y = pointFor(1, general.dailyBudget).dy;
-      canvas.drawLine(
-        Offset(0, y),
-        Offset(size.width, y),
-        Paint()
-          ..color = gridColor
-          ..strokeWidth = 1,
-      );
-    }
-
-    final line = Paint()
-      ..color = gridColor
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke
-      ..strokeJoin = StrokeJoin.round;
-    final sortedDays = values.keys.toList()..sort();
-    final baseY = size.height - 12;
-    final segments = <List<Offset>>[];
-    int? prev;
-    for (final day in sortedDays) {
-      final point = pointFor(day, values[day]!.luxury);
-      if (prev == null || day != prev + 1) {
-        segments.add([point]);
-      } else {
-        segments.last.add(point);
-      }
-      prev = day;
-    }
-    for (final segment in segments) {
-      final path = Path()..moveTo(segment.first.dx, segment.first.dy);
-      for (final point in segment.skip(1)) {
-        path.lineTo(point.dx, point.dy);
-      }
-      if (segment.length > 1) {
-        final area = Path.from(path)
-          ..lineTo(segment.last.dx, baseY)
-          ..lineTo(segment.first.dx, baseY)
-          ..close();
-        canvas.drawPath(
-          area,
-          Paint()
-            ..shader = LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                _green.withValues(alpha: 0.18),
-                _green.withValues(alpha: 0.02),
-              ],
-            ).createShader(Rect.fromLTWH(0, 0, size.width, size.height)),
-        );
-      }
-      canvas.drawPath(path, line);
-    }
-
-    for (final day in sortedDays) {
-      final dayPoint = values[day]!;
-      final point = pointFor(day, dayPoint.luxury);
-      final color = dayPoint.overBudget ? _red : _green;
-      if (day == selectedDay) {
-        canvas.drawCircle(
-            point,
-            8,
-            Paint()
-              ..color = color.withValues(alpha: 0.3)
-              ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3));
-      }
-      canvas.drawCircle(
-        point,
-        day == selectedDay ? 5 : 3.5,
-        Paint()..color = color,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(_MoneySparklinePainter oldDelegate) =>
-      oldDelegate.general != general ||
-      oldDelegate.selectedDay != selectedDay;
+class _MoneyColors {
+  static const red = Color(0xFFDA3633);
+  static const green = Color(0xFF2EA043);
 }
 
 // ---------------------------------------------------------------- Monthly
