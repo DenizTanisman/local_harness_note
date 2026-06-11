@@ -511,7 +511,7 @@ Her faz ayrı branch: `phase-0-scaffold`, `phase-1-entry`, ... Her faz sonunda: 
 | 3 | Water 0–1 L aralığı spec'te tanımsız (0 black, 1–2 lightBlue) | 0 < x < 1 → lightBlue'ya dahil (min=0 hariç-üstü) | Düşük öncelik |
 | 4 | Weekly/Monthly: toplam mı ortalama mı | Sayısal metriklerde TOPLAM (dk, L); istenirse metrik başına ayar eklenir | Düşük öncelik |
 | 5 | "Sıralama modunda üst üste bırakma" yanlışlıkla tetiklenirse | Onay diyaloğu her zaman sorulur (7. bölüm) | Hayır |
-| 6 | Geçmiş güne veri girişi | v1'de yalnızca BUGÜN ana sayfadan girilir; geçmiş düzeltme CSV import ile. v2 adayı: analiz sayfasından geçmiş gün düzenleme | Kullanıcı teyidi önerilir |
+| 6 | Geçmiş güne veri girişi | KAPANDI (CR-1): ana sayfadaki tarih çipiyle geçmiş güne giriş yapılır; gelecek kapalı; geçmiş outcome'a hatırlatma kurulmaz | Kapandı |
 
 ---
 
@@ -533,3 +533,13 @@ Sonraki fazlar için aynı kalıp: "Faz N'i uygula, kabul kriterleri Bölüm 12 
 ---
 
 *Bu spesifikasyon 2026-06-11 tarihli mimari tartışmasının çıktısıdır. Değişiklikler bu dosyada versiyonlanmalıdır (git).*
+
+
+---
+
+## CR-1 Güncellemeleri (2026-06-12, uygulandı)
+
+- **6.2 Ana Sayfa:** AppBar tarih çipi + geçmiş gün modu (bugün-değilken vurgulu çip + 'Today' butonu); geçmiş güne outcome girildiğinde hatırlatma sorusu atlanır ve `remind_date < bugün` satırı yazılmaz (CR1-D).
+- **6.3 Günlük Döküm:** Düz liste yerine özyinelemeli `ToggleRow` ağacı; tüm seviyeler varsayılan kapalı; ok = aç/kapa (32dp), başlık = detay sayfası; Money 3 seviye (yön → kategori → subtype) (CR1-A).
+- **6.4 / 6.5 Sparkline:** Ayın tüm günlerini kapsayan sürekli çizgi; boş/0 günler taban çizgisinde (alt %12 sabit); nokta yok, seçili güne 1dp dikey işaret; ucuz glow + gradyan dolgu; Money aynı painter, eşik aşan günün segmenti kırmızı (CR1-C).
+- **Yeni 6.7 Tema:** Tek koyu tema; tüm renkler `lib/theme/app_tokens.dart` token'larından (`Color(0x` ekranlarda yasak, testle zorlanır); BackdropFilter yasak; HeatColors bucket paleti ve sparkline yeşili (#39d353) temadan bağımsız veri renkleri (CR1-B).

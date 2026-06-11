@@ -38,8 +38,7 @@ void main() {
 
   String daysAgo(int n) => dateKey(DateTime.now().subtract(Duration(days: n)));
 
-  testWidgets('heatmap label tap opens the metric detail page',
-      (tester) async {
+  testWidgets('heatmap label tap opens the metric detail page', (tester) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -52,8 +51,9 @@ void main() {
     }
 
     final softwareLabel = find.descendant(
-        of: find.byKey(const ValueKey('heatmap-grid')).hitTestable(),
-        matching: find.text('Software'));
+      of: find.byKey(const ValueKey('heatmap-grid')).hitTestable(),
+      matching: find.text('Software'),
+    );
     // Labels live next to the grid; find via the label key instead.
     final label = softwareLabel.evaluate().isEmpty
         ? find.text('Software').first
@@ -69,13 +69,15 @@ void main() {
     await closeApp(tester);
   });
 
-  testWidgets('breakdown header tap opens detail; back returns to analysis',
-      (tester) async {
-    final software = await (db.select(db.metrics)
-          ..where((m) => m.key.equals('software')))
-        .getSingle();
-    await EntryRepository(db)
-        .saveEntry(metricId: software.id, date: daysAgo(1), numValue: 42);
+  testWidgets('breakdown header tap opens detail; back returns to analysis', (
+    tester,
+  ) async {
+    final software = await (db.select(
+      db.metrics,
+    )..where((m) => m.key.equals('software'))).getSingle();
+    await EntryRepository(
+      db,
+    ).saveEntry(metricId: software.id, date: daysAgo(1), numValue: 42);
 
     await tester.pumpWidget(app(const RootPager()));
     await tester.pumpAndSettle();
@@ -95,14 +97,15 @@ void main() {
   });
 
   testWidgets('sparkline dot tap selects that day', (tester) async {
-    final software = await (db.select(db.metrics)
-          ..where((m) => m.key.equals('software')))
-        .getSingle();
+    final software = await (db.select(
+      db.metrics,
+    )..where((m) => m.key.equals('software'))).getSingle();
     final selected = daysAgo(1);
     final month = selected.substring(0, 7);
     // Data on day 5 of the selected month.
-    await EntryRepository(db)
-        .saveEntry(metricId: software.id, date: '$month-05', numValue: 30);
+    await EntryRepository(
+      db,
+    ).saveEntry(metricId: software.id, date: '$month-05', numValue: 30);
 
     await tester.pumpWidget(app(MetricDetailPage(metric: software)));
     await tester.pumpAndSettle();

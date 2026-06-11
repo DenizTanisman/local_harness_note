@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'heat_colors.dart';
+import '../../theme/heat_colors.dart';
 
 /// Where a heatmap rule reads its daily value from (spec 5.1).
 enum HeatmapSource {
@@ -13,16 +13,21 @@ enum HeatmapSource {
   const HeatmapSource(this.json);
   final String json;
 
-  static HeatmapSource parse(String value) =>
-      values.firstWhere((s) => s.json == value,
-          orElse: () => throw FormatException('Unknown heatmap source: $value'));
+  static HeatmapSource parse(String value) => values.firstWhere(
+    (s) => s.json == value,
+    orElse: () => throw FormatException('Unknown heatmap source: $value'),
+  );
 }
 
 /// One color band. [min] inclusive, [max] exclusive; max == null → +∞.
 /// Degenerate bucket (min == max) matches that exact value only — used for
 /// "exactly 0" bands (Sport white, Water black; spec open point #3).
 class HeatmapBucket {
-  const HeatmapBucket({required this.min, required this.max, required this.color});
+  const HeatmapBucket({
+    required this.min,
+    required this.max,
+    required this.color,
+  });
 
   final double min;
   final double? max;
@@ -83,7 +88,7 @@ class HeatmapRule {
       HeatmapRule.fromJson(jsonDecode(raw) as Map<String, dynamic>);
 
   String encode() => jsonEncode({
-        'source': source.json,
-        'buckets': [for (final b in buckets) b.toJson()],
-      });
+    'source': source.json,
+    'buckets': [for (final b in buckets) b.toJson()],
+  });
 }

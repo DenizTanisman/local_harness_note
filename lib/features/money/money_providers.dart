@@ -6,11 +6,14 @@ import '../../data/repositories/money_repository.dart';
 import '../analysis/analysis_providers.dart';
 
 final moneyRepositoryProvider = Provider<MoneyRepository>(
-    (ref) => MoneyRepository(ref.watch(databaseProvider)));
+  (ref) => MoneyRepository(ref.watch(databaseProvider)),
+);
 
 final moneyCategoriesProvider =
-    StreamProvider.family<List<MoneyCategory>, String>((ref, direction) =>
-        ref.watch(moneyRepositoryProvider).watchCategories(direction));
+    StreamProvider.family<List<MoneyCategory>, String>(
+      (ref, direction) =>
+          ref.watch(moneyRepositoryProvider).watchCategories(direction),
+    );
 
 /// General view for the month of the selected date.
 final moneyGeneralProvider = StreamProvider<MoneyGeneral>((ref) {

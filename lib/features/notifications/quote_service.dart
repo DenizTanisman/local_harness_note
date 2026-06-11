@@ -11,8 +11,7 @@ class QuoteService {
 
   /// Deterministic daily pick: quotes[dayOfYear % quotes.length] (spec §8).
   static String quoteFor(List<String> quotes, DateTime date) {
-    final dayOfYear =
-        date.difference(DateTime(date.year, 1, 1)).inDays + 1;
+    final dayOfYear = date.difference(DateTime(date.year, 1, 1)).inDays + 1;
     return quotes[dayOfYear % quotes.length];
   }
 }

@@ -11,15 +11,14 @@ class BreakdownExpansionNotifier extends Notifier<Set<String>> {
   Set<String> build() => const {};
 
   void toggle(String id) {
-    state = state.contains(id)
-        ? (Set.of(state)..remove(id))
-        : {...state, id};
+    state = state.contains(id) ? (Set.of(state)..remove(id)) : {...state, id};
   }
 }
 
 final breakdownExpansionProvider =
     NotifierProvider<BreakdownExpansionNotifier, Set<String>>(
-        BreakdownExpansionNotifier.new);
+      BreakdownExpansionNotifier.new,
+    );
 
 /// Root row of the breakdown: always visible, no arrow; its level-1
 /// children render as collapsed [ToggleRow]s (CR1-A).
@@ -41,8 +40,10 @@ class BreakdownRootTile extends StatelessWidget {
               : () => onMetricTap?.call(node.metric!),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(node.title,
-                style: Theme.of(context).textTheme.titleMedium),
+            child: Text(
+              node.title,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
           ),
         ),
         for (final child in node.children)
@@ -69,8 +70,7 @@ class ToggleRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final expanded =
-        ref.watch(breakdownExpansionProvider).contains(node.id);
+    final expanded = ref.watch(breakdownExpansionProvider).contains(node.id);
     final theme = Theme.of(context);
 
     void toggle() =>
@@ -93,9 +93,7 @@ class ToggleRow extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(16),
                         onTap: toggle,
                         child: Icon(
-                          expanded
-                              ? Icons.arrow_drop_down
-                              : Icons.arrow_right,
+                          expanded ? Icons.arrow_drop_down : Icons.arrow_right,
                           size: 22,
                         ),
                       )
@@ -111,8 +109,7 @@ class ToggleRow extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(vertical: 6),
                     child: Text(
                       node.title,
-                      maxLines:
-                          node.inlineExpand && !expanded ? 1 : null,
+                      maxLines: node.inlineExpand && !expanded ? 1 : null,
                       overflow: node.inlineExpand && !expanded
                           ? TextOverflow.ellipsis
                           : null,
@@ -126,8 +123,7 @@ class ToggleRow extends ConsumerWidget {
         ),
         if (expanded)
           for (final child in node.children)
-            ToggleRow(
-                node: child, depth: depth + 1, onMetricTap: onMetricTap),
+            ToggleRow(node: child, depth: depth + 1, onMetricTap: onMetricTap),
       ],
     );
   }

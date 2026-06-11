@@ -31,11 +31,13 @@ class _RootPagerState extends State<RootPager> {
         const HomePage(),
         AnalysisPage(
           onMetricTap: (metric) {
-            Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) => metric.inputType == 'money'
-                  ? const MoneyPage()
-                  : MetricDetailPage(metric: metric),
-            ));
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => metric.inputType == 'money'
+                    ? const MoneyPage()
+                    : MetricDetailPage(metric: metric),
+              ),
+            );
           },
         ),
       ],

@@ -40,20 +40,23 @@ void main() {
       final money = MoneyRepository(db);
       // Budget: (3000 − 0) / 30 = 100; day 10 spends 200 → red.
       await money.addTransaction(
-          date: '2026-06-01',
-          direction: 'income',
-          amount: 3000,
-          category: 'Scholarship');
+        date: '2026-06-01',
+        direction: 'income',
+        amount: 3000,
+        category: 'Scholarship',
+      );
       await money.addTransaction(
-          date: '2026-06-10',
-          direction: 'outcome',
-          amount: 200,
-          category: 'Food');
+        date: '2026-06-10',
+        direction: 'outcome',
+        amount: 200,
+        category: 'Food',
+      );
       await money.addTransaction(
-          date: '2026-06-11',
-          direction: 'outcome',
-          amount: 50,
-          category: 'Food');
+        date: '2026-06-11',
+        direction: 'outcome',
+        amount: 50,
+        category: 'Food',
+      );
 
       final general = await money.loadGeneral('2026-06');
       final colors = moneyDayColors(30, general);
@@ -71,35 +74,40 @@ void main() {
   });
 
   group('widget', () {
-    testWidgets('empty month renders a flat line without crashing',
-        (tester) async {
-      await tester.pumpWidget(const MaterialApp(
-        home: Scaffold(
-          body: ContinuousSparkline(
-            daysInMonth: 30,
-            values: {},
-            selectedDay: 11,
+    testWidgets('empty month renders a flat line without crashing', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: ContinuousSparkline(
+              daysInMonth: 30,
+              values: {},
+              selectedDay: 11,
+            ),
           ),
         ),
-      ));
+      );
       expect(find.byKey(const ValueKey('sparkline')), findsOneWidget);
     });
 
-    testWidgets('taps round to the nearest day and clamp at month edges',
-        (tester) async {
+    testWidgets('taps round to the nearest day and clamp at month edges', (
+      tester,
+    ) async {
       final taps = <int>[];
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: ContinuousSparkline(
-            daysInMonth: 30,
-            values: const {10: 5.0},
-            selectedDay: 1,
-            onDayTap: taps.add,
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ContinuousSparkline(
+              daysInMonth: 30,
+              values: const {10: 5.0},
+              selectedDay: 1,
+              onDayTap: taps.add,
+            ),
           ),
         ),
-      ));
-      final rect =
-          tester.getRect(find.byKey(const ValueKey('sparkline')));
+      );
+      final rect = tester.getRect(find.byKey(const ValueKey('sparkline')));
       final step = rect.width / 29;
 
       await tester.tapAt(Offset(rect.left + step * 9, rect.center.dy));

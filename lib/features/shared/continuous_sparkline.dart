@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/app_tokens.dart';
+
 /// GitHub dark-mode neon green — preserved by CR1-B rule 3.
-const sparklineGreen = Color(0xFF39D353);
+const sparklineGreen = AppTokens.sparkline;
 
 /// Day 1..N → value with missing/empty days as 0 (CR1-C: the line covers
 /// the WHOLE month; no-data days run along the baseline).
-List<double> filledMonthValues(int daysInMonth, Map<int, double> values) =>
-    [for (var d = 1; d <= daysInMonth; d++) values[d] ?? 0];
+List<double> filledMonthValues(int daysInMonth, Map<int, double> values) => [
+  for (var d = 1; d <= daysInMonth; d++) values[d] ?? 0,
+];
 
 /// Color of a polyline segment. Segments are indexed by their left point
 /// (0-based, so left point index i = day i+1); the segment belongs to the
@@ -48,11 +51,9 @@ class ContinuousSparkline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final marker = markerColor ??
-        Theme.of(context)
-            .colorScheme
-            .onSurfaceVariant
-            .withValues(alpha: 0.4);
+    final marker =
+        markerColor ??
+        Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4);
     return LayoutBuilder(
       builder: (context, constraints) => GestureDetector(
         key: const ValueKey('sparkline'),
@@ -60,9 +61,10 @@ class ContinuousSparkline extends StatelessWidget {
           // Nearest day, clamped — taps at the edges never overflow the
           // month (CR1-C acceptance).
           final step = constraints.maxWidth / (daysInMonth - 1);
-          final day =
-              ((details.localPosition.dx / step).round() + 1)
-                  .clamp(1, daysInMonth);
+          final day = ((details.localPosition.dx / step).round() + 1).clamp(
+            1,
+            daysInMonth,
+          );
           onDayTap?.call(day);
         },
         child: CustomPaint(
@@ -107,11 +109,11 @@ class ContinuousSparklinePainter extends CustomPainter {
     final maxValue = series.reduce((a, b) => a > b ? a : b);
 
     Offset pointFor(int index) => Offset(
-          index * step,
-          maxValue == 0
-              ? baseY
-              : baseY - (series[index] / maxValue) * (baseY - topPad),
-        );
+      index * step,
+      maxValue == 0
+          ? baseY
+          : baseY - (series[index] / maxValue) * (baseY - topPad),
+    );
 
     final points = [for (var i = 0; i < days; i++) pointFor(i)];
 

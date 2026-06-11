@@ -61,14 +61,17 @@ class AnalysisRepository {
 
   /// Re-emits whenever any table involved in analysis changes.
   Stream<void> _changes() => db
-      .customSelect('SELECT 1', readsFrom: {
-        db.metrics,
-        db.metricOptions,
-        db.entries,
-        db.entryOptions,
-        db.transactions,
-        db.moneyCategories,
-      })
+      .customSelect(
+        'SELECT 1',
+        readsFrom: {
+          db.metrics,
+          db.metricOptions,
+          db.entries,
+          db.entryOptions,
+          db.transactions,
+          db.moneyCategories,
+        },
+      )
       .watch()
       .map((_) {});
 
@@ -78,9 +81,9 @@ class AnalysisRepository {
   /// Starred rows in display order: the core 9 first (fixed order), then
   /// later-starred metrics by star time (spec 5.3).
   Future<List<Metric>> starredInDisplayOrder() async {
-    final starred = await (db.select(db.metrics)
-          ..where((m) => m.isStarred.equals(true)))
-        .get();
+    final starred = await (db.select(
+      db.metrics,
+    )..where((m) => m.isStarred.equals(true))).get();
     final coreIndex = {
       for (var i = 0; i < coreHeatmapOrder.length; i++) coreHeatmapOrder[i]: i,
     };
@@ -118,11 +121,19 @@ class AnalysisRepository {
     for (final metric in metrics) {
       final rule = rules[metric.id];
       if (rule == null) continue;
-      values[metric.id] =
-          await sourceValues(metric, rule.source, startDate, endDate);
+      values[metric.id] = await sourceValues(
+        metric,
+        rule.source,
+        startDate,
+        endDate,
+      );
     }
     return HeatmapMatrix(
-        metrics: metrics, dates: dates, values: values, rules: rules);
+      metrics: metrics,
+      dates: dates,
+      values: values,
+      rules: rules,
+    );
   }
 
   /// Day → value for one metric in [startDate, endDate]; days without data
@@ -136,11 +147,13 @@ class AnalysisRepository {
     switch (source) {
       case HeatmapSource.numValue:
       case HeatmapSource.textExists:
-        final rows = await (db.select(db.entries)
-              ..where((e) =>
-                  e.metricId.equals(metric.id) &
-                  e.date.isBetweenValues(startDate, endDate)))
-            .get();
+        final rows =
+            await (db.select(db.entries)..where(
+                  (e) =>
+                      e.metricId.equals(metric.id) &
+                      e.date.isBetweenValues(startDate, endDate),
+                ))
+                .get();
         if (source == HeatmapSource.numValue) {
           return {
             for (final e in rows)
@@ -157,11 +170,15 @@ class AnalysisRepository {
         final query = db.selectOnly(db.entries)
           ..addColumns([db.entries.date, count])
           ..join([
-            leftOuterJoin(db.entryOptions,
-                db.entryOptions.entryId.equalsExp(db.entries.id)),
+            leftOuterJoin(
+              db.entryOptions,
+              db.entryOptions.entryId.equalsExp(db.entries.id),
+            ),
           ])
-          ..where(db.entries.metricId.equals(metric.id) &
-              db.entries.date.isBetweenValues(startDate, endDate))
+          ..where(
+            db.entries.metricId.equals(metric.id) &
+                db.entries.date.isBetweenValues(startDate, endDate),
+          )
           ..groupBy([db.entries.date]);
         final rows = await query.get();
         return {
@@ -177,8 +194,10 @@ class AnalysisRepository {
           ..join([
             innerJoin(children, children.id.equalsExp(db.entries.metricId)),
           ])
-          ..where(children.parentId.equals(metric.id) &
-              db.entries.date.isBetweenValues(startDate, endDate))
+          ..where(
+            children.parentId.equals(metric.id) &
+                db.entries.date.isBetweenValues(startDate, endDate),
+          )
           ..groupBy([db.entries.date]);
         final rows = await query.get();
         return {
@@ -194,13 +213,16 @@ class AnalysisRepository {
             innerJoin(
               db.moneyCategories,
               db.moneyCategories.name.equalsExp(db.transactions.category) &
-                  db.moneyCategories.direction
-                      .equalsExp(db.transactions.direction),
+                  db.moneyCategories.direction.equalsExp(
+                    db.transactions.direction,
+                  ),
             ),
           ])
-          ..where(db.transactions.direction.equals('outcome') &
-              db.moneyCategories.countsInHeatmap.equals(true) &
-              db.transactions.date.isBetweenValues(startDate, endDate))
+          ..where(
+            db.transactions.direction.equals('outcome') &
+                db.moneyCategories.countsInHeatmap.equals(true) &
+                db.transactions.date.isBetweenValues(startDate, endDate),
+          )
           ..groupBy([db.transactions.date]);
         final rows = await query.get();
         final result = {
@@ -209,11 +231,13 @@ class AnalysisRepository {
         };
         // A day with any transaction is "filled" even if nothing counts
         // toward the heatmap sum (sum 0 → darkGreen bucket).
-        final txDays = await (db.selectOnly(db.transactions, distinct: true)
-              ..addColumns([db.transactions.date])
-              ..where(
-                  db.transactions.date.isBetweenValues(startDate, endDate)))
-            .get();
+        final txDays =
+            await (db.selectOnly(db.transactions, distinct: true)
+                  ..addColumns([db.transactions.date])
+                  ..where(
+                    db.transactions.date.isBetweenValues(startDate, endDate),
+                  ))
+                .get();
         for (final row in txDays) {
           result.putIfAbsent(row.read(db.transactions.date)!, () => 0.0);
         }
@@ -230,13 +254,14 @@ class AnalysisRepository {
   /// Money → Income/Outcome (Month) → category → subtype;
   /// composite → filled child → its text; text metrics → note leaf.
   Future<List<BreakdownNode>> loadBreakdown(String date) async {
-    final top = await (db.select(db.metrics)
-          ..where((m) => m.parentId.isNull())
-          ..orderBy([(m) => OrderingTerm.asc(m.sortOrder)]))
-        .get();
-    final entries = await (db.select(db.entries)
-          ..where((e) => e.date.equals(date)))
-        .get();
+    final top =
+        await (db.select(db.metrics)
+              ..where((m) => m.parentId.isNull())
+              ..orderBy([(m) => OrderingTerm.asc(m.sortOrder)]))
+            .get();
+    final entries = await (db.select(
+      db.entries,
+    )..where((e) => e.date.equals(date))).get();
     final byMetric = {for (final e in entries) e.metricId: e};
 
     final roots = <BreakdownNode>[];
@@ -251,29 +276,33 @@ class AnalysisRepository {
           final entry = byMetric[metric.id];
           if (entry == null) break;
           final labels = await _selectedLabels(entry.id);
-          roots.add(BreakdownNode(
-            id: metric.key,
-            title:
-                '${metric.title}: ${labels.isEmpty ? '—' : labels.join(', ')}',
-            metric: metric,
-          ));
+          roots.add(
+            BreakdownNode(
+              id: metric.key,
+              title:
+                  '${metric.title}: ${labels.isEmpty ? '—' : labels.join(', ')}',
+              metric: metric,
+            ),
+          );
         default:
           final entry = byMetric[metric.id];
           if (entry == null) break;
           final text = entry.textValue?.trim();
-          roots.add(BreakdownNode(
-            id: metric.key,
-            title: '${metric.title}: ${_formatValue(metric, entry)}',
-            metric: metric,
-            children: [
-              if (text != null && text.isNotEmpty)
-                BreakdownNode(
-                  id: '${metric.key}/note',
-                  title: text,
-                  inlineExpand: true,
-                ),
-            ],
-          ));
+          roots.add(
+            BreakdownNode(
+              id: metric.key,
+              title: '${metric.title}: ${_formatValue(metric, entry)}',
+              metric: metric,
+              children: [
+                if (text != null && text.isNotEmpty)
+                  BreakdownNode(
+                    id: '${metric.key}/note',
+                    title: text,
+                    inlineExpand: true,
+                  ),
+              ],
+            ),
+          );
       }
     }
     return roots;
@@ -281,20 +310,24 @@ class AnalysisRepository {
 
   Future<List<String>> _selectedLabels(int entryId) async {
     final join = db.select(db.metricOptions).join([
-      innerJoin(db.entryOptions,
-          db.entryOptions.optionId.equalsExp(db.metricOptions.id)),
-    ])
-      ..where(db.entryOptions.entryId.equals(entryId));
+      innerJoin(
+        db.entryOptions,
+        db.entryOptions.optionId.equalsExp(db.metricOptions.id),
+      ),
+    ])..where(db.entryOptions.entryId.equals(entryId));
     final rows = await join.get();
     return [for (final r in rows) r.readTable(db.metricOptions).label];
   }
 
   Future<BreakdownNode?> _compositeBreakdown(
-      Metric metric, Map<int, Entry> dayEntries) async {
-    final children = await (db.select(db.metrics)
-          ..where((m) => m.parentId.equals(metric.id))
-          ..orderBy([(m) => OrderingTerm.asc(m.sortOrder)]))
-        .get();
+    Metric metric,
+    Map<int, Entry> dayEntries,
+  ) async {
+    final children =
+        await (db.select(db.metrics)
+              ..where((m) => m.parentId.equals(metric.id))
+              ..orderBy([(m) => OrderingTerm.asc(m.sortOrder)]))
+            .get();
     final filled = [
       for (final child in children)
         if (dayEntries.containsKey(child.id)) child,
@@ -317,8 +350,7 @@ class AnalysisRepository {
             title: child.title,
             metric: child,
             children: [
-              if (dayEntries[child.id]?.textValue?.trim().isNotEmpty ??
-                  false)
+              if (dayEntries[child.id]?.textValue?.trim().isNotEmpty ?? false)
                 BreakdownNode(
                   id: '${metric.key}/${child.key}/note',
                   title: dayEntries[child.id]!.textValue!,
@@ -333,31 +365,35 @@ class AnalysisRepository {
     // Daily line: ALL outcome of the day — deliberately not the heatmap
     // filter (spec §9.5).
     final daySum = db.transactions.amount.sum();
-    final dayRow = await (db.selectOnly(db.transactions)
-          ..addColumns([daySum])
-          ..where(db.transactions.date.equals(date) &
-              db.transactions.direction.equals('outcome')))
-        .getSingle();
+    final dayRow =
+        await (db.selectOnly(db.transactions)
+              ..addColumns([daySum])
+              ..where(
+                db.transactions.date.equals(date) &
+                    db.transactions.direction.equals('outcome'),
+              ))
+            .getSingle();
     final dayTotal = dayRow.read(daySum) ?? 0.0;
 
     final monthPrefix = date.substring(0, 7); // 'YYYY-MM'
     final sum = db.transactions.amount.sum();
     // Three levels: direction → category → subtype (CR1-A).
-    final monthly = await (db.selectOnly(db.transactions)
-          ..addColumns([
-            db.transactions.direction,
-            db.transactions.category,
-            db.transactions.subtype,
-            sum,
-          ])
-          ..where(db.transactions.date.like('$monthPrefix-%'))
-          ..groupBy([
-            db.transactions.direction,
-            db.transactions.category,
-            db.transactions.subtype,
-          ])
-          ..orderBy([OrderingTerm.desc(sum)]))
-        .get();
+    final monthly =
+        await (db.selectOnly(db.transactions)
+              ..addColumns([
+                db.transactions.direction,
+                db.transactions.category,
+                db.transactions.subtype,
+                sum,
+              ])
+              ..where(db.transactions.date.like('$monthPrefix-%'))
+              ..groupBy([
+                db.transactions.direction,
+                db.transactions.category,
+                db.transactions.subtype,
+              ])
+              ..orderBy([OrderingTerm.desc(sum)]))
+            .get();
 
     final directionNodes = <BreakdownNode>[];
     for (final direction in ['income', 'outcome']) {
@@ -372,43 +408,44 @@ class AnalysisRepository {
         byCategory[category] = (byCategory[category] ?? 0) + amount;
         final subtype = r.read(db.transactions.subtype);
         if (subtype != null) {
-          subtypes.putIfAbsent(category, () => []).add(
-              (label: '$category ($subtype)', total: amount));
+          subtypes.putIfAbsent(category, () => []).add((
+            label: '$category ($subtype)',
+            total: amount,
+          ));
         }
       }
-      final total =
-          byCategory.values.fold<double>(0, (acc, v) => acc + v);
+      final total = byCategory.values.fold<double>(0, (acc, v) => acc + v);
       final label = direction == 'outcome' ? 'Outcome' : 'Income';
       final names = byCategory.keys.toList()
         ..sort((a, b) => byCategory[b]!.compareTo(byCategory[a]!));
-      directionNodes.add(BreakdownNode(
-        id: 'money/$direction',
-        title: '$label (Month): ${formatAmount(total)}',
-        metric: metric,
-        children: [
-          for (final name in names)
-            BreakdownNode(
-              id: 'money/$direction/$name',
-              title: '$name: ${formatAmount(byCategory[name]!)}',
-              metric: metric,
-              children: [
-                for (final sub in subtypes[name] ?? const [])
-                  BreakdownNode(
-                    id: 'money/$direction/$name/${sub.label}',
-                    title:
-                        '${sub.label}: ${formatAmount(sub.total)}',
-                    metric: metric,
-                  ),
-              ],
-            ),
-        ],
-      ));
+      directionNodes.add(
+        BreakdownNode(
+          id: 'money/$direction',
+          title: '$label (Month): ${formatAmount(total)}',
+          metric: metric,
+          children: [
+            for (final name in names)
+              BreakdownNode(
+                id: 'money/$direction/$name',
+                title: '$name: ${formatAmount(byCategory[name]!)}',
+                metric: metric,
+                children: [
+                  for (final sub in subtypes[name] ?? const [])
+                    BreakdownNode(
+                      id: 'money/$direction/$name/${sub.label}',
+                      title: '${sub.label}: ${formatAmount(sub.total)}',
+                      metric: metric,
+                    ),
+                ],
+              ),
+          ],
+        ),
+      );
     }
     return BreakdownNode(
       id: 'money',
-      title:
-          '${metric.title}: ${formatAmount(dayTotal)} ${metric.unit ?? ''}'
-              .trim(),
+      title: '${metric.title}: ${formatAmount(dayTotal)} ${metric.unit ?? ''}'
+          .trim(),
       metric: metric,
       children: directionNodes,
     );
@@ -417,8 +454,7 @@ class AnalysisRepository {
   String _formatValue(Metric metric, Entry entry) {
     if (entry.numValue != null) {
       final v = entry.numValue!;
-      final text =
-          v == v.roundToDouble() ? v.toInt().toString() : v.toString();
+      final text = v == v.roundToDouble() ? v.toInt().toString() : v.toString();
       return metric.unit != null ? '$text ${metric.unit}' : text;
     }
     if (entry.textValue?.trim().isNotEmpty ?? false) return '✓';

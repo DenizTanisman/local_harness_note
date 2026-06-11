@@ -22,11 +22,8 @@ class BackupService {
 
   static final _aes = AesGcm.with256bits();
 
-  static Pbkdf2 get _kdf => Pbkdf2(
-        macAlgorithm: Hmac.sha256(),
-        iterations: 150000,
-        bits: 256,
-      );
+  static Pbkdf2 get _kdf =>
+      Pbkdf2(macAlgorithm: Hmac.sha256(), iterations: 150000, bits: 256);
 
   Future<Uint8List> _zipBytes() async {
     final export = ExportService(db);
@@ -53,7 +50,9 @@ class BackupService {
     final zip = await _zipBytes();
     final salt = SecretKeyData.random(length: 16).bytes;
     final secretKey = await _kdf.deriveKeyFromPassword(
-        password: password, nonce: salt);
+      password: password,
+      nonce: salt,
+    );
     final secretBox = await _aes.encrypt(zip, secretKey: secretKey);
 
     final builder = BytesBuilder();
@@ -67,7 +66,9 @@ class BackupService {
 
   /// Throws on a wrong password (MAC verification fails).
   static Future<Uint8List> decryptBackup(
-      Uint8List data, String password) async {
+    Uint8List data,
+    String password,
+  ) async {
     final magic = utf8.decode(data.sublist(0, _magic.length));
     if (magic != _magic) {
       throw const FormatException('Not a Daily Tracker backup');
@@ -81,7 +82,9 @@ class BackupService {
     final cipherText = data.sublist(offset, data.length - 16);
 
     final secretKey = await _kdf.deriveKeyFromPassword(
-        password: password, nonce: salt);
+      password: password,
+      nonce: salt,
+    );
     final clear = await _aes.decrypt(
       SecretBox(cipherText, nonce: nonce, mac: Mac(mac)),
       secretKey: secretKey,
@@ -90,8 +93,11 @@ class BackupService {
   }
 
   /// Writes a timestamped backup into [directory] and prunes old ones.
-  Future<File> backupTo(Directory directory, String password,
-      {DateTime? now}) async {
+  Future<File> backupTo(
+    Directory directory,
+    String password, {
+    DateTime? now,
+  }) async {
     final stamp = (now ?? DateTime.now())
         .toIso8601String()
         .substring(0, 19)
@@ -104,13 +110,17 @@ class BackupService {
 
   /// Keeps the newest [keptBackups] files, deletes the rest (spec 10.3).
   Future<List<String>> pruneOldBackups(Directory directory) async {
-    final backups = directory
-        .listSync()
-        .whereType<File>()
-        .where((f) => p.basename(f.path).startsWith('daily_tracker_') &&
-            f.path.endsWith('.dtbak'))
-        .toList()
-      ..sort((a, b) => p.basename(b.path).compareTo(p.basename(a.path)));
+    final backups =
+        directory
+            .listSync()
+            .whereType<File>()
+            .where(
+              (f) =>
+                  p.basename(f.path).startsWith('daily_tracker_') &&
+                  f.path.endsWith('.dtbak'),
+            )
+            .toList()
+          ..sort((a, b) => p.basename(b.path).compareTo(p.basename(a.path)));
     final deleted = <String>[];
     for (final old in backups.skip(keptBackups)) {
       deleted.add(old.path);

@@ -17,22 +17,27 @@ void main() {
       expect(metrics, hasLength(12));
     });
 
-    test('the 9 core heatmap metrics are starred, dev children are not',
-        () async {
-      final metrics = await db.select(db.metrics).get();
-      final starred = metrics.where((m) => m.isStarred).map((m) => m.key);
-      expect(starred, unorderedEquals(coreHeatmapOrder));
-    });
+    test(
+      'the 9 core heatmap metrics are starred, dev children are not',
+      () async {
+        final metrics = await db.select(db.metrics).get();
+        final starred = metrics.where((m) => m.isStarred).map((m) => m.key);
+        expect(starred, unorderedEquals(coreHeatmapOrder));
+      },
+    );
 
     test('Brushing has 3 options, Waste has 1', () async {
       final metrics = await db.select(db.metrics).get();
       final byKey = {for (final m in metrics) m.key: m};
       final options = await db.select(db.metricOptions).get();
 
-      final brushing =
-          options.where((o) => o.metricId == byKey['brushing']!.id);
-      expect(brushing.map((o) => o.label),
-          orderedEquals(['Morning', 'Noon', 'Evening']));
+      final brushing = options.where(
+        (o) => o.metricId == byKey['brushing']!.id,
+      );
+      expect(
+        brushing.map((o) => o.label),
+        orderedEquals(['Morning', 'Noon', 'Evening']),
+      );
 
       final waste = options.where((o) => o.metricId == byKey['waste']!.id);
       expect(waste, hasLength(1));
@@ -79,34 +84,35 @@ void main() {
 
   group('entries UNIQUE(metric_id, date)', () {
     test('upsert on same day updates instead of duplicating', () async {
-      final software = await (db.select(db.metrics)
-            ..where((m) => m.key.equals('software')))
-          .getSingle();
+      final software = await (db.select(
+        db.metrics,
+      )..where((m) => m.key.equals('software'))).getSingle();
       final now = DateTime.now().millisecondsSinceEpoch;
 
-      Future<void> upsert(double value) =>
-          db.upsertEntry(EntriesCompanion.insert(
-            metricId: software.id,
-            date: '2026-06-10',
-            numValue: Value(value),
-            createdAt: now,
-            updatedAt: now,
-          ));
+      Future<void> upsert(double value) => db.upsertEntry(
+        EntriesCompanion.insert(
+          metricId: software.id,
+          date: '2026-06-10',
+          numValue: Value(value),
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
 
       await upsert(30);
       await upsert(45);
 
-      final rows = await (db.select(db.entries)
-            ..where((e) => e.metricId.equals(software.id)))
-          .get();
+      final rows = await (db.select(
+        db.entries,
+      )..where((e) => e.metricId.equals(software.id))).get();
       expect(rows, hasLength(1));
       expect(rows.single.numValue, 45);
     });
 
     test('plain double insert on same day throws', () async {
-      final water = await (db.select(db.metrics)
-            ..where((m) => m.key.equals('water')))
-          .getSingle();
+      final water = await (db.select(
+        db.metrics,
+      )..where((m) => m.key.equals('water'))).getSingle();
       final now = DateTime.now().millisecondsSinceEpoch;
 
       final companion = EntriesCompanion.insert(
@@ -123,32 +129,46 @@ void main() {
 
   group('cascade delete', () {
     test('deleting a metric removes its entries and options', () async {
-      final brushing = await (db.select(db.metrics)
-            ..where((m) => m.key.equals('brushing')))
-          .getSingle();
+      final brushing = await (db.select(
+        db.metrics,
+      )..where((m) => m.key.equals('brushing'))).getSingle();
       final now = DateTime.now().millisecondsSinceEpoch;
-      final entryId = await db.into(db.entries).insert(EntriesCompanion.insert(
-            metricId: brushing.id,
-            date: '2026-06-10',
-            createdAt: now,
-            updatedAt: now,
-          ));
-      final option = await (db.select(db.metricOptions)
-            ..where((o) => o.metricId.equals(brushing.id)))
-          .get();
-      await db.into(db.entryOptions).insert(EntryOptionsCompanion.insert(
-          entryId: entryId, optionId: option.first.id));
+      final entryId = await db
+          .into(db.entries)
+          .insert(
+            EntriesCompanion.insert(
+              metricId: brushing.id,
+              date: '2026-06-10',
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+      final option = await (db.select(
+        db.metricOptions,
+      )..where((o) => o.metricId.equals(brushing.id))).get();
+      await db
+          .into(db.entryOptions)
+          .insert(
+            EntryOptionsCompanion.insert(
+              entryId: entryId,
+              optionId: option.first.id,
+            ),
+          );
 
-      await (db.delete(db.metrics)..where((m) => m.id.equals(brushing.id)))
-          .go();
+      await (db.delete(
+        db.metrics,
+      )..where((m) => m.id.equals(brushing.id))).go();
 
-      expect(await db.select(db.entries).get(),
-          isNot(contains(predicate<Entry>((e) => e.metricId == brushing.id))));
       expect(
-          await (db.select(db.metricOptions)
-                ..where((o) => o.metricId.equals(brushing.id)))
-              .get(),
-          isEmpty);
+        await db.select(db.entries).get(),
+        isNot(contains(predicate<Entry>((e) => e.metricId == brushing.id))),
+      );
+      expect(
+        await (db.select(
+          db.metricOptions,
+        )..where((o) => o.metricId.equals(brushing.id))).get(),
+        isEmpty,
+      );
       expect(await db.select(db.entryOptions).get(), isEmpty);
     });
   });

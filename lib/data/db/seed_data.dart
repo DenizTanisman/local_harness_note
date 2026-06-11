@@ -26,11 +26,11 @@ class SeedMetric {
 }
 
 String _rule(String source, List<List<Object?>> buckets) => jsonEncode({
-      'source': source,
-      'buckets': [
-        for (final b in buckets) {'min': b[0], 'max': b[1], 'color': b[2]},
-      ],
-    });
+  'source': source,
+  'buckets': [
+    for (final b in buckets) {'min': b[0], 'max': b[1], 'color': b[2]},
+  ],
+});
 
 /// Fixed heatmap row order for the 9 core metrics (spec 5.3).
 const coreHeatmapOrder = [
@@ -187,8 +187,12 @@ final List<SeedMetric> seedMetrics = [
 ];
 
 class SeedCategory {
-  const SeedCategory(this.direction, this.name,
-      {this.essential = false, this.countsInHeatmap = false});
+  const SeedCategory(
+    this.direction,
+    this.name, {
+    this.essential = false,
+    this.countsInHeatmap = false,
+  });
 
   final String direction;
   final String name;

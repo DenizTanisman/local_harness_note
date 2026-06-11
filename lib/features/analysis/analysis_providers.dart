@@ -5,14 +5,14 @@ import '../../data/db/database_provider.dart';
 import '../../data/repositories/analysis_repository.dart';
 
 final analysisRepositoryProvider = Provider<AnalysisRepository>(
-    (ref) => AnalysisRepository(ref.watch(databaseProvider)));
+  (ref) => AnalysisRepository(ref.watch(databaseProvider)),
+);
 
 /// Selected analysis date — defaults to yesterday, never in the future
 /// (spec 6.3). Shared by analysis, detail and money pages.
 class SelectedDateNotifier extends Notifier<String> {
   @override
-  String build() =>
-      dateKey(DateTime.now().subtract(const Duration(days: 1)));
+  String build() => dateKey(DateTime.now().subtract(const Duration(days: 1)));
 
   void select(String date) {
     if (date.compareTo(dateKey(DateTime.now())) > 0) return; // future blocked
@@ -20,8 +20,9 @@ class SelectedDateNotifier extends Notifier<String> {
   }
 }
 
-final selectedDateProvider =
-    NotifierProvider<SelectedDateNotifier, String>(SelectedDateNotifier.new);
+final selectedDateProvider = NotifierProvider<SelectedDateNotifier, String>(
+  SelectedDateNotifier.new,
+);
 
 /// Visible day window of the heatmap (scrollable, ends at selected date).
 const heatmapWindowDays = 60;

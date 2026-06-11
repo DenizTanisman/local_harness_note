@@ -1,10 +1,11 @@
 import 'package:daily_tracker/data/db/seed_data.dart';
-import 'package:daily_tracker/data/heatmap/heat_colors.dart';
+import 'package:daily_tracker/theme/heat_colors.dart';
 import 'package:daily_tracker/data/heatmap/heatmap_rule.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-HeatmapRule _ruleOf(String key) =>
-    HeatmapRule.decode(seedMetrics.firstWhere((m) => m.key == key).heatmapRule!);
+HeatmapRule _ruleOf(String key) => HeatmapRule.decode(
+  seedMetrics.firstWhere((m) => m.key == key).heatmapRule!,
+);
 
 void main() {
   group('bucket semantics', () {
@@ -25,12 +26,16 @@ void main() {
     });
 
     test('unknown source and color rejected', () {
-      expect(() => HeatmapRule.decode('{"source":"magic","buckets":[]}'),
-          throwsFormatException);
       expect(
-          () => HeatmapRule.decode(
-              '{"source":"num_value","buckets":[{"min":0,"max":null,"color":"ultraviolet"}]}'),
-          throwsFormatException);
+        () => HeatmapRule.decode('{"source":"magic","buckets":[]}'),
+        throwsFormatException,
+      );
+      expect(
+        () => HeatmapRule.decode(
+          '{"source":"num_value","buckets":[{"min":0,"max":null,"color":"ultraviolet"}]}',
+        ),
+        throwsFormatException,
+      );
     });
   });
 
@@ -53,16 +58,18 @@ void main() {
       expect(rule.colorFor(3), 'darkYellow');
     });
 
-    test('Money: 0-300 darkGreen, 300-600 green, 600-750 lightGreen, 750+ black',
-        () {
-      final rule = _ruleOf('money');
-      expect(rule.source, HeatmapSource.txSumHeatmap);
-      expect(rule.colorFor(0), 'darkGreen');
-      expect(rule.colorFor(299), 'darkGreen');
-      expect(rule.colorFor(450), 'green');
-      expect(rule.colorFor(700), 'lightGreen');
-      expect(rule.colorFor(750), 'black');
-    });
+    test(
+      'Money: 0-300 darkGreen, 300-600 green, 600-750 lightGreen, 750+ black',
+      () {
+        final rule = _ruleOf('money');
+        expect(rule.source, HeatmapSource.txSumHeatmap);
+        expect(rule.colorFor(0), 'darkGreen');
+        expect(rule.colorFor(299), 'darkGreen');
+        expect(rule.colorFor(450), 'green');
+        expect(rule.colorFor(700), 'lightGreen');
+        expect(rule.colorFor(750), 'black');
+      },
+    );
 
     test('Extra: text exists → orange, else white', () {
       final rule = _ruleOf('extra');
@@ -71,14 +78,16 @@ void main() {
       expect(rule.colorFor(1), 'orange');
     });
 
-    test('Instagram: 0-20 lightPink, 20-30 pink, 30-40 darkPink, 40+ black',
-        () {
-      final rule = _ruleOf('instagram');
-      expect(rule.colorFor(10), 'lightPink');
-      expect(rule.colorFor(25), 'pink');
-      expect(rule.colorFor(35), 'darkPink');
-      expect(rule.colorFor(40), 'black');
-    });
+    test(
+      'Instagram: 0-20 lightPink, 20-30 pink, 30-40 darkPink, 40+ black',
+      () {
+        final rule = _ruleOf('instagram');
+        expect(rule.colorFor(10), 'lightPink');
+        expect(rule.colorFor(25), 'pink');
+        expect(rule.colorFor(35), 'darkPink');
+        expect(rule.colorFor(40), 'black');
+      },
+    );
 
     test('Sport: exactly 0 white, 0-60 blue, 60+ red', () {
       final rule = _ruleOf('sport');
@@ -116,10 +125,22 @@ void main() {
   group('palette', () {
     test('all 16 spec colors present', () {
       const expected = [
-        'black', 'white', 'lightBlue', 'blue', 'darkBlue',
-        'lightYellow', 'yellow', 'darkYellow',
-        'lightGreen', 'green', 'darkGreen',
-        'orange', 'lightPink', 'pink', 'darkPink', 'red',
+        'black',
+        'white',
+        'lightBlue',
+        'blue',
+        'darkBlue',
+        'lightYellow',
+        'yellow',
+        'darkYellow',
+        'lightGreen',
+        'green',
+        'darkGreen',
+        'orange',
+        'lightPink',
+        'pink',
+        'darkPink',
+        'red',
       ];
       expect(HeatColors.palette.keys, unorderedEquals(expected));
     });

@@ -60,13 +60,16 @@ class DetailRepository {
   }
 
   Stream<MonthSeries> watchMonthSeries(Metric metric, String month) => db
-      .customSelect('SELECT 1', readsFrom: {
-        db.entries,
-        db.entryOptions,
-        db.transactions,
-        db.moneyCategories,
-        db.metrics,
-      })
+      .customSelect(
+        'SELECT 1',
+        readsFrom: {
+          db.entries,
+          db.entryOptions,
+          db.transactions,
+          db.moneyCategories,
+          db.metrics,
+        },
+      )
       .watch()
       .asyncMap((_) => loadMonthSeries(metric, month));
 
@@ -77,12 +80,19 @@ class DetailRepository {
     final lastDay = DateTime(parts[0], parts[1] + 1, 0).day;
     final start = '$month-01';
     final end = '$month-${lastDay.toString().padLeft(2, '0')}';
-    final values =
-        await _analysis.sourceValues(metric, sourceFor(metric), start, end);
-    return MonthSeries(month: month, values: {
-      for (final entry in values.entries)
-        int.parse(entry.key.substring(8)): entry.value,
-    });
+    final values = await _analysis.sourceValues(
+      metric,
+      sourceFor(metric),
+      start,
+      end,
+    );
+    return MonthSeries(
+      month: month,
+      values: {
+        for (final entry in values.entries)
+          int.parse(entry.key.substring(8)): entry.value,
+      },
+    );
   }
 
   /// Daily value + weekly (Mon–Sun week of [date]) and monthly sums.
@@ -94,20 +104,22 @@ class DetailRepository {
     final monthLast = DateTime(day.year, day.month + 1, 0);
 
     final windowStart = dateKey(
-        weekStart.isBefore(DateTime(day.year, day.month, 1))
-            ? weekStart
-            : DateTime(day.year, day.month, 1));
-    final windowEnd =
-        dateKey(weekEnd.isAfter(monthLast) ? weekEnd : monthLast);
+      weekStart.isBefore(DateTime(day.year, day.month, 1))
+          ? weekStart
+          : DateTime(day.year, day.month, 1),
+    );
+    final windowEnd = dateKey(weekEnd.isAfter(monthLast) ? weekEnd : monthLast);
 
-    final values =
-        await _analysis.sourceValues(metric, source, windowStart, windowEnd);
+    final values = await _analysis.sourceValues(
+      metric,
+      source,
+      windowStart,
+      windowEnd,
+    );
 
     double sumBetween(DateTime start, DateTime end) {
       var sum = 0.0;
-      for (var d = start;
-          !d.isAfter(end);
-          d = d.add(const Duration(days: 1))) {
+      for (var d = start; !d.isAfter(end); d = d.add(const Duration(days: 1))) {
         sum += values[dateKey(d)] ?? 0;
       }
       return sum;

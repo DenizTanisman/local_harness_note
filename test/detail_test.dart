@@ -27,11 +27,20 @@ void main() {
     // Last day of June (30) and first of July (31) must land in
     // different windows.
     await entries.saveEntry(
-        metricId: software.id, date: '2026-06-30', numValue: 30);
+      metricId: software.id,
+      date: '2026-06-30',
+      numValue: 30,
+    );
     await entries.saveEntry(
-        metricId: software.id, date: '2026-07-01', numValue: 31);
+      metricId: software.id,
+      date: '2026-07-01',
+      numValue: 31,
+    );
     await entries.saveEntry(
-        metricId: software.id, date: '2026-07-31', numValue: 99);
+      metricId: software.id,
+      date: '2026-07-31',
+      numValue: 99,
+    );
 
     final june = await detail.loadMonthSeries(software, '2026-06');
     expect(june.daysInMonth, 30);
@@ -51,15 +60,30 @@ void main() {
     final software = await byKey('software');
     // 2026-06-10 is a Wednesday; its Mon–Sun week is 06-08..06-14.
     await entries.saveEntry(
-        metricId: software.id, date: '2026-06-08', numValue: 10);
+      metricId: software.id,
+      date: '2026-06-08',
+      numValue: 10,
+    );
     await entries.saveEntry(
-        metricId: software.id, date: '2026-06-10', numValue: 35);
+      metricId: software.id,
+      date: '2026-06-10',
+      numValue: 35,
+    );
     await entries.saveEntry(
-        metricId: software.id, date: '2026-06-14', numValue: 5);
+      metricId: software.id,
+      date: '2026-06-14',
+      numValue: 5,
+    );
     await entries.saveEntry(
-        metricId: software.id, date: '2026-06-01', numValue: 100);
+      metricId: software.id,
+      date: '2026-06-01',
+      numValue: 100,
+    );
     await entries.saveEntry(
-        metricId: software.id, date: '2026-07-01', numValue: 999);
+      metricId: software.id,
+      date: '2026-07-01',
+      numValue: 999,
+    );
 
     final stats = await detail.loadStats(software, '2026-06-10');
     expect(stats.daily, 35);
@@ -67,28 +91,36 @@ void main() {
     expect(stats.monthly, 150); // + 100, July excluded
   });
 
-  test('weekly window crossing a month boundary still sums correctly',
-      () async {
-    final water = await byKey('water');
-    // 2026-07-01 is a Wednesday; its week starts Mon 2026-06-29.
-    await entries.saveEntry(
-        metricId: water.id, date: '2026-06-29', numValue: 2);
-    await entries.saveEntry(
-        metricId: water.id, date: '2026-07-01', numValue: 3);
+  test(
+    'weekly window crossing a month boundary still sums correctly',
+    () async {
+      final water = await byKey('water');
+      // 2026-07-01 is a Wednesday; its week starts Mon 2026-06-29.
+      await entries.saveEntry(
+        metricId: water.id,
+        date: '2026-06-29',
+        numValue: 2,
+      );
+      await entries.saveEntry(
+        metricId: water.id,
+        date: '2026-07-01',
+        numValue: 3,
+      );
 
-    final stats = await detail.loadStats(water, '2026-07-01');
-    expect(stats.daily, 3);
-    expect(stats.weekly, 5); // June 29 included
-    expect(stats.monthly, 3); // June excluded
-  });
+      final stats = await detail.loadStats(water, '2026-07-01');
+      expect(stats.daily, 3);
+      expect(stats.weekly, 5); // June 29 included
+      expect(stats.monthly, 3); // June excluded
+    },
+  );
 
   test('checkbox metric uses option_count as its series source', () async {
     final brushing = await byKey('brushing');
     expect(detail.sourceFor(brushing), HeatmapSource.optionCount);
 
-    final options = await (db.select(db.metricOptions)
-          ..where((o) => o.metricId.equals(brushing.id)))
-        .get();
+    final options = await (db.select(
+      db.metricOptions,
+    )..where((o) => o.metricId.equals(brushing.id))).get();
     for (final option in options) {
       await entries.setOptionSelected(
         metricId: brushing.id,

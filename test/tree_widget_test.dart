@@ -17,12 +17,12 @@ void main() {
   tearDown(() => db.close());
 
   Widget app() => ProviderScope(
-        overrides: [
-          databaseProvider.overrideWithValue(db),
-          debounceDurationProvider.overrideWithValue(Duration.zero),
-        ],
-        child: const MaterialApp(home: HomePage()),
-      );
+    overrides: [
+      databaseProvider.overrideWithValue(db),
+      debounceDurationProvider.overrideWithValue(Duration.zero),
+    ],
+    child: const MaterialApp(home: HomePage()),
+  );
 
   Future<void> closeApp(WidgetTester tester) async {
     await tester.pumpWidget(const SizedBox.shrink());
@@ -43,7 +43,10 @@ void main() {
 
   /// Long-press drag [from] onto [to] and release.
   Future<void> longPressDrag(
-      WidgetTester tester, Finder from, Finder to) async {
+    WidgetTester tester,
+    Finder from,
+    Finder to,
+  ) async {
     final gesture = await tester.startGesture(tester.getCenter(from));
     await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
     await gesture.moveTo(tester.getCenter(to), timeStamp: kLongPressTimeout);
@@ -52,8 +55,9 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('dropping a card onto another groups it after confirm',
-      (tester) async {
+  testWidgets('dropping a card onto another groups it after confirm', (
+    tester,
+  ) async {
     await pumpHome(tester);
 
     await longPressDrag(tester, find.text('Water'), find.text('Sport'));
@@ -84,8 +88,7 @@ void main() {
     await closeApp(tester);
   });
 
-  testWidgets('star tap asks for label and stars the metric',
-      (tester) async {
+  testWidgets('star tap asks for label and stars the metric', (tester) async {
     // Unstar Extra first via direct toggle, then star again through dialog.
     final extraCard = find
         .ancestor(of: find.text('Extra'), matching: find.byType(Card))
@@ -104,9 +107,12 @@ void main() {
     expect(find.text('Add to heatmap'), findsOneWidget);
 
     await tester.enterText(
-        find.descendant(
-            of: find.byType(AlertDialog), matching: find.byType(TextField)),
-        'My Extra Stuff');
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(TextField),
+      ),
+      'My Extra Stuff',
+    );
     await tester.tap(find.text('Star'));
     await tester.pumpAndSettle();
 

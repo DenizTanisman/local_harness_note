@@ -58,20 +58,28 @@ class EntryRepository {
     return db.transaction(() async {
       final now = DateTime.now().millisecondsSinceEpoch;
       final maxOrder = await _maxSortOrder();
-      final id = await db.into(db.metrics).insert(MetricsCompanion.insert(
-            key: await uniqueKeyFor(title),
-            title: title,
-            inputType: inputType,
-            sortOrder: Value(maxOrder + 1),
-            createdAt: now,
-            updatedAt: now,
-          ));
+      final id = await db
+          .into(db.metrics)
+          .insert(
+            MetricsCompanion.insert(
+              key: await uniqueKeyFor(title),
+              title: title,
+              inputType: inputType,
+              sortOrder: Value(maxOrder + 1),
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
       for (var i = 0; i < options.length; i++) {
-        await db.into(db.metricOptions).insert(MetricOptionsCompanion.insert(
-              metricId: id,
-              label: options[i],
-              sortOrder: Value(i),
-            ));
+        await db
+            .into(db.metricOptions)
+            .insert(
+              MetricOptionsCompanion.insert(
+                metricId: id,
+                label: options[i],
+                sortOrder: Value(i),
+              ),
+            );
       }
       return id;
     });
@@ -79,7 +87,9 @@ class EntryRepository {
 
   Future<int> _maxSortOrder() async {
     final max = db.metrics.sortOrder.max();
-    final row = await (db.selectOnly(db.metrics)..addColumns([max])).getSingle();
+    final row = await (db.selectOnly(
+      db.metrics,
+    )..addColumns([max])).getSingle();
     return row.read(max) ?? 0;
   }
 
@@ -92,19 +102,18 @@ class EntryRepository {
   /// All entries of [date], keyed by metric id.
   Stream<Map<int, Entry>> watchEntriesFor(String date) {
     final query = db.select(db.entries)..where((e) => e.date.equals(date));
-    return query
-        .watch()
-        .map((rows) => {for (final e in rows) e.metricId: e});
+    return query.watch().map((rows) => {for (final e in rows) e.metricId: e});
   }
 
   /// Selected option ids of [date], keyed by metric id.
   Stream<Map<int, Set<int>>> watchSelectedOptionsFor(String date) {
     final join = db.select(db.entryOptions).join([
       innerJoin(db.entries, db.entries.id.equalsExp(db.entryOptions.entryId)),
-      innerJoin(db.metricOptions,
-          db.metricOptions.id.equalsExp(db.entryOptions.optionId)),
-    ])
-      ..where(db.entries.date.equals(date));
+      innerJoin(
+        db.metricOptions,
+        db.metricOptions.id.equalsExp(db.entryOptions.optionId),
+      ),
+    ])..where(db.entries.date.equals(date));
     return join.watch().map((rows) {
       final result = <int, Set<int>>{};
       for (final row in rows) {
@@ -138,23 +147,26 @@ class EntryRepository {
     final now = DateTime.now().millisecondsSinceEpoch;
     final existing = await _entryFor(metricId, date);
     if (existing != null) {
-      await (db.update(db.entries)..where((e) => e.id.equals(existing.id)))
-          .write(EntriesCompanion(
-        numValue:
-            keepExistingNum ? const Value.absent() : Value(numValue),
-        textValue:
-            keepExistingText ? const Value.absent() : Value(textValue),
-        updatedAt: Value(now),
-      ));
+      await (db.update(
+        db.entries,
+      )..where((e) => e.id.equals(existing.id))).write(
+        EntriesCompanion(
+          numValue: keepExistingNum ? const Value.absent() : Value(numValue),
+          textValue: keepExistingText ? const Value.absent() : Value(textValue),
+          updatedAt: Value(now),
+        ),
+      );
     } else {
-      await db.upsertEntry(EntriesCompanion.insert(
-        metricId: metricId,
-        date: date,
-        numValue: Value(numValue),
-        textValue: Value(textValue),
-        createdAt: now,
-        updatedAt: now,
-      ));
+      await db.upsertEntry(
+        EntriesCompanion.insert(
+          metricId: metricId,
+          date: date,
+          numValue: Value(numValue),
+          textValue: Value(textValue),
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
     }
   }
 
@@ -164,10 +176,9 @@ class EntryRepository {
           .getSingleOrNull();
 
   /// Removes the day's entry entirely (composite child toggled off).
-  Future<void> clearEntry(int metricId, String date) =>
-      (db.delete(db.entries)
-            ..where((e) => e.metricId.equals(metricId) & e.date.equals(date)))
-          .go();
+  Future<void> clearEntry(int metricId, String date) => (db.delete(
+    db.entries,
+  )..where((e) => e.metricId.equals(metricId) & e.date.equals(date))).go();
 
   /// Toggles a checkbox option, creating the day entry on demand.
   Future<void> setOptionSelected({
@@ -184,16 +195,20 @@ class EntryRepository {
         entry = await _entryFor(metricId, date);
       }
       if (selected) {
-        await db.into(db.entryOptions).insert(
+        await db
+            .into(db.entryOptions)
+            .insert(
               EntryOptionsCompanion.insert(
-                  entryId: entry!.id, optionId: optionId),
+                entryId: entry!.id,
+                optionId: optionId,
+              ),
               mode: InsertMode.insertOrIgnore,
             );
       } else {
-        await (db.delete(db.entryOptions)
-              ..where((eo) =>
-                  eo.entryId.equals(entry!.id) &
-                  eo.optionId.equals(optionId)))
+        await (db.delete(db.entryOptions)..where(
+              (eo) =>
+                  eo.entryId.equals(entry!.id) & eo.optionId.equals(optionId),
+            ))
             .go();
       }
     });

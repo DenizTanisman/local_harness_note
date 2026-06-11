@@ -69,28 +69,32 @@ class NotificationPlanner {
       if (quotesEnabled && quotes.isNotEmpty) {
         final when = at(day, morning);
         if (when.isAfter(now)) {
-          result.add(PlannedNotification(
-            id: morningBaseId + i,
-            when: when,
-            title: 'Good morning',
-            body: QuoteService.quoteFor(quotes, day),
-            payload: 'home',
-          ));
+          result.add(
+            PlannedNotification(
+              id: morningBaseId + i,
+              when: when,
+              title: 'Good morning',
+              body: QuoteService.quoteFor(quotes, day),
+              payload: 'home',
+            ),
+          );
         }
       }
 
       final eveningAt = at(day, evening);
       if (eveningAt.isAfter(now)) {
         final isToday = i == 0;
-        result.add(PlannedNotification(
-          id: eveningBaseId + i,
-          when: eveningAt,
-          title: 'Time to fill in your day',
-          body: isToday && missingToday > 0
-              ? '$missingToday item${missingToday == 1 ? '' : 's'} left'
-              : null,
-          payload: 'home',
-        ));
+        result.add(
+          PlannedNotification(
+            id: eveningBaseId + i,
+            when: eveningAt,
+            title: 'Time to fill in your day',
+            body: isToday && missingToday > 0
+                ? '$missingToday item${missingToday == 1 ? '' : 's'} left'
+                : null,
+            payload: 'home',
+          ),
+        );
       }
     }
 
@@ -100,12 +104,14 @@ class NotificationPlanner {
       final when = at(parseDateKey(reminder.remindDate), '$expenseHour:00');
       if (!when.isAfter(now)) continue;
       // CATEGORY NAME ONLY — never the amount (lock-screen leak, spec §8).
-      result.add(PlannedNotification(
-        id: expenseBaseId + reminder.id,
-        when: when,
-        title: 'Reminder: ${reminder.category}',
-        payload: 'money',
-      ));
+      result.add(
+        PlannedNotification(
+          id: expenseBaseId + reminder.id,
+          when: when,
+          title: 'Reminder: ${reminder.category}',
+          payload: 'money',
+        ),
+      );
     }
 
     return result;

@@ -37,17 +37,16 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
   }
 
-  String daysAgo(int n) =>
-      dateKey(DateTime.now().subtract(Duration(days: n)));
+  String daysAgo(int n) => dateKey(DateTime.now().subtract(Duration(days: n)));
 
-  testWidgets('swiping the root pager reaches the analysis page',
-      (tester) async {
+  testWidgets('swiping the root pager reaches the analysis page', (
+    tester,
+  ) async {
     await tester.pumpWidget(app(const RootPager()));
     await tester.pumpAndSettle();
     expect(find.text('Daily Tracker'), findsOneWidget);
 
-    await tester.fling(
-        find.byType(PageView), const Offset(-600, 0), 1200);
+    await tester.fling(find.byType(PageView), const Offset(-600, 0), 1200);
     // Bounded pumps: the analysis page may briefly show an indeterminate
     // spinner, which pumpAndSettle would wait on forever.
     for (var i = 0; i < 10; i++) {
@@ -96,11 +95,12 @@ void main() {
     await closeApp(tester);
   });
 
-  testWidgets('breakdown renders entry values for the selected day',
-      (tester) async {
-    final software = await (db.select(db.metrics)
-          ..where((m) => m.key.equals('software')))
-        .getSingle();
+  testWidgets('breakdown renders entry values for the selected day', (
+    tester,
+  ) async {
+    final software = await (db.select(
+      db.metrics,
+    )..where((m) => m.key.equals('software'))).getSingle();
     await EntryRepository(db).saveEntry(
       metricId: software.id,
       date: daysAgo(1),
@@ -117,8 +117,9 @@ void main() {
     await closeApp(tester);
   });
 
-  testWidgets('heatmap renders one labeled row per starred metric',
-      (tester) async {
+  testWidgets('heatmap renders one labeled row per starred metric', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -129,7 +130,9 @@ void main() {
     for (final label in ['Software', 'Money', 'Brushing', 'Water']) {
       expect(
         find.descendant(
-            of: find.byType(HeatmapWidget), matching: find.text(label)),
+          of: find.byType(HeatmapWidget),
+          matching: find.text(label),
+        ),
         findsOneWidget,
         reason: label,
       );

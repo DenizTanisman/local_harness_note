@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/date_key.dart';
+import '../../theme/glow_background.dart';
 import '../settings/export_import_page.dart';
 import '../settings/settings_page.dart';
 import 'home_providers.dart';
@@ -52,8 +53,10 @@ class HomePage extends ConsumerWidget {
                 title: const Text('Settings'),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(
-                      builder: (_) => const SettingsPage()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SettingsPage()),
+                  );
                 },
               ),
               ListTile(
@@ -61,59 +64,63 @@ class HomePage extends ConsumerWidget {
                 title: const Text('Export / Import'),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(
-                      builder: (_) => const ExportImportPage()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ExportImportPage()),
+                  );
                 },
               ),
             ],
           ),
         ),
       ),
-      body: metrics.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
-        data: (rows) => rows.isEmpty
-            ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+      body: GlowBackground(
+        child: metrics.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(child: Text('Error: $e')),
+          data: (rows) => rows.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text('No metrics yet.'),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: () => AddMetricSheet.show(context),
+                        icon: const Icon(Icons.add),
+                        label: const Text('ADD'),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView(
+                  padding: const EdgeInsets.only(top: 6, bottom: 24),
                   children: [
-                    const Text('No metrics yet.'),
-                    const SizedBox(height: 8),
-                    OutlinedButton.icon(
-                      onPressed: () => AddMetricSheet.show(context),
-                      icon: const Icon(Icons.add),
-                      label: const Text('ADD'),
+                    for (var i = 0; i < rows.length; i++) ...[
+                      GapDropTarget(index: i),
+                      DraggableMetricCard(
+                        // Keyed by date too: input controllers must re-seed when
+                        // the active write date changes (CR1-D).
+                        key: ValueKey('metric-card-${rows[i].id}-$date'),
+                        metric: rows[i],
+                        child: MetricCard(
+                          metric: rows[i],
+                          dayEntries: entries.value ?? const {},
+                          selectedOptions: options.value ?? const {},
+                        ),
+                      ),
+                    ],
+                    GapDropTarget(index: rows.length),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+                      child: OutlinedButton.icon(
+                        onPressed: () => AddMetricSheet.show(context),
+                        icon: const Icon(Icons.add),
+                        label: const Text('ADD'),
+                      ),
                     ),
                   ],
                 ),
-              )
-            : ListView(
-          padding: const EdgeInsets.only(top: 6, bottom: 24),
-          children: [
-            for (var i = 0; i < rows.length; i++) ...[
-              GapDropTarget(index: i),
-              DraggableMetricCard(
-                // Keyed by date too: input controllers must re-seed when
-                // the active write date changes (CR1-D).
-                key: ValueKey('metric-card-${rows[i].id}-$date'),
-                metric: rows[i],
-                child: MetricCard(
-                  metric: rows[i],
-                  dayEntries: entries.value ?? const {},
-                  selectedOptions: options.value ?? const {},
-                ),
-              ),
-            ],
-            GapDropTarget(index: rows.length),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
-              child: OutlinedButton.icon(
-                onPressed: () => AddMetricSheet.show(context),
-                icon: const Icon(Icons.add),
-                label: const Text('ADD'),
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -152,14 +159,15 @@ class _DateChip extends ConsumerWidget {
           borderRadius: BorderRadius.circular(999),
           color: highlighted ? scheme.primary : Colors.transparent,
           border: Border.all(
-              color: highlighted ? scheme.primary : scheme.outlineVariant),
+            color: highlighted ? scheme.primary : scheme.outlineVariant,
+          ),
         ),
         child: Text(
           date,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: highlighted ? scheme.onPrimary : null,
-                fontWeight: highlighted ? FontWeight.bold : null,
-              ),
+            color: highlighted ? scheme.onPrimary : null,
+            fontWeight: highlighted ? FontWeight.bold : null,
+          ),
         ),
       ),
     );

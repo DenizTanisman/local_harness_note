@@ -94,49 +94,57 @@ void main() {
 
   group('home page past mode', () {
     testWidgets(
-        'enter Water yesterday → back to today: today empty, yesterday kept',
-        (tester) async {
-      await pumpHome(tester);
+      'enter Water yesterday → back to today: today empty, yesterday kept',
+      (tester) async {
+        await pumpHome(tester);
 
-      // Today: chip not highlighted, no Today button.
-      expect(find.byKey(const ValueKey('today-button')), findsNothing);
+        // Today: chip not highlighted, no Today button.
+        expect(find.byKey(const ValueKey('today-button')), findsNothing);
 
-      container.read(homeDateProvider.notifier).select(daysAgo(1));
-      await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey('today-button')), findsOneWidget);
-      expect(find.text(daysAgo(1)), findsOneWidget);
+        container.read(homeDateProvider.notifier).select(daysAgo(1));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('today-button')), findsOneWidget);
+        expect(find.text(daysAgo(1)), findsOneWidget);
 
-      final waterField = find.descendant(
+        final waterField = find.descendant(
           of: find
               .ancestor(of: find.text('Water'), matching: find.byType(Card))
               .first,
-          matching: find.byType(TextField));
-      await tester.enterText(waterField, '2');
-      await tester.pumpAndSettle();
+          matching: find.byType(TextField),
+        );
+        await tester.enterText(waterField, '2');
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const ValueKey('today-button')));
-      await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey('today-button')), findsNothing);
+        await tester.tap(find.byKey(const ValueKey('today-button')));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('today-button')), findsNothing);
 
-      final reopened = tester.widget<TextField>(find.descendant(
-          of: find
-              .ancestor(of: find.text('Water'), matching: find.byType(Card))
-              .first,
-          matching: find.byType(TextField)));
-      expect(reopened.controller!.text, isEmpty,
-          reason: 'today must be untouched');
+        final reopened = tester.widget<TextField>(
+          find.descendant(
+            of: find
+                .ancestor(of: find.text('Water'), matching: find.byType(Card))
+                .first,
+            matching: find.byType(TextField),
+          ),
+        );
+        expect(
+          reopened.controller!.text,
+          isEmpty,
+          reason: 'today must be untouched',
+        );
 
-      final water = await (db.select(db.metrics)
-            ..where((m) => m.key.equals('water')))
-          .getSingle();
-      final rows = await (db.select(db.entries)
-            ..where((e) => e.metricId.equals(water.id)))
-          .get();
-      expect(rows, hasLength(1));
-      expect(rows.single.date, daysAgo(1));
-      expect(rows.single.numValue, 2);
-      await closeApp(tester);
-    });
+        final water = await (db.select(
+          db.metrics,
+        )..where((m) => m.key.equals('water'))).getSingle();
+        final rows = await (db.select(
+          db.entries,
+        )..where((e) => e.metricId.equals(water.id))).get();
+        expect(rows, hasLength(1));
+        expect(rows.single.date, daysAgo(1));
+        expect(rows.single.numValue, 2);
+        await closeApp(tester);
+      },
+    );
 
     testWidgets('reminder question hidden on a past day', (tester) async {
       await pumpHome(tester);

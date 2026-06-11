@@ -47,7 +47,8 @@ class NotificationService {
     // Android 13+ runtime permission (spec §8) — asked on first launch.
     await _plugin
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.requestNotificationsPermission();
     _initialized = true;
   }
@@ -64,10 +65,11 @@ class NotificationService {
     final quotes = quotesEnabled ? await QuoteService.load(lang) : <String>[];
 
     final reminderJoin = db.select(db.expenseReminders).join([
-      innerJoin(db.transactions,
-          db.transactions.id.equalsExp(db.expenseReminders.transactionId)),
-    ])
-      ..where(db.expenseReminders.fired.equals(false));
+      innerJoin(
+        db.transactions,
+        db.transactions.id.equalsExp(db.expenseReminders.transactionId),
+      ),
+    ])..where(db.expenseReminders.fired.equals(false));
     final reminders = [
       for (final row in await reminderJoin.get())
         ReminderInput(
@@ -107,27 +109,28 @@ class NotificationService {
     final today = DateTime.now();
     final date =
         '${today.year.toString().padLeft(4, '0')}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-    final top = await (db.select(db.metrics)
-          ..where((m) => m.parentId.isNull()))
-        .get();
-    final dayEntries = await (db.select(db.entries)
-          ..where((e) => e.date.equals(date)))
-        .get();
+    final top = await (db.select(
+      db.metrics,
+    )..where((m) => m.parentId.isNull())).get();
+    final dayEntries = await (db.select(
+      db.entries,
+    )..where((e) => e.date.equals(date))).get();
     final filledIds = dayEntries.map((e) => e.metricId).toSet();
-    final txCount = await (db.select(db.transactions)
-          ..where((t) => t.date.equals(date)))
-        .get();
-    final children = await (db.select(db.metrics)
-          ..where((m) => m.parentId.isNotNull()))
-        .get();
+    final txCount = await (db.select(
+      db.transactions,
+    )..where((t) => t.date.equals(date))).get();
+    final children = await (db.select(
+      db.metrics,
+    )..where((m) => m.parentId.isNotNull())).get();
 
     var missing = 0;
     for (final metric in top) {
       final filled = switch (metric.inputType) {
         'money' => txCount.isNotEmpty,
-        'composite' => children
-            .where((c) => c.parentId == metric.id)
-            .any((c) => filledIds.contains(c.id)),
+        'composite' =>
+          children
+              .where((c) => c.parentId == metric.id)
+              .any((c) => filledIds.contains(c.id)),
         _ => filledIds.contains(metric.id),
       };
       if (!filled) missing++;
@@ -135,4 +138,3 @@ class NotificationService {
     return missing;
   }
 }
-

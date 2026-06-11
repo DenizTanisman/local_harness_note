@@ -19,9 +19,9 @@ class TreeRepository {
     }
     if (target.parentId != null) return false; // target already a child
     if (metric.inputType == 'composite') return false; // group into group
-    final children = await (db.select(db.metrics)
-          ..where((m) => m.parentId.equals(metric.id)))
-        .get();
+    final children = await (db.select(
+      db.metrics,
+    )..where((m) => m.parentId.equals(metric.id))).get();
     return children.isEmpty; // a card with children is a group
   }
 
@@ -29,27 +29,32 @@ class TreeRepository {
   Future<void> makeChildOf({required int childId, required int parentId}) {
     return db.transaction(() async {
       final now = DateTime.now().millisecondsSinceEpoch;
-      final parent = await (db.select(db.metrics)
-            ..where((m) => m.id.equals(parentId)))
-          .getSingle();
+      final parent = await (db.select(
+        db.metrics,
+      )..where((m) => m.id.equals(parentId))).getSingle();
       if (parent.inputType != 'composite') {
-        await (db.update(db.metrics)..where((m) => m.id.equals(parentId)))
-            .write(MetricsCompanion(
-          inputType: const Value('composite'),
-          updatedAt: Value(now),
-        ));
+        await (db.update(
+          db.metrics,
+        )..where((m) => m.id.equals(parentId))).write(
+          MetricsCompanion(
+            inputType: const Value('composite'),
+            updatedAt: Value(now),
+          ),
+        );
       }
       final siblingMax = db.metrics.sortOrder.max();
-      final row = await (db.selectOnly(db.metrics)
-            ..addColumns([siblingMax])
-            ..where(db.metrics.parentId.equals(parentId)))
-          .getSingle();
-      await (db.update(db.metrics)..where((m) => m.id.equals(childId)))
-          .write(MetricsCompanion(
-        parentId: Value(parentId),
-        sortOrder: Value((row.read(siblingMax) ?? -1) + 1),
-        updatedAt: Value(now),
-      ));
+      final row =
+          await (db.selectOnly(db.metrics)
+                ..addColumns([siblingMax])
+                ..where(db.metrics.parentId.equals(parentId)))
+              .getSingle();
+      await (db.update(db.metrics)..where((m) => m.id.equals(childId))).write(
+        MetricsCompanion(
+          parentId: Value(parentId),
+          sortOrder: Value((row.read(siblingMax) ?? -1) + 1),
+          updatedAt: Value(now),
+        ),
+      );
     });
   }
 
@@ -58,16 +63,18 @@ class TreeRepository {
     return db.transaction(() async {
       final now = DateTime.now().millisecondsSinceEpoch;
       final rootMax = db.metrics.sortOrder.max();
-      final row = await (db.selectOnly(db.metrics)
-            ..addColumns([rootMax])
-            ..where(db.metrics.parentId.isNull()))
-          .getSingle();
-      await (db.update(db.metrics)..where((m) => m.id.equals(childId)))
-          .write(MetricsCompanion(
-        parentId: const Value(null),
-        sortOrder: Value((row.read(rootMax) ?? -1) + 1),
-        updatedAt: Value(now),
-      ));
+      final row =
+          await (db.selectOnly(db.metrics)
+                ..addColumns([rootMax])
+                ..where(db.metrics.parentId.isNull()))
+              .getSingle();
+      await (db.update(db.metrics)..where((m) => m.id.equals(childId))).write(
+        MetricsCompanion(
+          parentId: const Value(null),
+          sortOrder: Value((row.read(rootMax) ?? -1) + 1),
+          updatedAt: Value(now),
+        ),
+      );
     });
   }
 
@@ -76,20 +83,22 @@ class TreeRepository {
   Future<void> moveToRootPosition(int metricId, int targetIndex) {
     return db.transaction(() async {
       final now = DateTime.now().millisecondsSinceEpoch;
-      final top = await (db.select(db.metrics)
-            ..where((m) => m.parentId.isNull())
-            ..orderBy([(m) => OrderingTerm.asc(m.sortOrder)]))
-          .get();
+      final top =
+          await (db.select(db.metrics)
+                ..where((m) => m.parentId.isNull())
+                ..orderBy([(m) => OrderingTerm.asc(m.sortOrder)]))
+              .get();
       final ids = top.map((m) => m.id).where((id) => id != metricId).toList();
       final clamped = targetIndex.clamp(0, ids.length);
       ids.insert(clamped, metricId);
       for (var i = 0; i < ids.length; i++) {
-        await (db.update(db.metrics)..where((m) => m.id.equals(ids[i])))
-            .write(MetricsCompanion(
-          sortOrder: Value(i),
-          parentId: const Value(null),
-          updatedAt: Value(now),
-        ));
+        await (db.update(db.metrics)..where((m) => m.id.equals(ids[i]))).write(
+          MetricsCompanion(
+            sortOrder: Value(i),
+            parentId: const Value(null),
+            updatedAt: Value(now),
+          ),
+        );
       }
     });
   }
@@ -98,33 +107,35 @@ class TreeRepository {
   /// attached based on input type if the metric has none yet.
   Future<void> star(Metric metric, String heatmapLabel) async {
     final now = DateTime.now().millisecondsSinceEpoch;
-    await (db.update(db.metrics)..where((m) => m.id.equals(metric.id)))
-        .write(MetricsCompanion(
-      isStarred: const Value(true),
-      starredAt: Value(now),
-      heatmapLabel: Value(heatmapLabel),
-      heatmapRule: metric.heatmapRule == null
-          ? Value(defaultRuleFor(metric.inputType))
-          : const Value.absent(),
-      updatedAt: Value(now),
-    ));
+    await (db.update(db.metrics)..where((m) => m.id.equals(metric.id))).write(
+      MetricsCompanion(
+        isStarred: const Value(true),
+        starredAt: Value(now),
+        heatmapLabel: Value(heatmapLabel),
+        heatmapRule: metric.heatmapRule == null
+            ? Value(defaultRuleFor(metric.inputType))
+            : const Value.absent(),
+        updatedAt: Value(now),
+      ),
+    );
   }
 
   /// Unstar: drops off the heatmap, history untouched.
   Future<void> unstar(int metricId) async {
     final now = DateTime.now().millisecondsSinceEpoch;
-    await (db.update(db.metrics)..where((m) => m.id.equals(metricId)))
-        .write(MetricsCompanion(
-      isStarred: const Value(false),
-      updatedAt: Value(now),
-    ));
+    await (db.update(db.metrics)..where((m) => m.id.equals(metricId))).write(
+      MetricsCompanion(isStarred: const Value(false), updatedAt: Value(now)),
+    );
   }
 }
 
 /// Default heatmap rule template per input type (spec 6.2).
 String defaultRuleFor(String inputType) {
-  Map<String, dynamic> bucket(num min, num? max, String color) =>
-      {'min': min, 'max': max, 'color': color};
+  Map<String, dynamic> bucket(num min, num? max, String color) => {
+    'min': min,
+    'max': max,
+    'color': color,
+  };
   switch (inputType) {
     case 'text':
       return jsonEncode({

@@ -12,9 +12,10 @@ const _dbKeyStorageKey = 'db_encryption_key';
 /// 32 random bytes from [Random.secure] as 64 lowercase hex chars.
 String generateDatabaseKey() {
   final random = Random.secure();
-  return List.generate(32, (_) => random.nextInt(256))
-      .map((b) => b.toRadixString(16).padLeft(2, '0'))
-      .join();
+  return List.generate(
+    32,
+    (_) => random.nextInt(256),
+  ).map((b) => b.toRadixString(16).padLeft(2, '0')).join();
 }
 
 /// Returns the database passphrase, generating and persisting it in the

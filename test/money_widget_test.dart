@@ -47,15 +47,15 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('outcome flow: amount → category → reminder ask → saved',
-      (tester) async {
+  testWidgets('outcome flow: amount → category → reminder ask → saved', (
+    tester,
+  ) async {
     await pump(tester, const HomePage());
 
     await tester.tap(find.text('Outcome'));
     await tester.pumpAndSettle();
 
-    await tester.enterText(
-        find.byKey(const ValueKey('money-amount')), '2500');
+    await tester.enterText(find.byKey(const ValueKey('money-amount')), '2500');
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const ValueKey('money-category')));
@@ -69,8 +69,7 @@ void main() {
     await tester.tap(find.text('Same day'));
     await tester.pumpAndSettle();
 
-    await tester.enterText(
-        find.byKey(const ValueKey('money-subtype')), 'home');
+    await tester.enterText(find.byKey(const ValueKey('money-subtype')), 'home');
     await tester.tap(find.byKey(const ValueKey('money-save')));
     await tester.pumpAndSettle();
 
@@ -95,28 +94,33 @@ void main() {
     await closeApp(tester);
   });
 
-  testWidgets('General view shows category totals with subtype breakdown',
-      (tester) async {
+  testWidgets('General view shows category totals with subtype breakdown', (
+    tester,
+  ) async {
     final money = MoneyRepository(db);
-    final month = dateKey(DateTime.now().subtract(const Duration(days: 1)))
-        .substring(0, 7);
+    final month = dateKey(
+      DateTime.now().subtract(const Duration(days: 1)),
+    ).substring(0, 7);
     await money.addTransaction(
-        date: '$month-01',
-        direction: 'income',
-        amount: 15000,
-        category: 'Scholarship');
+      date: '$month-01',
+      direction: 'income',
+      amount: 15000,
+      category: 'Scholarship',
+    );
     await money.addTransaction(
-        date: '$month-02',
-        direction: 'outcome',
-        amount: 2000,
-        category: 'Bill',
-        subtype: 'home');
+      date: '$month-02',
+      direction: 'outcome',
+      amount: 2000,
+      category: 'Bill',
+      subtype: 'home',
+    );
     await money.addTransaction(
-        date: '$month-03',
-        direction: 'outcome',
-        amount: 500,
-        category: 'Bill',
-        subtype: 'phone');
+      date: '$month-03',
+      direction: 'outcome',
+      amount: 500,
+      category: 'Bill',
+      subtype: 'phone',
+    );
 
     await pump(tester, const MoneyPage());
 
@@ -131,13 +135,15 @@ void main() {
 
   testWidgets('Monthly table lists only dates with entries', (tester) async {
     final money = MoneyRepository(db);
-    final month = dateKey(DateTime.now().subtract(const Duration(days: 1)))
-        .substring(0, 7);
+    final month = dateKey(
+      DateTime.now().subtract(const Duration(days: 1)),
+    ).substring(0, 7);
     await money.addTransaction(
-        date: '$month-05',
-        direction: 'outcome',
-        amount: 100,
-        category: 'Food');
+      date: '$month-05',
+      direction: 'outcome',
+      amount: 100,
+      category: 'Food',
+    );
 
     await pump(tester, const MoneyPage());
     await tester.tap(find.text('Monthly'));

@@ -3,9 +3,11 @@ import 'package:drift/drift.dart';
 /// Metric tree: every card is a row — groups and leaves alike (ADR-2).
 class Metrics extends Table {
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get parentId => integer()
-      .nullable()
-      .references(Metrics, #id, onDelete: KeyAction.cascade)();
+  IntColumn get parentId => integer().nullable().references(
+    Metrics,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
   TextColumn get key => text().unique()();
   TextColumn get title => text()();
 
@@ -55,8 +57,8 @@ class Entries extends Table {
 
   @override
   List<Set<Column>> get uniqueKeys => [
-        {metricId, date},
-      ];
+    {metricId, date},
+  ];
 }
 
 /// Which checkboxes were selected that day.
@@ -106,8 +108,8 @@ class MoneyCategories extends Table {
 
   @override
   List<Set<Column>> get uniqueKeys => [
-        {direction, name},
-      ];
+    {direction, name},
+  ];
 }
 
 /// Expense reminder queue (local notifications).

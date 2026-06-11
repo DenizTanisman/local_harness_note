@@ -62,11 +62,13 @@ class MoneyRepository {
 
   final AppDatabase db;
 
-  Stream<void> changes() => db.customSelect('SELECT 1', readsFrom: {
-        db.transactions,
-        db.moneyCategories,
-        db.expenseReminders,
-      }).watch().map((_) {});
+  Stream<void> changes() => db
+      .customSelect(
+        'SELECT 1',
+        readsFrom: {db.transactions, db.moneyCategories, db.expenseReminders},
+      )
+      .watch()
+      .map((_) {});
 
   // ---------- categories ----------
 
@@ -79,9 +81,12 @@ class MoneyRepository {
 
   Future<int> addCategory(String direction, String name) async {
     final max = db.moneyCategories.sortOrder.max();
-    final row = await (db.selectOnly(db.moneyCategories)..addColumns([max]))
-        .getSingle();
-    return db.into(db.moneyCategories).insert(
+    final row = await (db.selectOnly(
+      db.moneyCategories,
+    )..addColumns([max])).getSingle();
+    return db
+        .into(db.moneyCategories)
+        .insert(
           MoneyCategoriesCompanion.insert(
             direction: direction,
             name: name.trim(),
@@ -106,7 +111,9 @@ class MoneyRepository {
   }) {
     return db.transaction(() async {
       final now = DateTime.now().millisecondsSinceEpoch;
-      final id = await db.into(db.transactions).insert(
+      final id = await db
+          .into(db.transactions)
+          .insert(
             TransactionsCompanion.insert(
               date: date,
               direction: direction,
@@ -121,13 +128,18 @@ class MoneyRepository {
       if (direction == 'outcome') {
         final today = dateKey(DateTime.now());
         for (final offset in reminderOffsets) {
-          final remindDate =
-              dateKey(parseDateKey(date).subtract(Duration(days: offset)));
+          final remindDate = dateKey(
+            parseDateKey(date).subtract(Duration(days: offset)),
+          );
           // Past-day entries never queue reminders (CR1-D).
           if (remindDate.compareTo(today) < 0) continue;
-          await db.into(db.expenseReminders).insert(
+          await db
+              .into(db.expenseReminders)
+              .insert(
                 ExpenseRemindersCompanion.insert(
-                    transactionId: id, remindDate: remindDate),
+                  transactionId: id,
+                  remindDate: remindDate,
+                ),
               );
         }
       }
@@ -143,14 +155,15 @@ class MoneyRepository {
     String? note,
   }) async {
     final now = DateTime.now().millisecondsSinceEpoch;
-    await (db.update(db.transactions)..where((t) => t.id.equals(id)))
-        .write(TransactionsCompanion(
-      amount: amount != null ? Value(amount) : const Value.absent(),
-      category: category != null ? Value(category) : const Value.absent(),
-      subtype: Value(_clean(subtype)),
-      note: Value(_clean(note)),
-      updatedAt: Value(now),
-    ));
+    await (db.update(db.transactions)..where((t) => t.id.equals(id))).write(
+      TransactionsCompanion(
+        amount: amount != null ? Value(amount) : const Value.absent(),
+        category: category != null ? Value(category) : const Value.absent(),
+        subtype: Value(_clean(subtype)),
+        note: Value(_clean(note)),
+        updatedAt: Value(now),
+      ),
+    );
   }
 
   Future<void> deleteTransaction(int id) =>
@@ -167,9 +180,9 @@ class MoneyRepository {
       changes().asyncMap((_) => loadGeneral(month));
 
   Future<MoneyGeneral> loadGeneral(String month) async {
-    final rows = await (db.select(db.transactions)
-          ..where((t) => t.date.like('$month-%')))
-        .get();
+    final rows = await (db.select(
+      db.transactions,
+    )..where((t) => t.date.like('$month-%'))).get();
     final categories = await db.select(db.moneyCategories).get();
     final essential = {
       for (final c in categories)
@@ -215,7 +228,9 @@ class MoneyRepository {
   }
 
   List<CategoryTotal> _categoryTotals(
-      List<Transaction> rows, String direction) {
+    List<Transaction> rows,
+    String direction,
+  ) {
     final byCategory = <String, double>{};
     final bySubtype = <String, Map<String, double>>{};
     for (final tx in rows.where((t) => t.direction == direction)) {
@@ -233,8 +248,8 @@ class MoneyRepository {
           name: name,
           total: byCategory[name]!,
           subtypes: [
-            for (final sub in (bySubtype[name] ?? const <String, double>{})
-                .entries)
+            for (final sub
+                in (bySubtype[name] ?? const <String, double>{}).entries)
               (label: '$name (${sub.key})', total: sub.value),
           ],
         ),
@@ -249,18 +264,22 @@ class MoneyRepository {
   /// Dynamic rows: a date with N entries on one side spans N rows; dates
   /// with no entries at all do not appear.
   Future<List<MonthlyTableRow>> loadMonthlyTable(String month) async {
-    final rows = await (db.select(db.transactions)
-          ..where((t) => t.date.like('$month-%'))
-          ..orderBy([
-            (t) => OrderingTerm.asc(t.date),
-            (t) => OrderingTerm.asc(t.createdAt),
-          ]))
-        .get();
+    final rows =
+        await (db.select(db.transactions)
+              ..where((t) => t.date.like('$month-%'))
+              ..orderBy([
+                (t) => OrderingTerm.asc(t.date),
+                (t) => OrderingTerm.asc(t.createdAt),
+              ]))
+            .get();
 
-    final byDate = <String, ({List<Transaction> income, List<Transaction> outcome})>{};
+    final byDate =
+        <String, ({List<Transaction> income, List<Transaction> outcome})>{};
     for (final tx in rows) {
       final bucket = byDate.putIfAbsent(
-          tx.date, () => (income: <Transaction>[], outcome: <Transaction>[]));
+        tx.date,
+        () => (income: <Transaction>[], outcome: <Transaction>[]),
+      );
       (tx.direction == 'income' ? bucket.income : bucket.outcome).add(tx);
     }
 
@@ -271,11 +290,13 @@ class MoneyRepository {
           ? bucket.income.length
           : bucket.outcome.length;
       for (var i = 0; i < count; i++) {
-        result.add(MonthlyTableRow(
-          date: date,
-          income: i < bucket.income.length ? bucket.income[i] : null,
-          outcome: i < bucket.outcome.length ? bucket.outcome[i] : null,
-        ));
+        result.add(
+          MonthlyTableRow(
+            date: date,
+            income: i < bucket.income.length ? bucket.income[i] : null,
+            outcome: i < bucket.outcome.length ? bucket.outcome[i] : null,
+          ),
+        );
       }
     }
     return result;

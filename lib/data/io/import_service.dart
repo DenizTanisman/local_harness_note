@@ -47,8 +47,7 @@ class ImportService {
     if (rows.isEmpty) throw ImportFormatException('empty file');
     final header = rows.first.map((c) => c.toString().trim()).toList();
     if (header.join(',') != ExportService.entriesHeader.join(',')) {
-      throw ImportFormatException(
-          'unexpected header: ${header.join(',')}');
+      throw ImportFormatException('unexpected header: ${header.join(',')}');
     }
 
     final report = ImportReport();
@@ -61,8 +60,9 @@ class ImportService {
         final row = rows[i];
         if (row.length != ExportService.entriesHeader.length) {
           throw ImportFormatException(
-              'row ${i + 1}: expected ${ExportService.entriesHeader.length} '
-              'columns, got ${row.length}');
+            'row ${i + 1}: expected ${ExportService.entriesHeader.length} '
+            'columns, got ${row.length}',
+          );
         }
         final date = row[0].toString().trim();
         final key = row[1].toString().trim();
@@ -84,47 +84,58 @@ class ImportService {
           numValue = double.tryParse(numRaw);
           if (numValue == null) {
             throw ImportFormatException(
-                'row ${i + 1}: unparsable num_value "$numRaw"');
+              'row ${i + 1}: unparsable num_value "$numRaw"',
+            );
           }
         }
 
-        final existing = await (db.select(db.entries)
-              ..where((e) =>
-                  e.metricId.equals(metric.id) & e.date.equals(date)))
-            .getSingleOrNull();
+        final existing =
+            await (db.select(db.entries)..where(
+                  (e) => e.metricId.equals(metric.id) & e.date.equals(date),
+                ))
+                .getSingleOrNull();
         final now = DateTime.now().millisecondsSinceEpoch;
-        await db.upsertEntry(EntriesCompanion.insert(
-          metricId: metric.id,
-          date: date,
-          numValue: Value(numValue),
-          textValue: Value(text.isEmpty ? null : text),
-          createdAt: now,
-          updatedAt: now,
-        ));
+        await db.upsertEntry(
+          EntriesCompanion.insert(
+            metricId: metric.id,
+            date: date,
+            numValue: Value(numValue),
+            textValue: Value(text.isEmpty ? null : text),
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
         existing == null ? report.imported++ : report.overwritten++;
 
         // Re-link selected options by label.
-        final entry = await (db.select(db.entries)
-              ..where((e) =>
-                  e.metricId.equals(metric.id) & e.date.equals(date)))
-            .getSingle();
-        await (db.delete(db.entryOptions)
-              ..where((eo) => eo.entryId.equals(entry.id)))
-            .go();
+        final entry =
+            await (db.select(db.entries)..where(
+                  (e) => e.metricId.equals(metric.id) & e.date.equals(date),
+                ))
+                .getSingle();
+        await (db.delete(
+          db.entryOptions,
+        )..where((eo) => eo.entryId.equals(entry.id))).go();
         if (selected.isNotEmpty) {
           for (final label in selected.split(';')) {
             final option = options
-                .where((o) =>
-                    o.metricId == metric.id && o.label == label.trim())
+                .where(
+                  (o) => o.metricId == metric.id && o.label == label.trim(),
+                )
                 .firstOrNull;
             if (option == null) {
-              report.skipped
-                  .add('row ${i + 1}: unknown option "$label" for $key');
+              report.skipped.add(
+                'row ${i + 1}: unknown option "$label" for $key',
+              );
               continue;
             }
-            await db.into(db.entryOptions).insert(
+            await db
+                .into(db.entryOptions)
+                .insert(
                   EntryOptionsCompanion.insert(
-                      entryId: entry.id, optionId: option.id),
+                    entryId: entry.id,
+                    optionId: option.id,
+                  ),
                   mode: InsertMode.insertOrIgnore,
                 );
           }
@@ -153,8 +164,9 @@ class ImportService {
         final row = rows[i];
         if (row.length != ExportService.transactionsHeader.length) {
           throw ImportFormatException(
-              'row ${i + 1}: expected ${ExportService.transactionsHeader.length} '
-              'columns, got ${row.length}');
+            'row ${i + 1}: expected ${ExportService.transactionsHeader.length} '
+            'columns, got ${row.length}',
+          );
         }
         final date = row[0].toString().trim();
         final direction = row[1].toString().trim();
@@ -163,28 +175,32 @@ class ImportService {
           continue;
         }
         if (direction != 'income' && direction != 'outcome') {
-          report.skipped
-              .add('row ${i + 1}: bad direction "$direction"');
+          report.skipped.add('row ${i + 1}: bad direction "$direction"');
           continue;
         }
         final amount = double.tryParse(row[4].toString().trim());
         if (amount == null || amount < 0) {
           throw ImportFormatException(
-              'row ${i + 1}: unparsable amount "${row[4]}"');
+            'row ${i + 1}: unparsable amount "${row[4]}"',
+          );
         }
         final subtype = row[3].toString().trim();
         final note = row[5].toString().trim();
         final now = DateTime.now().millisecondsSinceEpoch;
-        await db.into(db.transactions).insert(TransactionsCompanion.insert(
-              date: date,
-              direction: direction,
-              amount: amount,
-              category: row[2].toString().trim(),
-              subtype: Value(subtype.isEmpty ? null : subtype),
-              note: Value(note.isEmpty ? null : note),
-              createdAt: now,
-              updatedAt: now,
-            ));
+        await db
+            .into(db.transactions)
+            .insert(
+              TransactionsCompanion.insert(
+                date: date,
+                direction: direction,
+                amount: amount,
+                category: row[2].toString().trim(),
+                subtype: Value(subtype.isEmpty ? null : subtype),
+                note: Value(note.isEmpty ? null : note),
+                createdAt: now,
+                updatedAt: now,
+              ),
+            );
         report.imported++;
       }
     });
