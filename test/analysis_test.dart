@@ -154,10 +154,11 @@ void main() {
           metricId: marketing.id, date: '2026-06-09', textValue: 'ads');
 
       final items = await analysis.loadBreakdown('2026-06-09');
-      final dev = items.firstWhere((i) => i.metric.key == 'development');
-      expect(dev.valueText, 'Marketing');
-      expect(dev.subItems.single.title, 'Marketing');
-      expect(dev.subItems.single.detail, 'ads');
+      final dev = items.firstWhere((i) => i.id == 'development');
+      expect(dev.title, 'Development: Marketing');
+      final child = dev.children.single;
+      expect(child.title, 'Marketing');
+      expect(child.children.single.title, 'ads');
     });
 
     test('group_display own_value shows the group entry instead', () async {
@@ -171,8 +172,8 @@ void main() {
           metricId: marketing.id, date: '2026-06-09', textValue: 'ads');
 
       final items = await analysis.loadBreakdown('2026-06-09');
-      final item = items.firstWhere((i) => i.metric.key == 'development');
-      expect(item.valueText, '✓');
+      final item = items.firstWhere((i) => i.id == 'development');
+      expect(item.title, 'Development: ✓');
     });
 
     test('Money line: day total is ALL outcome; month blocks by category',
@@ -183,19 +184,47 @@ void main() {
       await addTx('2026-06-02', 'income', 'Scholarship', 15000);
 
       final items = await analysis.loadBreakdown('2026-06-09');
-      final money = items.firstWhere((i) => i.metric.key == 'money');
-      expect(money.valueText, '540 TL'); // not filtered by heatmap flag
-      final titles = money.subItems.map((s) => s.title).toList();
-      expect(titles, contains('Outcome (Month): 8.540'));
-      expect(titles, contains('Income (Month): 15.000'));
-      expect(titles, contains('Rent: 8.200'));
-      expect(titles, contains('Scholarship: 15.000'));
+      final money = items.firstWhere((i) => i.id == 'money');
+      expect(money.title, 'Money: 540 TL'); // not heatmap-filtered
+      final outcome =
+          money.children.firstWhere((n) => n.id == 'money/outcome');
+      final income =
+          money.children.firstWhere((n) => n.id == 'money/income');
+      expect(outcome.title, 'Outcome (Month): 8.540');
+      expect(income.title, 'Income (Month): 15.000');
+      expect(outcome.children.map((n) => n.title),
+          contains('Rent: 8.200'));
+      expect(income.children.map((n) => n.title),
+          contains('Scholarship: 15.000'));
+    });
+
+    test('money subtype appears as a third level (CR1-A)', () async {
+      await addTx('2026-06-09', 'outcome', 'Bill', 2000);
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await db.into(db.transactions).insert(TransactionsCompanion.insert(
+            date: '2026-06-09',
+            direction: 'outcome',
+            amount: 500,
+            category: 'Bill',
+            subtype: const Value('home'),
+            createdAt: now,
+            updatedAt: now,
+          ));
+
+      final items = await analysis.loadBreakdown('2026-06-09');
+      final money = items.firstWhere((i) => i.id == 'money');
+      final outcome =
+          money.children.firstWhere((n) => n.id == 'money/outcome');
+      final bill =
+          outcome.children.firstWhere((n) => n.title.startsWith('Bill'));
+      expect(bill.title, 'Bill: 2.500'); // category-level total
+      expect(bill.children.single.title, 'Bill (home): 500');
     });
 
     test('metrics without entries that day are omitted', () async {
       final items = await analysis.loadBreakdown('2026-06-09');
       // Money is always present (day total 0); everything else omitted.
-      expect(items.where((i) => i.metric.key != 'money'), isEmpty);
+      expect(items.where((i) => i.id != 'money'), isEmpty);
     });
   });
 

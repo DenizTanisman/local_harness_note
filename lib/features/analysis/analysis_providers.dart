@@ -33,7 +33,7 @@ final heatmapProvider = StreamProvider<HeatmapMatrix>((ref) {
       .watchHeatmap(date, heatmapWindowDays);
 });
 
-final breakdownProvider = StreamProvider<List<BreakdownItem>>((ref) {
+final breakdownProvider = StreamProvider<List<BreakdownNode>>((ref) {
   final date = ref.watch(selectedDateProvider);
   return ref.watch(analysisRepositoryProvider).watchBreakdown(date);
 });
