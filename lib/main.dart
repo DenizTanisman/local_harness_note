@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'features/home/home_page.dart';
+import 'features/shell/root_pager.dart';
 
 void main() {
   runApp(const ProviderScope(child: DailyTrackerApp()));
@@ -19,7 +19,7 @@ class DailyTrackerApp extends StatelessWidget {
         brightness: Brightness.dark,
         useMaterial3: true,
       ),
-      home: const HomePage(),
+      home: const RootPager(),
     );
   }
 }

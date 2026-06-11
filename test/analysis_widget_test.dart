@@ -1,0 +1,139 @@
+import 'package:daily_tracker/core/date_key.dart';
+import 'package:daily_tracker/data/db/app_database.dart';
+import 'package:daily_tracker/data/db/database_provider.dart';
+import 'package:daily_tracker/data/repositories/entry_repository.dart';
+import 'package:daily_tracker/features/analysis/analysis_page.dart';
+import 'package:daily_tracker/features/analysis/analysis_providers.dart';
+import 'package:daily_tracker/features/analysis/heatmap_widget.dart';
+import 'package:daily_tracker/features/shell/root_pager.dart';
+import 'package:drift/native.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+/// Phase 3 acceptance (UI level): PageView swipe, heatmap cell tap moves
+/// the date, future days not selectable, breakdown renders.
+void main() {
+  late AppDatabase db;
+  late ProviderContainer container;
+
+  setUp(() => db = AppDatabase(NativeDatabase.memory()));
+  tearDown(() => db.close());
+
+  Widget app(Widget home) {
+    container = ProviderContainer(
+      overrides: [databaseProvider.overrideWithValue(db)],
+    );
+    addTearDown(container.dispose);
+    return UncontrolledProviderScope(
+      container: container,
+      child: MaterialApp(home: home),
+    );
+  }
+
+  Future<void> closeApp(WidgetTester tester) async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+
+  String daysAgo(int n) =>
+      dateKey(DateTime.now().subtract(Duration(days: n)));
+
+  testWidgets('swiping the root pager reaches the analysis page',
+      (tester) async {
+    await tester.pumpWidget(app(const RootPager()));
+    await tester.pumpAndSettle();
+    expect(find.text('Daily Tracker'), findsOneWidget);
+
+    await tester.fling(
+        find.byType(PageView), const Offset(-600, 0), 1200);
+    // Bounded pumps: the analysis page may briefly show an indeterminate
+    // spinner, which pumpAndSettle would wait on forever.
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('Analysis'), findsOneWidget);
+    await closeApp(tester);
+  });
+
+  testWidgets('selected date defaults to yesterday', (tester) async {
+    await tester.pumpWidget(app(const AnalysisPage()));
+    await tester.pumpAndSettle();
+    expect(find.text(daysAgo(1)), findsOneWidget);
+    await closeApp(tester);
+  });
+
+  testWidgets('tapping a heatmap cell selects that date', (tester) async {
+    await tester.pumpWidget(app(const AnalysisPage()));
+    await tester.pumpAndSettle();
+
+    final grid = find.byKey(const ValueKey('heatmap-grid'));
+    expect(grid, findsOneWidget);
+    // Rightmost visible column is the selected date (yesterday); tap a few
+    // columns to its left.
+    final box = tester.getRect(grid);
+    const cell = 29.0; // _rowHeight
+    final target = Offset(box.right - cell * 3.5, box.top + 10);
+    await tester.tapAt(target);
+    await tester.pumpAndSettle();
+
+    expect(container.read(selectedDateProvider), daysAgo(4));
+    await closeApp(tester);
+  });
+
+  testWidgets('future dates are rejected by the notifier', (tester) async {
+    await tester.pumpWidget(app(const AnalysisPage()));
+    await tester.pumpAndSettle();
+
+    final notifier = container.read(selectedDateProvider.notifier);
+    final before = container.read(selectedDateProvider);
+    notifier.select(dateKey(DateTime.now().add(const Duration(days: 2))));
+    expect(container.read(selectedDateProvider), before);
+
+    notifier.select(daysAgo(3));
+    expect(container.read(selectedDateProvider), daysAgo(3));
+    await closeApp(tester);
+  });
+
+  testWidgets('breakdown renders entry values for the selected day',
+      (tester) async {
+    final software = await (db.select(db.metrics)
+          ..where((m) => m.key.equals('software')))
+        .getSingle();
+    await EntryRepository(db).saveEntry(
+      metricId: software.id,
+      date: daysAgo(1),
+      numValue: 35,
+      textValue: 'refactored parser',
+    );
+
+    await tester.pumpWidget(app(const AnalysisPage()));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Software: '), findsOneWidget);
+    expect(find.text('35 min'), findsOneWidget);
+    expect(find.text('refactored parser'), findsOneWidget);
+    await closeApp(tester);
+  });
+
+  testWidgets('heatmap renders one labeled row per starred metric',
+      (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(app(const AnalysisPage()));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(HeatmapWidget), findsOneWidget);
+    for (final label in ['Software', 'Money', 'Brushing', 'Water']) {
+      expect(
+        find.descendant(
+            of: find.byType(HeatmapWidget), matching: find.text(label)),
+        findsOneWidget,
+        reason: label,
+      );
+    }
+    await closeApp(tester);
+  });
+}

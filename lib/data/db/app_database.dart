@@ -67,6 +67,7 @@ class AppDatabase extends _$AppDatabase {
           title: seed.title,
           inputType: seed.inputType,
           isStarred: Value(seed.starred),
+          starredAt: Value(seed.starred ? now : null),
           heatmapLabel: Value(seed.heatmapLabel),
           heatmapRule: Value(seed.heatmapRule),
           sortOrder: Value(order++),

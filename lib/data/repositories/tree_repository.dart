@@ -101,6 +101,7 @@ class TreeRepository {
     await (db.update(db.metrics)..where((m) => m.id.equals(metric.id)))
         .write(MetricsCompanion(
       isStarred: const Value(true),
+      starredAt: Value(now),
       heatmapLabel: Value(heatmapLabel),
       heatmapRule: metric.heatmapRule == null
           ? Value(defaultRuleFor(metric.inputType))

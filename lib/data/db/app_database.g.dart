@@ -80,6 +80,17 @@ class $MetricsTable extends Metrics with TableInfo<$MetricsTable, Metric> {
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _starredAtMeta = const VerificationMeta(
+    'starredAt',
+  );
+  @override
+  late final GeneratedColumn<int> starredAt = GeneratedColumn<int>(
+    'starred_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _heatmapLabelMeta = const VerificationMeta(
     'heatmapLabel',
   );
@@ -180,6 +191,7 @@ class $MetricsTable extends Metrics with TableInfo<$MetricsTable, Metric> {
     title,
     inputType,
     isStarred,
+    starredAt,
     heatmapLabel,
     heatmapRule,
     sortOrder,
@@ -238,6 +250,12 @@ class $MetricsTable extends Metrics with TableInfo<$MetricsTable, Metric> {
       context.handle(
         _isStarredMeta,
         isStarred.isAcceptableOrUnknown(data['is_starred']!, _isStarredMeta),
+      );
+    }
+    if (data.containsKey('starred_at')) {
+      context.handle(
+        _starredAtMeta,
+        starredAt.isAcceptableOrUnknown(data['starred_at']!, _starredAtMeta),
       );
     }
     if (data.containsKey('heatmap_label')) {
@@ -337,6 +355,10 @@ class $MetricsTable extends Metrics with TableInfo<$MetricsTable, Metric> {
         DriftSqlType.bool,
         data['${effectivePrefix}is_starred'],
       )!,
+      starredAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}starred_at'],
+      ),
       heatmapLabel: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}heatmap_label'],
@@ -387,6 +409,10 @@ class Metric extends DataClass implements Insertable<Metric> {
   /// 'int' | 'text' | 'int_text' | 'checkbox' | 'composite' | 'money'
   final String inputType;
   final bool isStarred;
+
+  /// Epoch ms of the star action — later-starred metrics append below the
+  /// fixed core rows in star order (spec 5.3).
+  final int? starredAt;
   final String? heatmapLabel;
 
   /// JSON bucket rule, see HeatmapRule.
@@ -406,6 +432,7 @@ class Metric extends DataClass implements Insertable<Metric> {
     required this.title,
     required this.inputType,
     required this.isStarred,
+    this.starredAt,
     this.heatmapLabel,
     this.heatmapRule,
     required this.sortOrder,
@@ -426,6 +453,9 @@ class Metric extends DataClass implements Insertable<Metric> {
     map['title'] = Variable<String>(title);
     map['input_type'] = Variable<String>(inputType);
     map['is_starred'] = Variable<bool>(isStarred);
+    if (!nullToAbsent || starredAt != null) {
+      map['starred_at'] = Variable<int>(starredAt);
+    }
     if (!nullToAbsent || heatmapLabel != null) {
       map['heatmap_label'] = Variable<String>(heatmapLabel);
     }
@@ -453,6 +483,9 @@ class Metric extends DataClass implements Insertable<Metric> {
       title: Value(title),
       inputType: Value(inputType),
       isStarred: Value(isStarred),
+      starredAt: starredAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(starredAt),
       heatmapLabel: heatmapLabel == null && nullToAbsent
           ? const Value.absent()
           : Value(heatmapLabel),
@@ -480,6 +513,7 @@ class Metric extends DataClass implements Insertable<Metric> {
       title: serializer.fromJson<String>(json['title']),
       inputType: serializer.fromJson<String>(json['inputType']),
       isStarred: serializer.fromJson<bool>(json['isStarred']),
+      starredAt: serializer.fromJson<int?>(json['starredAt']),
       heatmapLabel: serializer.fromJson<String?>(json['heatmapLabel']),
       heatmapRule: serializer.fromJson<String?>(json['heatmapRule']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
@@ -500,6 +534,7 @@ class Metric extends DataClass implements Insertable<Metric> {
       'title': serializer.toJson<String>(title),
       'inputType': serializer.toJson<String>(inputType),
       'isStarred': serializer.toJson<bool>(isStarred),
+      'starredAt': serializer.toJson<int?>(starredAt),
       'heatmapLabel': serializer.toJson<String?>(heatmapLabel),
       'heatmapRule': serializer.toJson<String?>(heatmapRule),
       'sortOrder': serializer.toJson<int>(sortOrder),
@@ -518,6 +553,7 @@ class Metric extends DataClass implements Insertable<Metric> {
     String? title,
     String? inputType,
     bool? isStarred,
+    Value<int?> starredAt = const Value.absent(),
     Value<String?> heatmapLabel = const Value.absent(),
     Value<String?> heatmapRule = const Value.absent(),
     int? sortOrder,
@@ -533,6 +569,7 @@ class Metric extends DataClass implements Insertable<Metric> {
     title: title ?? this.title,
     inputType: inputType ?? this.inputType,
     isStarred: isStarred ?? this.isStarred,
+    starredAt: starredAt.present ? starredAt.value : this.starredAt,
     heatmapLabel: heatmapLabel.present ? heatmapLabel.value : this.heatmapLabel,
     heatmapRule: heatmapRule.present ? heatmapRule.value : this.heatmapRule,
     sortOrder: sortOrder ?? this.sortOrder,
@@ -550,6 +587,7 @@ class Metric extends DataClass implements Insertable<Metric> {
       title: data.title.present ? data.title.value : this.title,
       inputType: data.inputType.present ? data.inputType.value : this.inputType,
       isStarred: data.isStarred.present ? data.isStarred.value : this.isStarred,
+      starredAt: data.starredAt.present ? data.starredAt.value : this.starredAt,
       heatmapLabel: data.heatmapLabel.present
           ? data.heatmapLabel.value
           : this.heatmapLabel,
@@ -578,6 +616,7 @@ class Metric extends DataClass implements Insertable<Metric> {
           ..write('title: $title, ')
           ..write('inputType: $inputType, ')
           ..write('isStarred: $isStarred, ')
+          ..write('starredAt: $starredAt, ')
           ..write('heatmapLabel: $heatmapLabel, ')
           ..write('heatmapRule: $heatmapRule, ')
           ..write('sortOrder: $sortOrder, ')
@@ -598,6 +637,7 @@ class Metric extends DataClass implements Insertable<Metric> {
     title,
     inputType,
     isStarred,
+    starredAt,
     heatmapLabel,
     heatmapRule,
     sortOrder,
@@ -617,6 +657,7 @@ class Metric extends DataClass implements Insertable<Metric> {
           other.title == this.title &&
           other.inputType == this.inputType &&
           other.isStarred == this.isStarred &&
+          other.starredAt == this.starredAt &&
           other.heatmapLabel == this.heatmapLabel &&
           other.heatmapRule == this.heatmapRule &&
           other.sortOrder == this.sortOrder &&
@@ -634,6 +675,7 @@ class MetricsCompanion extends UpdateCompanion<Metric> {
   final Value<String> title;
   final Value<String> inputType;
   final Value<bool> isStarred;
+  final Value<int?> starredAt;
   final Value<String?> heatmapLabel;
   final Value<String?> heatmapRule;
   final Value<int> sortOrder;
@@ -649,6 +691,7 @@ class MetricsCompanion extends UpdateCompanion<Metric> {
     this.title = const Value.absent(),
     this.inputType = const Value.absent(),
     this.isStarred = const Value.absent(),
+    this.starredAt = const Value.absent(),
     this.heatmapLabel = const Value.absent(),
     this.heatmapRule = const Value.absent(),
     this.sortOrder = const Value.absent(),
@@ -665,6 +708,7 @@ class MetricsCompanion extends UpdateCompanion<Metric> {
     required String title,
     required String inputType,
     this.isStarred = const Value.absent(),
+    this.starredAt = const Value.absent(),
     this.heatmapLabel = const Value.absent(),
     this.heatmapRule = const Value.absent(),
     this.sortOrder = const Value.absent(),
@@ -685,6 +729,7 @@ class MetricsCompanion extends UpdateCompanion<Metric> {
     Expression<String>? title,
     Expression<String>? inputType,
     Expression<bool>? isStarred,
+    Expression<int>? starredAt,
     Expression<String>? heatmapLabel,
     Expression<String>? heatmapRule,
     Expression<int>? sortOrder,
@@ -701,6 +746,7 @@ class MetricsCompanion extends UpdateCompanion<Metric> {
       if (title != null) 'title': title,
       if (inputType != null) 'input_type': inputType,
       if (isStarred != null) 'is_starred': isStarred,
+      if (starredAt != null) 'starred_at': starredAt,
       if (heatmapLabel != null) 'heatmap_label': heatmapLabel,
       if (heatmapRule != null) 'heatmap_rule': heatmapRule,
       if (sortOrder != null) 'sort_order': sortOrder,
@@ -719,6 +765,7 @@ class MetricsCompanion extends UpdateCompanion<Metric> {
     Value<String>? title,
     Value<String>? inputType,
     Value<bool>? isStarred,
+    Value<int?>? starredAt,
     Value<String?>? heatmapLabel,
     Value<String?>? heatmapRule,
     Value<int>? sortOrder,
@@ -735,6 +782,7 @@ class MetricsCompanion extends UpdateCompanion<Metric> {
       title: title ?? this.title,
       inputType: inputType ?? this.inputType,
       isStarred: isStarred ?? this.isStarred,
+      starredAt: starredAt ?? this.starredAt,
       heatmapLabel: heatmapLabel ?? this.heatmapLabel,
       heatmapRule: heatmapRule ?? this.heatmapRule,
       sortOrder: sortOrder ?? this.sortOrder,
@@ -766,6 +814,9 @@ class MetricsCompanion extends UpdateCompanion<Metric> {
     }
     if (isStarred.present) {
       map['is_starred'] = Variable<bool>(isStarred.value);
+    }
+    if (starredAt.present) {
+      map['starred_at'] = Variable<int>(starredAt.value);
     }
     if (heatmapLabel.present) {
       map['heatmap_label'] = Variable<String>(heatmapLabel.value);
@@ -803,6 +854,7 @@ class MetricsCompanion extends UpdateCompanion<Metric> {
           ..write('title: $title, ')
           ..write('inputType: $inputType, ')
           ..write('isStarred: $isStarred, ')
+          ..write('starredAt: $starredAt, ')
           ..write('heatmapLabel: $heatmapLabel, ')
           ..write('heatmapRule: $heatmapRule, ')
           ..write('sortOrder: $sortOrder, ')
@@ -3368,6 +3420,7 @@ typedef $$MetricsTableCreateCompanionBuilder =
       required String title,
       required String inputType,
       Value<bool> isStarred,
+      Value<int?> starredAt,
       Value<String?> heatmapLabel,
       Value<String?> heatmapRule,
       Value<int> sortOrder,
@@ -3385,6 +3438,7 @@ typedef $$MetricsTableUpdateCompanionBuilder =
       Value<String> title,
       Value<String> inputType,
       Value<bool> isStarred,
+      Value<int?> starredAt,
       Value<String?> heatmapLabel,
       Value<String?> heatmapRule,
       Value<int> sortOrder,
@@ -3485,6 +3539,11 @@ class $$MetricsTableFilterComposer
 
   ColumnFilters<bool> get isStarred => $composableBuilder(
     column: $table.isStarred,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get starredAt => $composableBuilder(
+    column: $table.starredAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3636,6 +3695,11 @@ class $$MetricsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get starredAt => $composableBuilder(
+    column: $table.starredAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get heatmapLabel => $composableBuilder(
     column: $table.heatmapLabel,
     builder: (column) => ColumnOrderings(column),
@@ -3723,6 +3787,9 @@ class $$MetricsTableAnnotationComposer
 
   GeneratedColumn<bool> get isStarred =>
       $composableBuilder(column: $table.isStarred, builder: (column) => column);
+
+  GeneratedColumn<int> get starredAt =>
+      $composableBuilder(column: $table.starredAt, builder: (column) => column);
 
   GeneratedColumn<String> get heatmapLabel => $composableBuilder(
     column: $table.heatmapLabel,
@@ -3868,6 +3935,7 @@ class $$MetricsTableTableManager
                 Value<String> title = const Value.absent(),
                 Value<String> inputType = const Value.absent(),
                 Value<bool> isStarred = const Value.absent(),
+                Value<int?> starredAt = const Value.absent(),
                 Value<String?> heatmapLabel = const Value.absent(),
                 Value<String?> heatmapRule = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
@@ -3883,6 +3951,7 @@ class $$MetricsTableTableManager
                 title: title,
                 inputType: inputType,
                 isStarred: isStarred,
+                starredAt: starredAt,
                 heatmapLabel: heatmapLabel,
                 heatmapRule: heatmapRule,
                 sortOrder: sortOrder,
@@ -3900,6 +3969,7 @@ class $$MetricsTableTableManager
                 required String title,
                 required String inputType,
                 Value<bool> isStarred = const Value.absent(),
+                Value<int?> starredAt = const Value.absent(),
                 Value<String?> heatmapLabel = const Value.absent(),
                 Value<String?> heatmapRule = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
@@ -3915,6 +3985,7 @@ class $$MetricsTableTableManager
                 title: title,
                 inputType: inputType,
                 isStarred: isStarred,
+                starredAt: starredAt,
                 heatmapLabel: heatmapLabel,
                 heatmapRule: heatmapRule,
                 sortOrder: sortOrder,
