@@ -26,33 +26,32 @@ class HeatmapMatrix {
   final Map<int, HeatmapRule> rules;
 }
 
-/// One line of the daily breakdown (spec 6.3).
-class BreakdownItem {
-  const BreakdownItem({
-    required this.metric,
-    required this.valueText,
-    this.detail,
-    this.subItems = const [],
+/// One node of the recursive daily breakdown tree (CR1-A).
+/// Roots are always visible; every deeper level starts collapsed.
+class BreakdownNode {
+  const BreakdownNode({
+    required this.id,
+    required this.title,
+    this.metric,
+    this.inlineExpand = false,
+    this.children = const [],
   });
 
-  final Metric metric;
+  /// Stable path id ('money/outcome/Food') — keys the expansion state.
+  final String id;
 
-  /// e.g. 'Software: 35 min' → the part after the title.
-  final String valueText;
-
-  /// Collapsible free text (entry.text_value).
-  final String? detail;
-
-  /// Composite children / money category lines.
-  final List<BreakdownSubItem> subItems;
-}
-
-class BreakdownSubItem {
-  const BreakdownSubItem({required this.title, this.detail, this.indent = 1});
-
+  /// Full row text, e.g. 'Outcome (Month): 200'.
   final String title;
-  final String? detail;
-  final int indent; // 1 = '>', 2 = '>>'
+
+  /// Tapping the TITLE opens this metric's page (arrow toggles instead).
+  final Metric? metric;
+
+  /// Long-text leaf: the arrow un-ellipsizes the title (Software notes).
+  final bool inlineExpand;
+
+  final List<BreakdownNode> children;
+
+  bool get hasArrow => inlineExpand || children.isNotEmpty;
 }
 
 class AnalysisRepository {
@@ -224,10 +223,13 @@ class AnalysisRepository {
 
   // ---------- daily breakdown (spec 6.3) ----------
 
-  Stream<List<BreakdownItem>> watchBreakdown(String date) =>
+  Stream<List<BreakdownNode>> watchBreakdown(String date) =>
       _changes().asyncMap((_) => loadBreakdown(date));
 
-  Future<List<BreakdownItem>> loadBreakdown(String date) async {
+  /// Root nodes in card order. Children follow CR1-A:
+  /// Money → Income/Outcome (Month) → category → subtype;
+  /// composite → filled child → its text; text metrics → note leaf.
+  Future<List<BreakdownNode>> loadBreakdown(String date) async {
     final top = await (db.select(db.metrics)
           ..where((m) => m.parentId.isNull())
           ..orderBy([(m) => OrderingTerm.asc(m.sortOrder)]))
@@ -237,33 +239,44 @@ class AnalysisRepository {
         .get();
     final byMetric = {for (final e in entries) e.metricId: e};
 
-    final items = <BreakdownItem>[];
+    final roots = <BreakdownNode>[];
     for (final metric in top) {
       switch (metric.inputType) {
         case 'money':
-          items.add(await _moneyBreakdown(metric, date));
+          roots.add(await _moneyBreakdown(metric, date));
         case 'composite':
-          final item = await _compositeBreakdown(metric, byMetric);
-          if (item != null) items.add(item);
+          final node = await _compositeBreakdown(metric, byMetric);
+          if (node != null) roots.add(node);
         case 'checkbox':
           final entry = byMetric[metric.id];
           if (entry == null) break;
           final labels = await _selectedLabels(entry.id);
-          items.add(BreakdownItem(
+          roots.add(BreakdownNode(
+            id: metric.key,
+            title:
+                '${metric.title}: ${labels.isEmpty ? '—' : labels.join(', ')}',
             metric: metric,
-            valueText: labels.isEmpty ? '—' : labels.join(', '),
           ));
         default:
           final entry = byMetric[metric.id];
           if (entry == null) break;
-          items.add(BreakdownItem(
+          final text = entry.textValue?.trim();
+          roots.add(BreakdownNode(
+            id: metric.key,
+            title: '${metric.title}: ${_formatValue(metric, entry)}',
             metric: metric,
-            valueText: _formatValue(metric, entry),
-            detail: entry.textValue,
+            children: [
+              if (text != null && text.isNotEmpty)
+                BreakdownNode(
+                  id: '${metric.key}/note',
+                  title: text,
+                  inlineExpand: true,
+                ),
+            ],
           ));
       }
     }
-    return items;
+    return roots;
   }
 
   Future<List<String>> _selectedLabels(int entryId) async {
@@ -276,7 +289,7 @@ class AnalysisRepository {
     return [for (final r in rows) r.readTable(db.metricOptions).label];
   }
 
-  Future<BreakdownItem?> _compositeBreakdown(
+  Future<BreakdownNode?> _compositeBreakdown(
       Metric metric, Map<int, Entry> dayEntries) async {
     final children = await (db.select(db.metrics)
           ..where((m) => m.parentId.equals(metric.id))
@@ -293,20 +306,30 @@ class AnalysisRepository {
     final valueText = metric.groupDisplay == 'own_value'
         ? (ownEntry != null ? _formatValue(metric, ownEntry) : '—')
         : (filled.isEmpty ? '—' : filled.map((c) => c.title).join(', '));
-    return BreakdownItem(
+    return BreakdownNode(
+      id: metric.key,
+      title: '${metric.title}: $valueText',
       metric: metric,
-      valueText: valueText,
-      subItems: [
+      children: [
         for (final child in filled)
-          BreakdownSubItem(
+          BreakdownNode(
+            id: '${metric.key}/${child.key}',
             title: child.title,
-            detail: dayEntries[child.id]?.textValue,
+            metric: child,
+            children: [
+              if (dayEntries[child.id]?.textValue?.trim().isNotEmpty ??
+                  false)
+                BreakdownNode(
+                  id: '${metric.key}/${child.key}/note',
+                  title: dayEntries[child.id]!.textValue!,
+                ),
+            ],
           ),
       ],
     );
   }
 
-  Future<BreakdownItem> _moneyBreakdown(Metric metric, String date) async {
+  Future<BreakdownNode> _moneyBreakdown(Metric metric, String date) async {
     // Daily line: ALL outcome of the day — deliberately not the heatmap
     // filter (spec §9.5).
     final daySum = db.transactions.amount.sum();
@@ -319,36 +342,75 @@ class AnalysisRepository {
 
     final monthPrefix = date.substring(0, 7); // 'YYYY-MM'
     final sum = db.transactions.amount.sum();
+    // Three levels: direction → category → subtype (CR1-A).
     final monthly = await (db.selectOnly(db.transactions)
-          ..addColumns([db.transactions.direction, db.transactions.category, sum])
+          ..addColumns([
+            db.transactions.direction,
+            db.transactions.category,
+            db.transactions.subtype,
+            sum,
+          ])
           ..where(db.transactions.date.like('$monthPrefix-%'))
-          ..groupBy([db.transactions.direction, db.transactions.category])
+          ..groupBy([
+            db.transactions.direction,
+            db.transactions.category,
+            db.transactions.subtype,
+          ])
           ..orderBy([OrderingTerm.desc(sum)]))
         .get();
 
-    final subItems = <BreakdownSubItem>[];
-    for (final direction in ['outcome', 'income']) {
+    final directionNodes = <BreakdownNode>[];
+    for (final direction in ['income', 'outcome']) {
       final rows = monthly
           .where((r) => r.read(db.transactions.direction) == direction)
           .toList();
-      final total = rows.fold<double>(0, (acc, r) => acc + (r.read(sum) ?? 0));
-      subItems.add(BreakdownSubItem(
-        title:
-            '${direction == 'outcome' ? 'Outcome' : 'Income'} (Month): ${formatAmount(total)}',
+      final byCategory = <String, double>{};
+      final subtypes = <String, List<({String label, double total})>>{};
+      for (final r in rows) {
+        final category = r.read(db.transactions.category)!;
+        final amount = r.read(sum) ?? 0;
+        byCategory[category] = (byCategory[category] ?? 0) + amount;
+        final subtype = r.read(db.transactions.subtype);
+        if (subtype != null) {
+          subtypes.putIfAbsent(category, () => []).add(
+              (label: '$category ($subtype)', total: amount));
+        }
+      }
+      final total =
+          byCategory.values.fold<double>(0, (acc, v) => acc + v);
+      final label = direction == 'outcome' ? 'Outcome' : 'Income';
+      final names = byCategory.keys.toList()
+        ..sort((a, b) => byCategory[b]!.compareTo(byCategory[a]!));
+      directionNodes.add(BreakdownNode(
+        id: 'money/$direction',
+        title: '$label (Month): ${formatAmount(total)}',
+        metric: metric,
+        children: [
+          for (final name in names)
+            BreakdownNode(
+              id: 'money/$direction/$name',
+              title: '$name: ${formatAmount(byCategory[name]!)}',
+              metric: metric,
+              children: [
+                for (final sub in subtypes[name] ?? const [])
+                  BreakdownNode(
+                    id: 'money/$direction/$name/${sub.label}',
+                    title:
+                        '${sub.label}: ${formatAmount(sub.total)}',
+                    metric: metric,
+                  ),
+              ],
+            ),
+        ],
       ));
-      subItems.addAll([
-        for (final r in rows)
-          BreakdownSubItem(
-            title:
-                '${r.read(db.transactions.category)}: ${formatAmount(r.read(sum) ?? 0)}',
-            indent: 2,
-          ),
-      ]);
     }
-    return BreakdownItem(
+    return BreakdownNode(
+      id: 'money',
+      title:
+          '${metric.title}: ${formatAmount(dayTotal)} ${metric.unit ?? ''}'
+              .trim(),
       metric: metric,
-      valueText: '${formatAmount(dayTotal)} ${metric.unit ?? ''}'.trim(),
-      subItems: subItems,
+      children: directionNodes,
     );
   }
 

@@ -111,8 +111,8 @@ void main() {
     await tester.pumpWidget(app(const AnalysisPage()));
     await tester.pumpAndSettle();
 
-    expect(find.text('Software: '), findsOneWidget);
-    expect(find.text('35 min'), findsOneWidget);
+    expect(find.text('Software: 35 min'), findsOneWidget);
+    // CR1-A: the note starts collapsed as a level-1 toggle row.
     expect(find.text('refactored parser'), findsOneWidget);
     await closeApp(tester);
   });
