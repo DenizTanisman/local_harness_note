@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/date_key.dart';
 import '../home/home_providers.dart';
 import '../home/widgets/input_bodies.dart' show parseNum;
 import 'money_providers.dart';
@@ -153,7 +154,9 @@ class _MoneyCardBodyState extends ConsumerState<MoneyCardBody> {
               ),
             ),
           ],
-          if (direction == 'outcome') ...[
+          if (direction == 'outcome' &&
+              ref.watch(homeDateProvider) ==
+                  dateKey(DateTime.now())) ...[
             const SizedBox(height: 8),
             Text('Set a reminder?',
                 style: Theme.of(context).textTheme.bodySmall),

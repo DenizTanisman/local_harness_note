@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/date_key.dart';
 import '../settings/export_import_page.dart';
 import '../settings/settings_page.dart';
 import 'home_providers.dart';
@@ -15,6 +16,7 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final date = ref.watch(homeDateProvider);
+    final isToday = date == dateKey(DateTime.now());
     final metrics = ref.watch(topLevelMetricsProvider);
     final entries = ref.watch(entriesForDateProvider(date));
     final options = ref.watch(selectedOptionsProvider(date));
@@ -23,10 +25,19 @@ class HomePage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Daily Tracker'),
         actions: [
+          // Past-day entry mode (CR1-D): tap the chip to pick a past day;
+          // a visible 'Today' escape appears whenever not on today.
+          if (!isToday)
+            TextButton(
+              key: const ValueKey('today-button'),
+              onPressed: () =>
+                  ref.read(homeDateProvider.notifier).resetToToday(),
+              child: const Text('Today'),
+            ),
           Center(
             child: Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: Text(date, style: Theme.of(context).textTheme.bodyMedium),
+              padding: const EdgeInsets.only(right: 12),
+              child: _DateChip(date: date, highlighted: !isToday),
             ),
           ),
         ],
@@ -82,7 +93,9 @@ class HomePage extends ConsumerWidget {
             for (var i = 0; i < rows.length; i++) ...[
               GapDropTarget(index: i),
               DraggableMetricCard(
-                key: ValueKey('metric-card-${rows[i].id}'),
+                // Keyed by date too: input controllers must re-seed when
+                // the active write date changes (CR1-D).
+                key: ValueKey('metric-card-${rows[i].id}-$date'),
                 metric: rows[i],
                 child: MetricCard(
                   metric: rows[i],
@@ -101,6 +114,52 @@ class HomePage extends ConsumerWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Tappable date chip in the app bar (CR1-D). Highlighted whenever the
+/// active write date is not today — writing to the past must be obvious.
+class _DateChip extends ConsumerWidget {
+  const _DateChip({required this.date, required this.highlighted});
+
+  final String date;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
+    return InkWell(
+      key: const ValueKey('home-date-chip'),
+      borderRadius: BorderRadius.circular(999),
+      onTap: () async {
+        final now = DateTime.now();
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: parseDateKey(date),
+          firstDate: DateTime(2020),
+          lastDate: now, // the future stays blocked
+        );
+        if (picked != null) {
+          ref.read(homeDateProvider.notifier).select(dateKey(picked));
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(999),
+          color: highlighted ? scheme.primary : Colors.transparent,
+          border: Border.all(
+              color: highlighted ? scheme.primary : scheme.outlineVariant),
+        ),
+        child: Text(
+          date,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: highlighted ? scheme.onPrimary : null,
+                fontWeight: highlighted ? FontWeight.bold : null,
+              ),
         ),
       ),
     );

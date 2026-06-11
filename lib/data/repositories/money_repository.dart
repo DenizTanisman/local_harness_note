@@ -119,9 +119,12 @@ class MoneyRepository {
             ),
           );
       if (direction == 'outcome') {
+        final today = dateKey(DateTime.now());
         for (final offset in reminderOffsets) {
           final remindDate =
               dateKey(parseDateKey(date).subtract(Duration(days: offset)));
+          // Past-day entries never queue reminders (CR1-D).
+          if (remindDate.compareTo(today) < 0) continue;
           await db.into(db.expenseReminders).insert(
                 ExpenseRemindersCompanion.insert(
                     transactionId: id, remindDate: remindDate),

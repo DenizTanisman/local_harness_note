@@ -6,6 +6,7 @@ import 'package:workmanager/workmanager.dart';
 
 import 'data/db/database_provider.dart';
 import 'features/backup/backup_worker.dart';
+import 'features/home/home_providers.dart';
 import 'features/money/money_page.dart';
 import 'features/notifications/notification_service.dart';
 import 'features/settings/settings_providers.dart';
@@ -17,6 +18,8 @@ final notificationServiceProvider = Provider<NotificationService>((ref) {
   return NotificationService(
     ref.watch(databaseProvider),
     onTapPayload: (payload) {
+      // Notification entry always lands on TODAY (CR1-D).
+      ref.read(homeDateProvider.notifier).resetToToday();
       final navigator = navigatorKey.currentState;
       if (navigator == null) return;
       // Always land on the home page first (spec 6.1/§8).

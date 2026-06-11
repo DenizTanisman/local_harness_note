@@ -63,9 +63,10 @@ void main() {
     await tester.tap(find.text('Bill').last);
     await tester.pumpAndSettle();
 
-    // Reminder question appears for outcome.
+    // Reminder question appears for outcome. 'Same day' queues; offsets
+    // that land before today are dropped (CR1-D).
     expect(find.text('Set a reminder?'), findsOneWidget);
-    await tester.tap(find.text('1 day before'));
+    await tester.tap(find.text('Same day'));
     await tester.pumpAndSettle();
 
     await tester.enterText(
