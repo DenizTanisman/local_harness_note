@@ -94,8 +94,18 @@ class EntryRepository {
   }
 
   /// Del flow: removes the metric and its whole history (CASCADE).
-  Future<void> deleteMetric(int metricId) =>
-      (db.delete(db.metrics)..where((m) => m.id.equals(metricId))).go();
+  /// Core metrics are refused here too — the UI condition alone is not a
+  /// guarantee against future flows like swipe-to-delete (CR-2).
+  Future<void> deleteMetric(int metricId) async {
+    final metric = await (db.select(
+      db.metrics,
+    )..where((m) => m.id.equals(metricId))).getSingleOrNull();
+    if (metric == null) return;
+    if (!metric.isDeletable) {
+      throw StateError('Core metric "${metric.key}" cannot be deleted');
+    }
+    await (db.delete(db.metrics)..where((m) => m.id.equals(metricId))).go();
+  }
 
   // ---------- entries ----------
 

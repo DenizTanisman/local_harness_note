@@ -1,5 +1,6 @@
 import 'package:daily_tracker/data/db/app_database.dart';
 import 'package:daily_tracker/data/db/database_provider.dart';
+import 'package:daily_tracker/data/repositories/entry_repository.dart';
 import 'package:daily_tracker/features/home/home_page.dart';
 import 'package:daily_tracker/features/home/home_providers.dart';
 import 'package:drift/native.dart';
@@ -226,9 +227,13 @@ void main() {
     tester,
   ) async {
     await pumpHome(tester);
+    // Core metrics carry no Del (CR-2); exercise the flow on a
+    // user-created metric instead.
+    await EntryRepository(db).addMetric(title: 'Extra2', inputType: 'text');
+    await tester.pumpAndSettle();
 
     final delButton = find.descendant(
-      of: cardOf('Extra'),
+      of: cardOf('Extra2'),
       matching: find.text('Del'),
     );
     await tester.ensureVisible(delButton);
@@ -242,7 +247,7 @@ void main() {
 
     final gone = await (db.select(
       db.metrics,
-    )..where((m) => m.key.equals('extra'))).getSingleOrNull();
+    )..where((m) => m.key.equals('extra2'))).getSingleOrNull();
     expect(gone, isNull);
     await closeApp(tester);
   });

@@ -45,7 +45,9 @@ void main() {
 
     await tester.pumpWidget(app(const RootPager()));
     await tester.pumpAndSettle();
-    await tester.fling(find.byType(PageView), const Offset(-600, 0), 1200);
+    // Fling from the AppBar title: a fling over a card body can land on
+    // a TextField whose horizontal drag recognizer beats the PageView.
+    await tester.fling(find.text('Daily Tracker'), const Offset(-600, 0), 1200);
     for (var i = 0; i < 10; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
@@ -81,7 +83,9 @@ void main() {
 
     await tester.pumpWidget(app(const RootPager()));
     await tester.pumpAndSettle();
-    await tester.fling(find.byType(PageView), const Offset(-600, 0), 1200);
+    // Fling from the AppBar title: a fling over a card body can land on
+    // a TextField whose horizontal drag recognizer beats the PageView.
+    await tester.fling(find.text('Daily Tracker'), const Offset(-600, 0), 1200);
     for (var i = 0; i < 10; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }

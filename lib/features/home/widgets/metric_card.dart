@@ -61,13 +61,16 @@ class MetricCard extends ConsumerWidget {
                 Expanded(
                   child: Text(metric.title, style: theme.textTheme.titleMedium),
                 ),
-                TextButton(
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppTokens.danger,
+                // Core metrics show NO Del at all — absence, not a disabled
+                // button (CR-2).
+                if (metric.isDeletable)
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppTokens.danger,
+                    ),
+                    onPressed: () => _confirmDelete(context, ref),
+                    child: const Text('Del'),
                   ),
-                  onPressed: () => _confirmDelete(context, ref),
-                  child: const Text('Del'),
-                ),
               ],
             ),
             _body(),

@@ -32,6 +32,13 @@ String _rule(String source, List<List<Object?>> buckets) => jsonEncode({
   ],
 });
 
+/// The 12 protected seed records (CR-2): the 9 fixed heatmap rows plus
+/// Development's seed children — deleting Marketing would break the
+/// Development composite, so protection covers group integrity too.
+final List<String> coreMetricKeys = seedMetrics
+    .map((m) => m.key)
+    .toList(growable: false);
+
 /// Fixed heatmap row order for the 9 core metrics (spec 5.3).
 const coreHeatmapOrder = [
   'software',

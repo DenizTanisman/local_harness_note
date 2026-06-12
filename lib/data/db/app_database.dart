@@ -21,7 +21,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -34,10 +34,24 @@ class AppDatabase extends _$AppDatabase {
       );
       await _seed();
     },
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        // CR-2: existing installs — protect the core 12 by KEY
+        // (never by id; the user may have reordered).
+        await markCoreUndeletable();
+      }
+    },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
     },
   );
+
+  /// CR-2 v2 migration body, exposed for tests.
+  Future<void> markCoreUndeletable() {
+    return (update(metrics)..where((m) => m.key.isIn(coreMetricKeys))).write(
+      const MetricsCompanion(isDeletable: Value(false)),
+    );
+  }
 
   /// Debounced auto-save target (spec 6.2): one row per metric × day.
   /// On conflict the value columns are updated; created_at is preserved.
@@ -70,6 +84,7 @@ class AppDatabase extends _$AppDatabase {
             title: seed.title,
             inputType: seed.inputType,
             isStarred: Value(seed.starred),
+            isDeletable: const Value(false), // core 12 protected (CR-2)
             starredAt: Value(seed.starred ? now : null),
             heatmapLabel: Value(seed.heatmapLabel),
             heatmapRule: Value(seed.heatmapRule),
