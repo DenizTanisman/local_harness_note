@@ -105,6 +105,11 @@ class EntryRepository {
       throw StateError('Core metric "${metric.key}" cannot be deleted');
     }
     await (db.delete(db.metrics)..where((m) => m.id.equals(metricId))).go();
+    // Deleting the last child of a promoted group restores the parent's
+    // original input type.
+    if (metric.parentId != null) {
+      await db.demoteIfChildless(metric.parentId!);
+    }
   }
 
   // ---------- entries ----------

@@ -21,7 +21,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -40,11 +40,38 @@ class AppDatabase extends _$AppDatabase {
         // (never by id; the user may have reordered).
         await markCoreUndeletable();
       }
+      if (from < 3) {
+        // Promotion memory for drop-grouped leaves (demote-on-detach fix).
+        await m.addColumn(metrics, metrics.prevInputType);
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
     },
   );
+
+  /// Restores a promoted leaf to its original input type once it has no
+  /// children left. Natural composites (prev_input_type NULL) are
+  /// untouched. Called by every flow that removes a child from a parent.
+  Future<void> demoteIfChildless(int metricId) async {
+    final metric = await (select(metrics)
+          ..where((m) => m.id.equals(metricId)))
+        .getSingleOrNull();
+    if (metric == null || metric.prevInputType == null) return;
+    final childCount = metrics.id.count();
+    final row = await (selectOnly(metrics)
+          ..addColumns([childCount])
+          ..where(metrics.parentId.equals(metricId)))
+        .getSingle();
+    if ((row.read(childCount) ?? 0) > 0) return;
+    await (update(metrics)..where((m) => m.id.equals(metricId))).write(
+      MetricsCompanion(
+        inputType: Value(metric.prevInputType!),
+        prevInputType: const Value(null),
+        updatedAt: Value(DateTime.now().millisecondsSinceEpoch),
+      ),
+    );
+  }
 
   /// CR-2 v2 migration body, exposed for tests.
   Future<void> markCoreUndeletable() {

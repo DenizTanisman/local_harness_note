@@ -26,9 +26,15 @@ class TreeRepository {
   }
 
   /// Drop onto a card: re-parent and promote a leaf target to composite.
+  /// The leaf's original input type is remembered (prev_input_type) so the
+  /// card gets it back when its last child detaches.
   Future<void> makeChildOf({required int childId, required int parentId}) {
     return db.transaction(() async {
       final now = DateTime.now().millisecondsSinceEpoch;
+      final child = await (db.select(
+        db.metrics,
+      )..where((m) => m.id.equals(childId))).getSingle();
+      final oldParentId = child.parentId;
       final parent = await (db.select(
         db.metrics,
       )..where((m) => m.id.equals(parentId))).getSingle();
@@ -38,6 +44,7 @@ class TreeRepository {
         )..where((m) => m.id.equals(parentId))).write(
           MetricsCompanion(
             inputType: const Value('composite'),
+            prevInputType: Value(parent.inputType),
             updatedAt: Value(now),
           ),
         );
@@ -55,6 +62,9 @@ class TreeRepository {
           updatedAt: Value(now),
         ),
       );
+      if (oldParentId != null && oldParentId != parentId) {
+        await db.demoteIfChildless(oldParentId);
+      }
     });
   }
 
@@ -62,6 +72,10 @@ class TreeRepository {
   Future<void> detach(int childId) {
     return db.transaction(() async {
       final now = DateTime.now().millisecondsSinceEpoch;
+      final child = await (db.select(
+        db.metrics,
+      )..where((m) => m.id.equals(childId))).getSingle();
+      final oldParentId = child.parentId;
       final rootMax = db.metrics.sortOrder.max();
       final row =
           await (db.selectOnly(db.metrics)
@@ -75,6 +89,7 @@ class TreeRepository {
           updatedAt: Value(now),
         ),
       );
+      if (oldParentId != null) await db.demoteIfChildless(oldParentId);
     });
   }
 
@@ -83,6 +98,10 @@ class TreeRepository {
   Future<void> moveToRootPosition(int metricId, int targetIndex) {
     return db.transaction(() async {
       final now = DateTime.now().millisecondsSinceEpoch;
+      final moved = await (db.select(
+        db.metrics,
+      )..where((m) => m.id.equals(metricId))).getSingleOrNull();
+      final oldParentId = moved?.parentId;
       final top =
           await (db.select(db.metrics)
                 ..where((m) => m.parentId.isNull())
@@ -100,6 +119,7 @@ class TreeRepository {
           ),
         );
       }
+      if (oldParentId != null) await db.demoteIfChildless(oldParentId);
     });
   }
 
