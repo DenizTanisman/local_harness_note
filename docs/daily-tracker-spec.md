@@ -507,7 +507,7 @@ Her faz ayrı branch: `phase-0-scaffold`, `phase-1-entry`, ... Her faz sonunda: 
 | # | Konu | Varsayılan karar | Onay gerekli mi |
 |---|---|---|---|
 | 1 | Sabah sözleri dili | TR varsayılan, Settings'ten EN | Kullanıcı teyidi bekleniyor |
-| 2 | Çekirdek 9 metrik silinebilir mi | Evet, silinebilir (is_deletable=1) — kullanıcı tam kontrol istiyor | Hayır |
+| 2 | Çekirdek 9 metrik silinebilir mi | KAPANDI (CR-2): çekirdek 12 kayıt (9 satır + dev çocukları) silinemez (is_deletable=0); Del yalnızca kullanıcı metriklerinde | Kapandı |
 | 3 | Water 0–1 L aralığı spec'te tanımsız (0 black, 1–2 lightBlue) | 0 < x < 1 → lightBlue'ya dahil (min=0 hariç-üstü) | Düşük öncelik |
 | 4 | Weekly/Monthly: toplam mı ortalama mı | Sayısal metriklerde TOPLAM (dk, L); istenirse metrik başına ayar eklenir | Düşük öncelik |
 | 5 | "Sıralama modunda üst üste bırakma" yanlışlıkla tetiklenirse | Onay diyaloğu her zaman sorulur (7. bölüm) | Hayır |
@@ -543,3 +543,9 @@ Sonraki fazlar için aynı kalıp: "Faz N'i uygula, kabul kriterleri Bölüm 12 
 - **6.3 Günlük Döküm:** Düz liste yerine özyinelemeli `ToggleRow` ağacı; tüm seviyeler varsayılan kapalı; ok = aç/kapa (32dp), başlık = detay sayfası; Money 3 seviye (yön → kategori → subtype) (CR1-A).
 - **6.4 / 6.5 Sparkline:** Ayın tüm günlerini kapsayan sürekli çizgi; boş/0 günler taban çizgisinde (alt %12 sabit); nokta yok, seçili güne 1dp dikey işaret; ucuz glow + gradyan dolgu; Money aynı painter, eşik aşan günün segmenti kırmızı (CR1-C).
 - **Yeni 6.7 Tema:** Tek koyu tema; tüm renkler `lib/theme/app_tokens.dart` token'larından (`Color(0x` ekranlarda yasak, testle zorlanır); BackdropFilter yasak; HeatColors bucket paleti ve sparkline yeşili (#39d353) temadan bağımsız veri renkleri (CR1-B).
+
+## CR-2 Güncellemeleri (2026-06-12, uygulandı)
+
+- **4.3 Seed:** Çekirdek 12 kayıt `is_deletable = 0` ile yazılır; mevcut kurulumlar şema v2 migration'ında `UPDATE ... WHERE key IN (çekirdek 12)` ile korunur (key üzerinden, id'ye güvenilmez).
+- **6.2 Del:** Del butonu yalnızca `is_deletable = 1` metriklerde render edilir (yokluk, disabled değil). Repository katmanı da silmeyi reddeder (savunma katmanı).
+- **13 Açık Nokta #2:** KAPANDI — çekirdek korunur.

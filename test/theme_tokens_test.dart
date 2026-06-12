@@ -21,8 +21,11 @@ void main() {
         }
       }
     }
-    expect(offenders, isEmpty,
-        reason: 'raw colors must move to AppTokens:\n${offenders.join('\n')}');
+    expect(
+      offenders,
+      isEmpty,
+      reason: 'raw colors must move to AppTokens:\n${offenders.join('\n')}',
+    );
   });
 
   test('no BackdropFilter in the app (scroll performance rule)', () {
