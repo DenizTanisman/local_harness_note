@@ -13,6 +13,11 @@ class Metrics extends Table {
 
   /// 'int' | 'text' | 'int_text' | 'checkbox' | 'composite' | 'money'
   TextColumn get inputType => text()();
+
+  /// Original input type of a leaf that was auto-promoted to composite by
+  /// a drop; restored when its last child detaches. NULL for natural
+  /// composites (Development) and never-promoted cards.
+  TextColumn get prevInputType => text().nullable()();
   BoolColumn get isStarred => boolean().withDefault(const Constant(false))();
 
   /// Epoch ms of the star action — later-starred metrics append below the

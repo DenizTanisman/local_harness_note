@@ -65,6 +65,17 @@ class $MetricsTable extends Metrics with TableInfo<$MetricsTable, Metric> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _prevInputTypeMeta = const VerificationMeta(
+    'prevInputType',
+  );
+  @override
+  late final GeneratedColumn<String> prevInputType = GeneratedColumn<String>(
+    'prev_input_type',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _isStarredMeta = const VerificationMeta(
     'isStarred',
   );
@@ -190,6 +201,7 @@ class $MetricsTable extends Metrics with TableInfo<$MetricsTable, Metric> {
     key,
     title,
     inputType,
+    prevInputType,
     isStarred,
     starredAt,
     heatmapLabel,
@@ -245,6 +257,15 @@ class $MetricsTable extends Metrics with TableInfo<$MetricsTable, Metric> {
       );
     } else if (isInserting) {
       context.missing(_inputTypeMeta);
+    }
+    if (data.containsKey('prev_input_type')) {
+      context.handle(
+        _prevInputTypeMeta,
+        prevInputType.isAcceptableOrUnknown(
+          data['prev_input_type']!,
+          _prevInputTypeMeta,
+        ),
+      );
     }
     if (data.containsKey('is_starred')) {
       context.handle(
@@ -351,6 +372,10 @@ class $MetricsTable extends Metrics with TableInfo<$MetricsTable, Metric> {
         DriftSqlType.string,
         data['${effectivePrefix}input_type'],
       )!,
+      prevInputType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}prev_input_type'],
+      ),
       isStarred: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_starred'],
@@ -408,6 +433,11 @@ class Metric extends DataClass implements Insertable<Metric> {
 
   /// 'int' | 'text' | 'int_text' | 'checkbox' | 'composite' | 'money'
   final String inputType;
+
+  /// Original input type of a leaf that was auto-promoted to composite by
+  /// a drop; restored when its last child detaches. NULL for natural
+  /// composites (Development) and never-promoted cards.
+  final String? prevInputType;
   final bool isStarred;
 
   /// Epoch ms of the star action — later-starred metrics append below the
@@ -431,6 +461,7 @@ class Metric extends DataClass implements Insertable<Metric> {
     required this.key,
     required this.title,
     required this.inputType,
+    this.prevInputType,
     required this.isStarred,
     this.starredAt,
     this.heatmapLabel,
@@ -452,6 +483,9 @@ class Metric extends DataClass implements Insertable<Metric> {
     map['key'] = Variable<String>(key);
     map['title'] = Variable<String>(title);
     map['input_type'] = Variable<String>(inputType);
+    if (!nullToAbsent || prevInputType != null) {
+      map['prev_input_type'] = Variable<String>(prevInputType);
+    }
     map['is_starred'] = Variable<bool>(isStarred);
     if (!nullToAbsent || starredAt != null) {
       map['starred_at'] = Variable<int>(starredAt);
@@ -482,6 +516,9 @@ class Metric extends DataClass implements Insertable<Metric> {
       key: Value(key),
       title: Value(title),
       inputType: Value(inputType),
+      prevInputType: prevInputType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(prevInputType),
       isStarred: Value(isStarred),
       starredAt: starredAt == null && nullToAbsent
           ? const Value.absent()
@@ -512,6 +549,7 @@ class Metric extends DataClass implements Insertable<Metric> {
       key: serializer.fromJson<String>(json['key']),
       title: serializer.fromJson<String>(json['title']),
       inputType: serializer.fromJson<String>(json['inputType']),
+      prevInputType: serializer.fromJson<String?>(json['prevInputType']),
       isStarred: serializer.fromJson<bool>(json['isStarred']),
       starredAt: serializer.fromJson<int?>(json['starredAt']),
       heatmapLabel: serializer.fromJson<String?>(json['heatmapLabel']),
@@ -533,6 +571,7 @@ class Metric extends DataClass implements Insertable<Metric> {
       'key': serializer.toJson<String>(key),
       'title': serializer.toJson<String>(title),
       'inputType': serializer.toJson<String>(inputType),
+      'prevInputType': serializer.toJson<String?>(prevInputType),
       'isStarred': serializer.toJson<bool>(isStarred),
       'starredAt': serializer.toJson<int?>(starredAt),
       'heatmapLabel': serializer.toJson<String?>(heatmapLabel),
@@ -552,6 +591,7 @@ class Metric extends DataClass implements Insertable<Metric> {
     String? key,
     String? title,
     String? inputType,
+    Value<String?> prevInputType = const Value.absent(),
     bool? isStarred,
     Value<int?> starredAt = const Value.absent(),
     Value<String?> heatmapLabel = const Value.absent(),
@@ -568,6 +608,9 @@ class Metric extends DataClass implements Insertable<Metric> {
     key: key ?? this.key,
     title: title ?? this.title,
     inputType: inputType ?? this.inputType,
+    prevInputType: prevInputType.present
+        ? prevInputType.value
+        : this.prevInputType,
     isStarred: isStarred ?? this.isStarred,
     starredAt: starredAt.present ? starredAt.value : this.starredAt,
     heatmapLabel: heatmapLabel.present ? heatmapLabel.value : this.heatmapLabel,
@@ -586,6 +629,9 @@ class Metric extends DataClass implements Insertable<Metric> {
       key: data.key.present ? data.key.value : this.key,
       title: data.title.present ? data.title.value : this.title,
       inputType: data.inputType.present ? data.inputType.value : this.inputType,
+      prevInputType: data.prevInputType.present
+          ? data.prevInputType.value
+          : this.prevInputType,
       isStarred: data.isStarred.present ? data.isStarred.value : this.isStarred,
       starredAt: data.starredAt.present ? data.starredAt.value : this.starredAt,
       heatmapLabel: data.heatmapLabel.present
@@ -615,6 +661,7 @@ class Metric extends DataClass implements Insertable<Metric> {
           ..write('key: $key, ')
           ..write('title: $title, ')
           ..write('inputType: $inputType, ')
+          ..write('prevInputType: $prevInputType, ')
           ..write('isStarred: $isStarred, ')
           ..write('starredAt: $starredAt, ')
           ..write('heatmapLabel: $heatmapLabel, ')
@@ -636,6 +683,7 @@ class Metric extends DataClass implements Insertable<Metric> {
     key,
     title,
     inputType,
+    prevInputType,
     isStarred,
     starredAt,
     heatmapLabel,
@@ -656,6 +704,7 @@ class Metric extends DataClass implements Insertable<Metric> {
           other.key == this.key &&
           other.title == this.title &&
           other.inputType == this.inputType &&
+          other.prevInputType == this.prevInputType &&
           other.isStarred == this.isStarred &&
           other.starredAt == this.starredAt &&
           other.heatmapLabel == this.heatmapLabel &&
@@ -674,6 +723,7 @@ class MetricsCompanion extends UpdateCompanion<Metric> {
   final Value<String> key;
   final Value<String> title;
   final Value<String> inputType;
+  final Value<String?> prevInputType;
   final Value<bool> isStarred;
   final Value<int?> starredAt;
   final Value<String?> heatmapLabel;
@@ -690,6 +740,7 @@ class MetricsCompanion extends UpdateCompanion<Metric> {
     this.key = const Value.absent(),
     this.title = const Value.absent(),
     this.inputType = const Value.absent(),
+    this.prevInputType = const Value.absent(),
     this.isStarred = const Value.absent(),
     this.starredAt = const Value.absent(),
     this.heatmapLabel = const Value.absent(),
@@ -707,6 +758,7 @@ class MetricsCompanion extends UpdateCompanion<Metric> {
     required String key,
     required String title,
     required String inputType,
+    this.prevInputType = const Value.absent(),
     this.isStarred = const Value.absent(),
     this.starredAt = const Value.absent(),
     this.heatmapLabel = const Value.absent(),
@@ -728,6 +780,7 @@ class MetricsCompanion extends UpdateCompanion<Metric> {
     Expression<String>? key,
     Expression<String>? title,
     Expression<String>? inputType,
+    Expression<String>? prevInputType,
     Expression<bool>? isStarred,
     Expression<int>? starredAt,
     Expression<String>? heatmapLabel,
@@ -745,6 +798,7 @@ class MetricsCompanion extends UpdateCompanion<Metric> {
       if (key != null) 'key': key,
       if (title != null) 'title': title,
       if (inputType != null) 'input_type': inputType,
+      if (prevInputType != null) 'prev_input_type': prevInputType,
       if (isStarred != null) 'is_starred': isStarred,
       if (starredAt != null) 'starred_at': starredAt,
       if (heatmapLabel != null) 'heatmap_label': heatmapLabel,
@@ -764,6 +818,7 @@ class MetricsCompanion extends UpdateCompanion<Metric> {
     Value<String>? key,
     Value<String>? title,
     Value<String>? inputType,
+    Value<String?>? prevInputType,
     Value<bool>? isStarred,
     Value<int?>? starredAt,
     Value<String?>? heatmapLabel,
@@ -781,6 +836,7 @@ class MetricsCompanion extends UpdateCompanion<Metric> {
       key: key ?? this.key,
       title: title ?? this.title,
       inputType: inputType ?? this.inputType,
+      prevInputType: prevInputType ?? this.prevInputType,
       isStarred: isStarred ?? this.isStarred,
       starredAt: starredAt ?? this.starredAt,
       heatmapLabel: heatmapLabel ?? this.heatmapLabel,
@@ -811,6 +867,9 @@ class MetricsCompanion extends UpdateCompanion<Metric> {
     }
     if (inputType.present) {
       map['input_type'] = Variable<String>(inputType.value);
+    }
+    if (prevInputType.present) {
+      map['prev_input_type'] = Variable<String>(prevInputType.value);
     }
     if (isStarred.present) {
       map['is_starred'] = Variable<bool>(isStarred.value);
@@ -853,6 +912,7 @@ class MetricsCompanion extends UpdateCompanion<Metric> {
           ..write('key: $key, ')
           ..write('title: $title, ')
           ..write('inputType: $inputType, ')
+          ..write('prevInputType: $prevInputType, ')
           ..write('isStarred: $isStarred, ')
           ..write('starredAt: $starredAt, ')
           ..write('heatmapLabel: $heatmapLabel, ')
@@ -3419,6 +3479,7 @@ typedef $$MetricsTableCreateCompanionBuilder =
       required String key,
       required String title,
       required String inputType,
+      Value<String?> prevInputType,
       Value<bool> isStarred,
       Value<int?> starredAt,
       Value<String?> heatmapLabel,
@@ -3437,6 +3498,7 @@ typedef $$MetricsTableUpdateCompanionBuilder =
       Value<String> key,
       Value<String> title,
       Value<String> inputType,
+      Value<String?> prevInputType,
       Value<bool> isStarred,
       Value<int?> starredAt,
       Value<String?> heatmapLabel,
@@ -3534,6 +3596,11 @@ class $$MetricsTableFilterComposer
 
   ColumnFilters<String> get inputType => $composableBuilder(
     column: $table.inputType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get prevInputType => $composableBuilder(
+    column: $table.prevInputType,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3690,6 +3757,11 @@ class $$MetricsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get prevInputType => $composableBuilder(
+    column: $table.prevInputType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isStarred => $composableBuilder(
     column: $table.isStarred,
     builder: (column) => ColumnOrderings(column),
@@ -3784,6 +3856,11 @@ class $$MetricsTableAnnotationComposer
 
   GeneratedColumn<String> get inputType =>
       $composableBuilder(column: $table.inputType, builder: (column) => column);
+
+  GeneratedColumn<String> get prevInputType => $composableBuilder(
+    column: $table.prevInputType,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<bool> get isStarred =>
       $composableBuilder(column: $table.isStarred, builder: (column) => column);
@@ -3934,6 +4011,7 @@ class $$MetricsTableTableManager
                 Value<String> key = const Value.absent(),
                 Value<String> title = const Value.absent(),
                 Value<String> inputType = const Value.absent(),
+                Value<String?> prevInputType = const Value.absent(),
                 Value<bool> isStarred = const Value.absent(),
                 Value<int?> starredAt = const Value.absent(),
                 Value<String?> heatmapLabel = const Value.absent(),
@@ -3950,6 +4028,7 @@ class $$MetricsTableTableManager
                 key: key,
                 title: title,
                 inputType: inputType,
+                prevInputType: prevInputType,
                 isStarred: isStarred,
                 starredAt: starredAt,
                 heatmapLabel: heatmapLabel,
@@ -3968,6 +4047,7 @@ class $$MetricsTableTableManager
                 required String key,
                 required String title,
                 required String inputType,
+                Value<String?> prevInputType = const Value.absent(),
                 Value<bool> isStarred = const Value.absent(),
                 Value<int?> starredAt = const Value.absent(),
                 Value<String?> heatmapLabel = const Value.absent(),
@@ -3984,6 +4064,7 @@ class $$MetricsTableTableManager
                 key: key,
                 title: title,
                 inputType: inputType,
+                prevInputType: prevInputType,
                 isStarred: isStarred,
                 starredAt: starredAt,
                 heatmapLabel: heatmapLabel,
