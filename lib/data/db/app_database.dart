@@ -21,7 +21,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -43,6 +43,11 @@ class AppDatabase extends _$AppDatabase {
       if (from < 3) {
         // Promotion memory for drop-grouped leaves (demote-on-detach fix).
         await m.addColumn(metrics, metrics.prevInputType);
+      }
+      if (from < 4) {
+        // Repair cards damaged by pre-v3 promotions (no prev_input_type
+        // memory existed): restore core types from the seed definitions.
+        await repairCorruptedCoreTypes();
       }
     },
     beforeOpen: (details) async {
@@ -71,6 +76,36 @@ class AppDatabase extends _$AppDatabase {
         updatedAt: Value(DateTime.now().millisecondsSinceEpoch),
       ),
     );
+  }
+
+  /// v4 repair: a leaf promoted to composite BEFORE v3 carries no
+  /// prev_input_type, so demote-on-detach cannot restore it. Core metric
+  /// types are known from the seed — childless composites are restored
+  /// outright; composites that still hold children keep working as groups
+  /// but get their seed type written into prev_input_type so the next
+  /// detach restores them.
+  Future<void> repairCorruptedCoreTypes() async {
+    for (final seed in seedMetrics) {
+      if (seed.inputType == 'composite') continue; // development is natural
+      final row = await (select(metrics)
+            ..where((m) => m.key.equals(seed.key)))
+          .getSingleOrNull();
+      if (row == null || row.inputType != 'composite') continue;
+      final childCount = metrics.id.count();
+      final children = await (selectOnly(metrics)
+            ..addColumns([childCount])
+            ..where(metrics.parentId.equals(row.id)))
+          .getSingle();
+      final hasChildren = (children.read(childCount) ?? 0) > 0;
+      await (update(metrics)..where((m) => m.id.equals(row.id))).write(
+        hasChildren
+            ? MetricsCompanion(prevInputType: Value(seed.inputType))
+            : MetricsCompanion(
+                inputType: Value(seed.inputType),
+                prevInputType: const Value(null),
+              ),
+      );
+    }
   }
 
   /// CR-2 v2 migration body, exposed for tests.
