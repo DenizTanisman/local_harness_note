@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/db/app_database.dart';
 import '../../../theme/app_tokens.dart';
-import '../../money/money_card_body.dart';
+import '../../shell/tab_index.dart';
 import '../home_providers.dart';
 import 'composite_body.dart';
 import 'input_bodies.dart';
@@ -111,7 +111,10 @@ class MetricCard extends ConsumerWidget {
       case 'composite':
         return CompositeBody(metric: metric, dayEntries: dayEntries);
       case 'money':
-        return const MoneyCardBody();
+        // CR-3: money input lives in the dashboard's Quick money card and
+        // the Money tab; here it's a read-only deep link, so there is only
+        // ever one money form on screen.
+        return const _MoneyDeepLink();
       default:
         return Text('Unsupported input type: ${metric.inputType}');
     }
@@ -207,6 +210,24 @@ class _StarLabelDialogState extends State<_StarLabelDialog> {
           child: const Text('Star'),
         ),
       ],
+    );
+  }
+}
+
+/// Read-only money row inside the Daily Check-in (CR-3): the money form
+/// lives in the dashboard and the Money tab, so this only deep-links.
+class _MoneyDeepLink extends ConsumerWidget {
+  const _MoneyDeepLink();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: TextButton.icon(
+        onPressed: () => ref.read(tabIndexProvider.notifier).goTo(AppTab.money),
+        icon: const Icon(Icons.open_in_new, size: 18),
+        label: const Text('Open Money'),
+      ),
     );
   }
 }
