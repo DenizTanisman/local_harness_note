@@ -560,3 +560,11 @@ Sonraki fazlar için aynı kalıp: "Faz N'i uygula, kabul kriterleri Bölüm 12 
 - **Analysis (§7):** DEĞİŞMEDİ — yalnızca index 1'e taşındı; money döküm satırı salt-okunur.
 - **Güvenlik (§14):** Sağlık/finans değerleri log/analytics'e ASLA yazılmaz (statik tarama testi); FLAG_SECURE app-wide (Money & Health) opsiyonel, varsayılan kapalı; SQLCipher korunur.
 - **Kapsam dışı (bu turda):** P4 Health Connect canlı çekme — HealthRepository arayüzü hazır, gerçek pull ertelendi.
+## CR-3 sonrası UI/davranış rötuşları (2026-06-13)
+
+- Settings/Export: hamburger kaldırıldı; her sekmenin AppBar'ında sabit dişli ikonu.
+- Programs sparkline dokunması program ADINI gösterir.
+- Daily Check-in money satırı: "Spent today: N ₺" salt-okunur özet (Money sekmesine dokunma korunur).
+- Money giriş formu yalnızca Overview alt-sekmesinde.
+- Birleşik tarih/ay bileşeni (PeriodBar): Main/Analysis/Detail (gün) ve Money/Sport (ay) aynı görünüm/yer; gün sayfalarında gelecek kapalı, "Today/This month" reset.
+- **Gün-sonu-0 kuralı:** Daily Check-in'de girilmeyen değerler ısı haritasında 0 kabul edilir (Waste/checkbox = NO = 0 seçenek). Boş günler artık boş hücre değil, kendi 0-bucket rengiyle dolar. (CR1-C'nin "boş ≠ 0" notu bu kararla geçersiz.)
