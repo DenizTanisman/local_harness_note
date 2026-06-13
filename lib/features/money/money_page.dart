@@ -1,19 +1,23 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/secure_window.dart';
-import '../../theme/app_tokens.dart';
 import '../../data/db/app_database.dart';
+import '../../data/db/database_provider.dart';
 import '../../data/repositories/analysis_repository.dart' show formatAmount;
 import '../../data/repositories/money_repository.dart';
-import '../analysis/analysis_providers.dart';
-import '../settings/settings_providers.dart';
+import '../../theme/app_tokens.dart';
 import '../../theme/glow_background.dart';
-import '../shared/calendar_row.dart';
+import '../home/home_providers.dart';
+import '../settings/settings_providers.dart';
 import '../shared/continuous_sparkline.dart';
+import 'category_donut.dart';
+import 'money_card_body.dart';
 import 'money_providers.dart';
 
-/// Money page (spec 6.5): calendar + General / Monthly switch.
+/// Money tab (CR-3 §4): shared entry form on top, then a tap-only inner
+/// nav (Overview / Transactions / Categories). Global swipe stays free.
 class MoneyPage extends ConsumerStatefulWidget {
   const MoneyPage({super.key});
 
@@ -21,8 +25,10 @@ class MoneyPage extends ConsumerStatefulWidget {
   ConsumerState<MoneyPage> createState() => _MoneyPageState();
 }
 
+enum _MoneyView { overview, transactions, categories }
+
 class _MoneyPageState extends ConsumerState<MoneyPage> {
-  bool _monthly = false;
+  _MoneyView _view = _MoneyView.overview;
   bool _secured = false;
 
   @override
@@ -46,27 +52,70 @@ class _MoneyPageState extends ConsumerState<MoneyPage> {
 
   @override
   Widget build(BuildContext context) {
+    final month = ref.watch(moneyMonthProvider);
+    final date = ref.watch(homeDateProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Money')),
       body: GlowBackground(
         child: ListView(
+          padding: const EdgeInsets.only(bottom: 24),
           children: [
-            const CalendarRow(),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: SegmentedButton<bool>(
-                segments: const [
-                  ButtonSegment(value: false, label: Text('General')),
-                  ButtonSegment(value: true, label: Text('Monthly')),
-                ],
-                selected: {_monthly},
-                onSelectionChanged: (selection) =>
-                    setState(() => _monthly = selection.first),
+            // Shared entry form (writes at the active date, with the
+            // outcome reminder flow — spec §6.2).
+            Card(
+              margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                child: MoneyCardBody(key: ValueKey('money-tab-form-$date')),
               ),
             ),
-            const SizedBox(height: 12),
-            if (_monthly) const _MonthlyView() else const _GeneralView(),
-            const SizedBox(height: 24),
+            // Month selector for the views below.
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.chevron_left),
+                    onPressed: () =>
+                        ref.read(moneyMonthProvider.notifier).shift(-1),
+                  ),
+                  Text(month, style: Theme.of(context).textTheme.titleMedium),
+                  IconButton(
+                    icon: const Icon(Icons.chevron_right),
+                    onPressed: () =>
+                        ref.read(moneyMonthProvider.notifier).shift(1),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: SegmentedButton<_MoneyView>(
+                segments: const [
+                  ButtonSegment(
+                    value: _MoneyView.overview,
+                    label: Text('Overview'),
+                  ),
+                  ButtonSegment(
+                    value: _MoneyView.transactions,
+                    label: Text('Transactions'),
+                  ),
+                  ButtonSegment(
+                    value: _MoneyView.categories,
+                    label: Text('Categories'),
+                  ),
+                ],
+                selected: {_view},
+                onSelectionChanged: (s) => setState(() => _view = s.first),
+              ),
+            ),
+            const SizedBox(height: 8),
+            switch (_view) {
+              _MoneyView.overview => const _OverviewSection(),
+              _MoneyView.transactions => const _TransactionsSection(),
+              _MoneyView.categories => const _CategoriesSection(),
+            },
           ],
         ),
       ),
@@ -74,40 +123,46 @@ class _MoneyPageState extends ConsumerState<MoneyPage> {
   }
 }
 
-// ---------------------------------------------------------------- General
+// ----------------------------------------------------------------- Overview
 
-class _GeneralView extends ConsumerWidget {
-  const _GeneralView();
+class _OverviewSection extends ConsumerWidget {
+  const _OverviewSection();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final general = ref.watch(moneyGeneralProvider);
-    final date = ref.watch(selectedDateProvider);
+    final month = ref.watch(moneyMonthProvider);
+    final general = ref.watch(moneyGeneralByMonthProvider(month));
     return general.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Text('Error: $e'),
+      error: (e, _) =>
+          Padding(padding: const EdgeInsets.all(16), child: Text('Error: $e')),
       data: (data) {
-        final incomeTotal = data.income.fold<double>(
-          0,
-          (acc, c) => acc + c.total,
-        );
+        final balance = monthBalance(data);
+        final incomeTotal = data.income.fold<double>(0, (a, c) => a + c.total);
         final outcomeTotal = data.outcome.fold<double>(
           0,
-          (acc, c) => acc + c.total,
+          (a, c) => a + c.total,
         );
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Builder(
-                builder: (context) {
-                  final month = date.substring(0, 7);
-                  final parts = month.split('-').map(int.parse).toList();
-                  final days = DateTime(parts[0], parts[1] + 1, 0).day;
-                  // Same painter as the detail page (CR1-C); only the
-                  // per-day color rule differs: over-budget days are red.
-                  return KeyedSubtree(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(
+                'Balance: ${balance >= 0 ? '+' : '−'}'
+                '${formatAmount(balance.abs())} ₺',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ),
+            // Red/green daily-budget sparkline (spec §6.5 General, kept as
+            // an Overview sub-view per CR-3 §4).
+            Builder(
+              builder: (context) {
+                final parts = month.split('-').map(int.parse).toList();
+                final days = DateTime(parts[0], parts[1] + 1, 0).day;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: KeyedSubtree(
                     key: const ValueKey('money-sparkline'),
                     child: ContinuousSparkline(
                       daysInMonth: days,
@@ -116,26 +171,22 @@ class _GeneralView extends ConsumerWidget {
                           e.key: e.value.luxury,
                       },
                       dayColors: moneyDayColors(days, data),
-                      lineColor: _MoneyColors.green,
-                      selectedDay: int.parse(date.substring(8)),
-                      onDayTap: (day) {
-                        ref
-                            .read(selectedDateProvider.notifier)
-                            .select('$month-${day.toString().padLeft(2, '0')}');
-                      },
+                      lineColor: AppTokens.moneyGreen,
+                      selectedDay: 1,
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
               child: Text(
-                'Daily budget: ${formatAmount(data.dailyBudget)} TL '
-                '(red dot = luxury above budget)',
+                'Daily budget: ${formatAmount(data.dailyBudget)} ₺ '
+                '(red = luxury above budget)',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
+            CategoryDonut(categories: data.outcome),
             _CategoryBlock(
               key: const ValueKey('income-block'),
               title: 'Income: ${formatAmount(incomeTotal)}',
@@ -153,8 +204,8 @@ class _GeneralView extends ConsumerWidget {
   }
 }
 
-/// 'Income: 15.000' header with '> Scholarship: 15.000' children and
-/// '>> Bill (home): 2.000' subtype breakdown (spec 6.5).
+/// Collapsible Income/Outcome breakdown (CR1-A style): category total with
+/// a 'Bill (home)' subtype breakdown underneath.
 class _CategoryBlock extends StatelessWidget {
   const _CategoryBlock({
     super.key,
@@ -198,34 +249,18 @@ class _CategoryBlock extends StatelessWidget {
   }
 }
 
-/// Per-day line colors for the Money sparkline: red when the day's
-/// luxury spend exceeds the daily budget (spec 6.5), green otherwise.
-/// Index 0 unused; 1..N are days.
-List<Color> moneyDayColors(int daysInMonth, MoneyGeneral general) => [
-  _MoneyColors.green,
-  for (var day = 1; day <= daysInMonth; day++)
-    (general.days[day]?.overBudget ?? false)
-        ? _MoneyColors.red
-        : _MoneyColors.green,
-];
+// ------------------------------------------------------------- Transactions
 
-class _MoneyColors {
-  static const red = AppTokens.moneyRed;
-  static const green = AppTokens.moneyGreen;
-}
-
-// ---------------------------------------------------------------- Monthly
-
-class _MonthlyView extends ConsumerWidget {
-  const _MonthlyView();
+class _TransactionsSection extends ConsumerWidget {
+  const _TransactionsSection();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final table = ref.watch(monthlyTableProvider);
-    final theme = Theme.of(context);
-    return table.when(
+    final txs = ref.watch(moneyTabTransactionsProvider);
+    return txs.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Text('Error: $e'),
+      error: (e, _) =>
+          Padding(padding: const EdgeInsets.all(16), child: Text('Error: $e')),
       data: (rows) {
         if (rows.isEmpty) {
           return const Padding(
@@ -234,91 +269,35 @@ class _MonthlyView extends ConsumerWidget {
           );
         }
         return Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text('Income', style: theme.textTheme.labelLarge),
-                  ),
-                  SizedBox(
-                    width: 56,
-                    child: Center(
-                      child: Text('Date', style: theme.textTheme.labelLarge),
-                    ),
-                  ),
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: Text('Outcome', style: theme.textTheme.labelLarge),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            for (final row in rows) _MonthlyRowTile(row: row),
-          ],
+          children: [for (final tx in rows) _TransactionTile(tx: tx)],
         );
       },
     );
   }
 }
 
-class _MonthlyRowTile extends ConsumerWidget {
-  const _MonthlyRowTile({required this.row});
+class _TransactionTile extends ConsumerWidget {
+  const _TransactionTile({required this.tx});
 
-  final MonthlyTableRow row;
+  final Transaction tx;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-
-    Widget cell(Transaction? tx, {required bool alignEnd}) {
-      if (tx == null) return const Expanded(child: SizedBox.shrink());
-      return Expanded(
-        child: InkWell(
-          onLongPress: () => _editOrDelete(context, ref, tx),
-          child: Column(
-            crossAxisAlignment: alignEnd
-                ? CrossAxisAlignment.end
-                : CrossAxisAlignment.start,
-            children: [
-              Text(displayCategory(tx), style: theme.textTheme.bodyMedium),
-              Text(formatAmount(tx.amount), style: theme.textTheme.bodySmall),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          cell(row.income, alignEnd: false),
-          SizedBox(
-            width: 56,
-            child: Center(
-              child: Text(
-                row.date.substring(8),
-                style: theme.textTheme.bodyMedium,
-              ),
-            ),
-          ),
-          cell(row.outcome, alignEnd: true),
-        ],
+    final income = tx.direction == 'income';
+    final color = income ? AppTokens.moneyGreen : AppTokens.danger;
+    return ListTile(
+      leading: Icon(income ? Icons.south_west : Icons.north_east, color: color),
+      title: Text(displayCategory(tx)),
+      subtitle: Text(tx.date),
+      trailing: Text(
+        '${income ? '+' : '−'}${formatAmount(tx.amount)} ₺',
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(color: color),
       ),
+      onLongPress: () => _editOrDelete(context, ref),
     );
   }
 
-  Future<void> _editOrDelete(
-    BuildContext context,
-    WidgetRef ref,
-    Transaction tx,
-  ) async {
+  Future<void> _editOrDelete(BuildContext context, WidgetRef ref) async {
     final action = await showModalBottomSheet<String>(
       context: context,
       builder: (context) => SafeArea(
@@ -420,3 +399,150 @@ class _EditTransactionDialogState extends State<_EditTransactionDialog> {
     );
   }
 }
+
+// -------------------------------------------------------------- Categories
+
+class _CategoriesSection extends ConsumerWidget {
+  const _CategoriesSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final categories = ref.watch(allMoneyCategoriesProvider);
+    final db = ref.watch(databaseProvider);
+    return categories.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) =>
+          Padding(padding: const EdgeInsets.all(16), child: Text('Error: $e')),
+      data: (rows) {
+        Widget section(String direction, String label) {
+          final items = rows.where((c) => c.direction == direction).toList();
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                child: Row(
+                  children: [
+                    Expanded(child: Text(label)),
+                    TextButton.icon(
+                      onPressed: () => _addCategory(context, ref, direction),
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('Add'),
+                    ),
+                  ],
+                ),
+              ),
+              for (final c in items)
+                ListTile(
+                  title: Text(c.name),
+                  subtitle: direction == 'outcome'
+                      ? Wrap(
+                          spacing: 8,
+                          children: [
+                            FilterChip(
+                              label: const Text('Essential'),
+                              selected: c.isEssential,
+                              onSelected: (v) =>
+                                  (db.update(
+                                    db.moneyCategories,
+                                  )..where((m) => m.id.equals(c.id))).write(
+                                    MoneyCategoriesCompanion(
+                                      isEssential: Value(v),
+                                    ),
+                                  ),
+                            ),
+                            FilterChip(
+                              label: const Text('In heatmap'),
+                              selected: c.countsInHeatmap,
+                              onSelected: (v) =>
+                                  (db.update(
+                                    db.moneyCategories,
+                                  )..where((m) => m.id.equals(c.id))).write(
+                                    MoneyCategoriesCompanion(
+                                      countsInHeatmap: Value(v),
+                                    ),
+                                  ),
+                            ),
+                          ],
+                        )
+                      : null,
+                ),
+            ],
+          );
+        }
+
+        return Column(
+          children: [
+            section('outcome', 'Outcome categories'),
+            const Divider(),
+            section('income', 'Income categories'),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _addCategory(
+    BuildContext context,
+    WidgetRef ref,
+    String direction,
+  ) async {
+    final name = await showDialog<String>(
+      context: context,
+      builder: (context) => const _NewCategoryDialog(),
+    );
+    if (name != null && name.trim().isNotEmpty) {
+      await ref.read(moneyRepositoryProvider).addCategory(direction, name);
+    }
+  }
+}
+
+class _NewCategoryDialog extends StatefulWidget {
+  const _NewCategoryDialog();
+
+  @override
+  State<_NewCategoryDialog> createState() => _NewCategoryDialogState();
+}
+
+class _NewCategoryDialogState extends State<_NewCategoryDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('New category'),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        decoration: const InputDecoration(labelText: 'Name'),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, _controller.text),
+          child: const Text('Add'),
+        ),
+      ],
+    );
+  }
+}
+
+/// Per-day line colors for the Money budget sparkline (spec §6.5): red when
+/// the day's luxury spend exceeds the daily budget, green otherwise.
+/// Index 0 unused; 1..N are days. Used by the Overview chart and tests.
+List<Color> moneyDayColors(int daysInMonth, MoneyGeneral general) => [
+  AppTokens.moneyGreen,
+  for (var day = 1; day <= daysInMonth; day++)
+    (general.days[day]?.overBudget ?? false)
+        ? AppTokens.moneyRed
+        : AppTokens.moneyGreen,
+];

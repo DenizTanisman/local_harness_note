@@ -94,13 +94,11 @@ void main() {
     await closeApp(tester);
   });
 
-  testWidgets('General view shows category totals with subtype breakdown', (
+  testWidgets('Overview shows category totals with subtype breakdown', (
     tester,
   ) async {
     final money = MoneyRepository(db);
-    final month = dateKey(
-      DateTime.now().subtract(const Duration(days: 1)),
-    ).substring(0, 7);
+    final month = dateKey(DateTime.now()).substring(0, 7);
     await money.addTransaction(
       date: '$month-01',
       direction: 'income',
@@ -133,11 +131,9 @@ void main() {
     await closeApp(tester);
   });
 
-  testWidgets('Monthly table lists only dates with entries', (tester) async {
+  testWidgets('Transactions sub-tab lists the month entries', (tester) async {
     final money = MoneyRepository(db);
-    final month = dateKey(
-      DateTime.now().subtract(const Duration(days: 1)),
-    ).substring(0, 7);
+    final month = dateKey(DateTime.now()).substring(0, 7);
     await money.addTransaction(
       date: '$month-05',
       direction: 'outcome',
@@ -146,13 +142,11 @@ void main() {
     );
 
     await pump(tester, const MoneyPage());
-    await tester.tap(find.text('Monthly'));
+    await tester.tap(find.text('Transactions'));
     await tester.pumpAndSettle();
 
     expect(find.text('Food'), findsOneWidget);
-    expect(find.text('05'), findsOneWidget);
-    // Only one data row (header + 1).
-    expect(find.text('100'), findsOneWidget);
+    expect(find.text('−100 ₺'), findsOneWidget);
     await closeApp(tester);
   });
 }

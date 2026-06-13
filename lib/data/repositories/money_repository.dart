@@ -98,6 +98,17 @@ class MoneyRepository {
 
   // ---------- transactions ----------
 
+  /// Flat list of [month]'s transactions, newest first (CR-3 §4 İşlemler).
+  Stream<List<Transaction>> watchTransactions(String month) {
+    final query = db.select(db.transactions)
+      ..where((t) => t.date.like('$month-%'))
+      ..orderBy([
+        (t) => OrderingTerm.desc(t.date),
+        (t) => OrderingTerm.desc(t.createdAt),
+      ]);
+    return query.watch();
+  }
+
   /// Saves a transaction; for outcomes, [reminderOffsets] (days before the
   /// transaction date, 0–3 each) queue local reminders (spec 6.2).
   Future<int> addTransaction({
