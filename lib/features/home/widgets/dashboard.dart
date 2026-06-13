@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/repositories/analysis_repository.dart' show formatAmount;
+import '../../../data/repositories/screen_time_repository.dart'
+    show formatMinutes;
 import '../../money/money_card_body.dart';
 import '../../money/money_providers.dart';
+import '../../screentime/screentime_providers.dart';
 import '../../shell/tab_index.dart';
 import '../home_providers.dart';
 
@@ -73,6 +76,21 @@ class TodaySummaryCard extends ConsumerWidget {
             label: 'Sleep',
             value: '—',
             onTap: () => goTo(AppTab.health),
+          ),
+          // Screen time (CR-4 §3.2): glanceable total → Health.
+          Consumer(
+            builder: (context, ref, _) {
+              final st = ref.watch(todayScreenTimeProvider).value;
+              final value = st == null || st.isEmpty
+                  ? '—'
+                  : '${formatMinutes(st.totalMinutes)} (~)';
+              return _SummaryRow(
+                icon: Icons.phone_android,
+                label: 'Screen time',
+                value: value,
+                onTap: () => goTo(AppTab.health),
+              );
+            },
           ),
           const SizedBox(height: 6),
         ],
