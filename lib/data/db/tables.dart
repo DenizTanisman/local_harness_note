@@ -191,3 +191,79 @@ class SyncState extends Table {
   @override
   Set<Column> get primaryKey => {source};
 }
+
+// ----------------------------------------------------------------- CR-3 Sport
+
+/// Autocomplete dictionary of exercise names (CR-3 §12). INSERT OR IGNORE.
+class SavedExerciseTitles extends Table {
+  TextColumn get name => text()();
+
+  @override
+  Set<Column> get primaryKey => {name};
+}
+
+/// Autocomplete dictionary of food types (CR-3 §12). Seeded builtins +
+/// user additions; INSERT OR IGNORE.
+class SavedFoodTypes extends Table {
+  TextColumn get name => text()();
+  BoolColumn get isBuiltin => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {name};
+}
+
+/// Workout programs (CR-3 §13).
+class Programs extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+  IntColumn get createdAt => integer()();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+}
+
+/// Exercise blocks within a program (CR-3 §13). [sets]/[duration]: at least
+/// one non-null, enforced by the app layer. Same [supersetGroup] = a
+/// superset performed [supersetRounds] times together.
+class ProgramExercises extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get programId =>
+      integer().references(Programs, #id, onDelete: KeyAction.cascade)();
+  TextColumn get name => text()();
+  TextColumn get sets => text().nullable()();
+  TextColumn get duration => text().nullable()();
+  BoolColumn get restAfter => boolean().withDefault(const Constant(false))();
+  IntColumn get supersetGroup => integer().nullable()();
+  IntColumn get supersetRounds => integer().nullable()();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+}
+
+/// Per-meal calorie intake entries (CR-3 §13).
+class CalorieEntries extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get date => text()();
+  TextColumn get meal => text().nullable()(); // 'breakfast'|'lunch'|'dinner'
+  RealColumn get kcal =>
+      real().customConstraint('NOT NULL CHECK (kcal >= 0)')();
+  TextColumn get type => text()(); // saved_food_types.name
+  IntColumn get createdAt => integer()();
+}
+
+/// Derived daily calorie total + FROZEN target/color (CR-3 §11). Written
+/// on entry, never recomputed on read.
+class CalorieDay extends Table {
+  TextColumn get date => text()();
+  RealColumn get intake => real().withDefault(const Constant(0))();
+  RealColumn get targetSnapshot => real().nullable()();
+  TextColumn get color => text().nullable()(); // 'green'|'yellow'|'red'|NULL
+
+  @override
+  Set<Column> get primaryKey => {date};
+}
+
+/// Daily program activity for the Programs sparkline (CR-3 §11).
+class ProgramLog extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get date => text()();
+  IntColumn get programId =>
+      integer().references(Programs, #id, onDelete: KeyAction.cascade)();
+  RealColumn get volume => real().withDefault(const Constant(0))();
+}
