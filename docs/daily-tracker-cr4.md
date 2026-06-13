@@ -263,3 +263,8 @@ kolonuyla manuel-override-kazanır kuralını uygula. flutter analyze sıfır uy
 
 ---
 *CR-4, 2026-06-12. Kişisel kullanım; mağaza kısıtı yok. Açık Nokta #1 (yerleşim) onayı beklenir.*
+
+## CR-4 uygulandı (2026-06-13)
+- P0: screen_time_day/app tabloları (v7), buildScreenTimeDay (top-5/total), ScreenTimeSource+UsageStatsSource, izin-korumalı sessiz sync, manifest PACKAGE_USAGE_STATS+QUERY_ALL_PACKAGES, açılışta pull.
+- P1: Health "Digital Wellbeing" (onboarding / toplam + top-5 çubuk, resume'da yeniden dene), Main "Today" ekran süresi satırı + deep link.
+- P2: entries.value_source (v8); Instagram auto-fill (manuel kazanır, auto auto'yu ezer), Settings "Auto-fill Instagram" (varsayılan açık); değerler log/analytics'e yazılmaz.

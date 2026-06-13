@@ -82,10 +82,14 @@ ScreenTimeDayData buildScreenTimeDay(
 /// Stores fetched screen time and reads it back (CR-4 §5/§6). The total is
 /// kept; only the top-5 app rows are persisted (data minimization).
 class ScreenTimeRepository {
-  ScreenTimeRepository(this.db, this.source);
+  ScreenTimeRepository(this.db, this.source, {this.onSynced});
 
   final AppDatabase db;
   final ScreenTimeSource source;
+
+  /// Post-sync hook with the FULL raw usage (CR-4 §3.3 Instagram auto-fill
+  /// needs the measured minutes even when the app is not in the top-5).
+  final Future<void> Function(String date, Map<String, AppUsage> raw)? onSynced;
 
   Future<bool> hasPermission() => source.hasPermission();
   Future<void> openPermissionSettings() => source.openPermissionSettings();
@@ -99,6 +103,7 @@ class ScreenTimeRepository {
     if (raw == null) return null;
     final summary = buildScreenTimeDay(dateKey(d), raw);
     await _store(summary);
+    await onSynced?.call(dateKey(d), raw);
     return summary;
   }
 

@@ -57,6 +57,10 @@ class Entries extends Table {
   TextColumn get date => text()();
   RealColumn get numValue => real().nullable()();
   TextColumn get textValue => text().nullable()();
+
+  /// 'manual' | 'auto' (CR-4 §3.3): a manual edit pins the day so
+  /// screen-time auto-fill never overwrites it again.
+  TextColumn get valueSource => text().withDefault(const Constant('manual'))();
   IntColumn get createdAt => integer()();
   IntColumn get updatedAt => integer()();
 

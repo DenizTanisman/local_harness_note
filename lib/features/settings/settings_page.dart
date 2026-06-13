@@ -100,6 +100,12 @@ class SettingsPage extends ConsumerWidget {
               value: settings['flag_secure'] == 'true',
               onChanged: (on) => repo.set('flag_secure', on.toString()),
             ),
+            SwitchListTile(
+              title: const Text('Auto-fill Instagram from screen time'),
+              subtitle: const Text('Measured minutes; manual edits win'),
+              value: settings['autofill_instagram'] != 'false', // default on
+              onChanged: (on) => repo.set('autofill_instagram', on.toString()),
+            ),
             const Divider(),
             const _SectionHeader('Backup'),
             ListTile(
