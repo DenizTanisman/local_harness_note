@@ -6,6 +6,7 @@ import '../../core/date_key.dart';
 import '../../theme/pill_buttons.dart';
 import '../home/home_providers.dart';
 import '../home/widgets/input_bodies.dart' show parseNum;
+import 'day_money_editor.dart';
 import 'money_providers.dart';
 
 const reminderOptions = [
@@ -77,6 +78,8 @@ class _MoneyCardBodyState extends ConsumerState<MoneyCardBody> {
           ],
         ),
         if (_direction != null) _form(_direction!),
+        // Editable breakdown of what was already entered for the active day.
+        DayMoneyEditor(date: ref.watch(homeDateProvider)),
       ],
     );
   }
