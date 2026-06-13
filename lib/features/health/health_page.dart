@@ -320,31 +320,7 @@ class _VitalsCard extends ConsumerWidget {
             _vital('VO2max', _fmt(vo2, digits: 1)),
             _vital('Steps', _fmt(vitals.steps)),
             _vital('Active kcal', _fmt(vitals.activeKcal)),
-            if (vitals.isEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: OutlinedButton.icon(
-                  key: const ValueKey('health-connect'),
-                  onPressed: () async {
-                    final messenger = ScaffoldMessenger.of(context);
-                    final ok = await ref
-                        .read(healthRepositoryProvider)
-                        .requestAndSync();
-                    ref.invalidate(healthPermissionProvider);
-                    if (!ok) {
-                      messenger.showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Health Connect not available or access denied.',
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.sync),
-                  label: const Text('Connect a data source'),
-                ),
-              ),
+            _HealthConnectArea(hasData: !vitals.isEmpty),
           ],
         ),
       ),
@@ -358,4 +334,106 @@ class _VitalsCard extends ConsumerWidget {
       children: [Text(label), Text(value)],
     ),
   );
+}
+
+/// Connect / sync controls for the fetched-vitals block. Distinguishes
+/// "Health Connect not installed" (offer install), "not connected" (request
+/// access) and "connected but no data today" (offer a manual sync) so the
+/// user isn't left with a single dead button (CR-3 §9 / P4).
+class _HealthConnectArea extends ConsumerWidget {
+  const _HealthConnectArea({required this.hasData});
+
+  final bool hasData;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final granted = ref.watch(healthPermissionProvider).value ?? false;
+    if (granted) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (!hasData)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  'Health Connect bağlı ama bugün için veri yok. '
+                  'Saat/uygulamanın Health Connect ile eşitlendiğinden emin olun.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+            OutlinedButton.icon(
+              key: const ValueKey('health-sync'),
+              onPressed: () => _syncNow(context, ref),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Şimdi senkronize et'),
+            ),
+          ],
+        ),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: OutlinedButton.icon(
+        key: const ValueKey('health-connect'),
+        onPressed: () => _connect(context, ref),
+        icon: const Icon(Icons.sync),
+        label: const Text('Connect a data source'),
+      ),
+    );
+  }
+
+  Future<void> _connect(BuildContext context, WidgetRef ref) async {
+    final repo = ref.read(healthRepositoryProvider);
+    final messenger = ScaffoldMessenger.of(context);
+
+    if (await repo.sensorNeedsInstall()) {
+      if (!context.mounted) return;
+      final go = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Health Connect gerekli'),
+          content: const Text(
+            'Sensör verisini çekmek için Health Connect uygulamasının '
+            'kurulu ve güncel olması gerekir. Mağazaya gidilsin mi?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('İptal'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Kur / Güncelle'),
+            ),
+          ],
+        ),
+      );
+      if (go == true) await repo.installSensor();
+      return;
+    }
+
+    final ok = await repo.requestAndSync();
+    ref.invalidate(healthPermissionProvider);
+    if (!ok) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Erişim verilmedi. Health Connect ayarlarından bu uygulamaya '
+            'izin verdiğinizden emin olun.',
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _syncNow(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    await ref.read(healthRepositoryProvider).sync();
+    ref.invalidate(healthPermissionProvider);
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Senkronize edildi.')),
+    );
+  }
 }

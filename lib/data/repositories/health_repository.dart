@@ -47,6 +47,14 @@ class BodyStats {
 /// Device source of fetched vitals (CR-3 §9 / P4). UI never talks to it.
 abstract class HealthSource {
   Future<bool> isAvailable();
+
+  /// True when Health Connect is missing or too old to use — the UI then
+  /// offers [install] instead of a permission request.
+  Future<bool> needsInstall();
+
+  /// Sends the user to the store to install / update Health Connect.
+  Future<void> install();
+
   Future<bool> hasPermission();
   Future<bool> requestPermission();
 
@@ -141,6 +149,8 @@ class HealthRepository {
   // ---------- sensors (P4 Health Connect) ----------
 
   Future<bool> sensorAvailable() async => source?.isAvailable() ?? false;
+  Future<bool> sensorNeedsInstall() async => source?.needsInstall() ?? false;
+  Future<void> installSensor() async => source?.install();
   Future<bool> sensorPermission() async => source?.hasPermission() ?? false;
 
   /// Requests Health Connect access, then pulls today (or [day]).
