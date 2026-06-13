@@ -9,6 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/money_test_support.dart';
+
 /// CR1-A acceptance: all levels collapsed on first open; Money expands
 /// 3 levels deep; arrow toggles vs title navigation are separate targets.
 void main() {
@@ -22,7 +24,7 @@ void main() {
 
   Widget app({void Function(Metric)? onMetricTap}) {
     container = ProviderContainer(
-      overrides: [databaseProvider.overrideWithValue(db)],
+      overrides: [databaseProvider.overrideWithValue(db), revealAllOverride],
     );
     addTearDown(container.dispose);
     return UncontrolledProviderScope(

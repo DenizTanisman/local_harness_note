@@ -8,6 +8,7 @@ import '../../data/repositories/money_repository.dart';
 import '../home/widgets/input_bodies.dart' show parseNum;
 import 'edit_guard.dart';
 import 'money_providers.dart';
+import 'money_reveal.dart';
 
 /// Password-gated edit (then delete-or-update) of one transaction. Shared by
 /// the day breakdown and the monthly table. New data is never gated — only
@@ -75,29 +76,44 @@ class _DirectionDropdown extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final reveal = ref.watch(moneyRevealProvider);
     final total = rows.fold<double>(0, (a, t) => a + t.amount);
+    final dir = isIncome ? 'income' : 'outcome';
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 2),
       color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
       child: ExpansionTile(
         dense: true,
         tilePadding: const EdgeInsets.symmetric(horizontal: 12),
-        title: Text(
-          '${isIncome ? 'Income' : 'Outcome'}: ${formatAmount(total)} ₺',
+        title: MoneyText(
+          id: 'money-day-$dir-total',
+          prefix: '${isIncome ? 'Income' : 'Outcome'}: ',
+          amount: '${formatAmount(total)} ₺',
           style: theme.textTheme.titleSmall,
         ),
         children: [
           for (final tx in rows)
-            ListTile(
-              dense: true,
-              contentPadding: const EdgeInsets.only(left: 24, right: 12),
-              title: Text(displayCategory(tx)),
-              subtitle: tx.note == null ? null : Text(tx.note!),
-              trailing: Text(
-                '${isIncome ? '+' : '−'}${formatAmount(tx.amount)} ₺',
-                style: theme.textTheme.bodyMedium,
-              ),
-              onTap: () => editTransactionFlow(context, ref, tx),
+            Builder(
+              builder: (context) {
+                final id = 'money-day-tx-${tx.id}';
+                final shown = reveal.shows(id);
+                return ListTile(
+                  dense: true,
+                  contentPadding: const EdgeInsets.only(left: 24, right: 12),
+                  title: Text(displayCategory(tx)),
+                  subtitle: tx.note == null ? null : Text(tx.note!),
+                  trailing: MoneyText(
+                    id: id,
+                    interactive: false,
+                    amount: '${isIncome ? '+' : '−'}${formatAmount(tx.amount)} ₺',
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  // Masked → reveal; revealed → edit. Both password-gated.
+                  onTap: () => shown
+                      ? editTransactionFlow(context, ref, tx)
+                      : revealMoneyFlow(context, ref, id),
+                );
+              },
             ),
         ],
       ),

@@ -6,6 +6,7 @@ import '../../../data/repositories/screen_time_repository.dart'
     show formatMinutes;
 import '../../money/money_card_body.dart';
 import '../../money/money_providers.dart';
+import '../../money/money_reveal.dart';
 import '../../screentime/screentime_providers.dart';
 import '../../shell/tab_index.dart';
 import '../home_providers.dart';
@@ -134,15 +135,20 @@ class BalanceCard extends ConsumerWidget {
     final month = ref.watch(homeDateProvider).substring(0, 7);
     final general = ref.watch(moneyGeneralByMonthProvider(month));
     final balance = general.maybeWhen(data: monthBalance, orElse: () => null);
-    final text = balance == null
-        ? '—'
-        : '${balance >= 0 ? '+' : '−'}${formatAmount(balance.abs())} ₺';
+    final style = Theme.of(context).textTheme.titleMedium;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: ListTile(
         leading: const Icon(Icons.account_balance_wallet_outlined),
         title: const Text('This month'),
-        trailing: Text(text, style: Theme.of(context).textTheme.titleMedium),
+        trailing: balance == null
+            ? Text('—', style: style)
+            : MoneyText(
+                id: 'money-main-balance',
+                amount:
+                    '${balance >= 0 ? '+' : '−'}${formatAmount(balance.abs())} ₺',
+                style: style,
+              ),
         onTap: () => ref.read(tabIndexProvider.notifier).goTo(AppTab.money),
       ),
     );

@@ -5,6 +5,7 @@ import '../../../data/db/app_database.dart';
 import '../../../data/repositories/analysis_repository.dart' show formatAmount;
 import '../../../theme/app_tokens.dart';
 import '../../money/money_providers.dart';
+import '../../money/money_reveal.dart';
 import '../../shell/tab_index.dart';
 import '../home_providers.dart';
 import 'composite_body.dart';
@@ -238,8 +239,9 @@ class _MoneyDeepLink extends ConsumerWidget {
           children: [
             Text('Spent today', style: Theme.of(context).textTheme.bodyMedium),
             const Spacer(),
-            Text(
-              '${formatAmount(total)} ₺',
+            MoneyText(
+              id: 'money-main-spent',
+              amount: '${formatAmount(total)} ₺',
               style: Theme.of(context).textTheme.titleMedium,
             ),
           ],
