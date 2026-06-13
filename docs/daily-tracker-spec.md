@@ -568,3 +568,10 @@ Sonraki fazlar için aynı kalıp: "Faz N'i uygula, kabul kriterleri Bölüm 12 
 - Money giriş formu yalnızca Overview alt-sekmesinde.
 - Birleşik tarih/ay bileşeni (PeriodBar): Main/Analysis/Detail (gün) ve Money/Sport (ay) aynı görünüm/yer; gün sayfalarında gelecek kapalı, "Today/This month" reset.
 - **Gün-sonu-0 kuralı:** Daily Check-in'de girilmeyen değerler ısı haritasında 0 kabul edilir (Waste/checkbox = NO = 0 seçenek). Boş günler artık boş hücre değil, kendi 0-bucket rengiyle dolar. (CR1-C'nin "boş ≠ 0" notu bu kararla geçersiz.)
+## CR-3 P4 uygulandı (2026-06-13) — Health Connect
+
+- HealthSource soyutlaması + HealthConnectSource (health paketi): isAvailable/hasPermission/requestPermission/fetchDay; saf aggregateReadings (RHR/HR ortalama, adım/kalori/uyku toplamı).
+- HealthRepository.sync/storeSamples → health_samples (v5 tablo); açılışta + Connect butonuyla çekim; izin yoksa sessiz atlama.
+- Vitals kartı: gerçek "Connect a data source" (Health Connect izin akışı), VO2max yoksa RHR+yaş fallback (§10), Active kcal satırı.
+- Manifest: health.READ_* izinleri + rationale intent-filter + Android 14 alias + Health Connect paket queries.
+- Cihaz/köprü gerektirir: Huawei saat için GT5→Health Connect köprü uygulaması; veri yoksa kart placeholder kalır.

@@ -1,5 +1,7 @@
 import 'package:drift/drift.dart';
 
+import '../../core/date_key.dart';
+
 import '../db/app_database.dart';
 
 /// Daily fetched vitals (CR-3 §9). All nullable — null means "no data /
@@ -42,13 +44,25 @@ class BodyStats {
   final double? tdeeStatic;
 }
 
-/// DB-backed health profile + body log + sensor reads. The sensor side is
-/// a placeholder until a HealthSource is wired (P4): `vitalsFor` reads
-/// `health_samples`, which stays empty, so the UI shows '—' + Connect.
+/// Device source of fetched vitals (CR-3 §9 / P4). UI never talks to it.
+abstract class HealthSource {
+  Future<bool> isAvailable();
+  Future<bool> hasPermission();
+  Future<bool> requestPermission();
+
+  /// kind → value for [day] ('rhr','hr_day','sleep_min','steps',
+  /// 'active_kcal', 'vo2max'); null when unavailable.
+  Future<Map<String, double>?> fetchDay(DateTime day);
+}
+
+/// DB-backed health profile + body log + sensor reads/sync. With a
+/// [source] wired (P4), `sync` pulls Health Connect into `health_samples`;
+/// without it (or without permission), `vitalsFor` stays empty → '—'.
 class HealthRepository {
-  HealthRepository(this.db);
+  HealthRepository(this.db, {this.source});
 
   final AppDatabase db;
+  final HealthSource? source;
 
   // ---------- profile ----------
 
@@ -124,7 +138,54 @@ class HealthRepository {
         );
   }
 
-  // ---------- sensors (placeholder until P4) ----------
+  // ---------- sensors (P4 Health Connect) ----------
+
+  Future<bool> sensorAvailable() async => source?.isAvailable() ?? false;
+  Future<bool> sensorPermission() async => source?.hasPermission() ?? false;
+
+  /// Requests Health Connect access, then pulls today (or [day]).
+  Future<bool> requestAndSync({DateTime? day}) async {
+    if (source == null) return false;
+    final granted = await source!.requestPermission();
+    if (!granted) return false;
+    await sync(day: day);
+    return true;
+  }
+
+  /// Pulls [day] from the source into health_samples. Silent no-op without
+  /// a source or permission (CR-3 §9).
+  Future<void> sync({DateTime? day}) async {
+    final src = source;
+    if (src == null || !await src.hasPermission()) return;
+    final d = day ?? DateTime.now();
+    final map = await src.fetchDay(d);
+    if (map == null || map.isEmpty) return;
+    await storeSamples(dateKey(d), map, sourceTag: 'health_connect');
+  }
+
+  /// Upserts fetched vitals for a day (testable with any source).
+  Future<void> storeSamples(
+    String date,
+    Map<String, double> values, {
+    String sourceTag = 'health_connect',
+  }) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await db.transaction(() async {
+      for (final entry in values.entries) {
+        await db
+            .into(db.healthSamples)
+            .insertOnConflictUpdate(
+              HealthSamplesCompanion(
+                date: Value(date),
+                kind: Value(entry.key),
+                value: Value(entry.value),
+                source: Value(sourceTag),
+                fetchedAt: Value(now),
+              ),
+            );
+      }
+    });
+  }
 
   Future<DailyVitals> vitalsFor(String date) async {
     final rows = await (db.select(

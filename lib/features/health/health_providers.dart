@@ -5,9 +5,23 @@ import '../../data/db/app_database.dart';
 import '../../data/db/database_provider.dart';
 import '../../data/repositories/health_repository.dart';
 import 'health_calc.dart';
+import 'health_connect_source.dart';
+
+/// Swapped for a fake in tests.
+final healthSourceProvider = Provider<HealthSource>(
+  (ref) => HealthConnectSource(),
+);
 
 final healthRepositoryProvider = Provider<HealthRepository>(
-  (ref) => HealthRepository(ref.watch(databaseProvider)),
+  (ref) => HealthRepository(
+    ref.watch(databaseProvider),
+    source: ref.watch(healthSourceProvider),
+  ),
+);
+
+/// Whether Health Connect access is granted (drives Connect vs data).
+final healthPermissionProvider = FutureProvider<bool>(
+  (ref) => ref.watch(healthRepositoryProvider).sensorPermission(),
 );
 
 final healthProfileProvider = StreamProvider<HealthProfileData?>(

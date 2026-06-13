@@ -288,6 +288,14 @@ class _VitalsCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final vitals = ref.watch(todayVitalsProvider).value ?? const DailyVitals();
+    // VO2max fallback from RHR + age when Health Connect doesn't supply it
+    // (CR-3 §10).
+    final profile = ref.watch(healthProfileProvider).value;
+    final age = HealthCalc.ageOn(profile?.birthDate, DateTime.now());
+    final vo2 =
+        vitals.vo2max ??
+        HealthCalc.vo2maxFallback(age: age, restingHr: vitals.restingHr);
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Padding(
@@ -309,18 +317,30 @@ class _VitalsCard extends ConsumerWidget {
                   : '${(vitals.sleepMin! / 60).floor()}h '
                         '${(vitals.sleepMin! % 60).round()}m',
             ),
-            _vital('VO2max', _fmt(vitals.vo2max, digits: 1)),
+            _vital('VO2max', _fmt(vo2, digits: 1)),
             _vital('Steps', _fmt(vitals.steps)),
+            _vital('Active kcal', _fmt(vitals.activeKcal)),
             if (vitals.isEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: OutlinedButton.icon(
-                  // Health Connect wiring lands in CR3-P4.
-                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Sensor sync arrives in a later update.'),
-                    ),
-                  ),
+                  key: const ValueKey('health-connect'),
+                  onPressed: () async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    final ok = await ref
+                        .read(healthRepositoryProvider)
+                        .requestAndSync();
+                    ref.invalidate(healthPermissionProvider);
+                    if (!ok) {
+                      messenger.showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Health Connect not available or access denied.',
+                          ),
+                        ),
+                      );
+                    }
+                  },
                   icon: const Icon(Icons.sync),
                   label: const Text('Connect a data source'),
                 ),
