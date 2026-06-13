@@ -134,3 +134,60 @@ class AppSettings extends Table {
   @override
   Set<Column> get primaryKey => {key};
 }
+
+// ---------------------------------------------------------------- CR-3 Health
+
+/// Health profile singleton (id always 1) — spec CR-3 §13.
+class HealthProfile extends Table {
+  IntColumn get id => integer().withDefault(const Constant(1))();
+  TextColumn get birthDate => text().nullable()(); // 'YYYY-MM-DD'
+  TextColumn get sex => text().nullable()(); // 'M' | 'F'
+  RealColumn get heightCm => real().nullable()();
+
+  /// 'sedentary' | 'light' | 'moderate' | 'active' | 'very'
+  TextColumn get activityLevel => text().nullable()();
+  IntColumn get updatedAt => integer()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Repeating body measurements; one row per day (CR-3 §13).
+class BodyLog extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get date => text()();
+  RealColumn get weightKg => real().nullable()();
+  RealColumn get bodyFatPct => real().nullable()();
+  IntColumn get createdAt => integer()();
+  IntColumn get updatedAt => integer()();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+    {date},
+  ];
+}
+
+/// Fetched daily sensor summary (CR-3 §13). Empty until a HealthSource is
+/// wired (P4); the UI reads it as placeholders.
+class HealthSamples extends Table {
+  TextColumn get date => text()();
+
+  /// 'rhr'|'hr_day'|'sleep_min'|'sleep_score'|'steps'|'vo2max'|'active_kcal'
+  TextColumn get kind => text()();
+  RealColumn get value => real().nullable()();
+  TextColumn get valueText => text().nullable()(); // e.g. sleep stages JSON
+  TextColumn get source => text()(); // 'health_connect'|'huawei'|'manual'
+  IntColumn get fetchedAt => integer()();
+
+  @override
+  Set<Column> get primaryKey => {date, kind};
+}
+
+/// Last successful pull per source (CR-3 §13).
+class SyncState extends Table {
+  TextColumn get source => text()();
+  IntColumn get lastSync => integer().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {source};
+}

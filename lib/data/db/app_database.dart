@@ -15,13 +15,17 @@ part 'app_database.g.dart';
     MoneyCategories,
     ExpenseReminders,
     AppSettings,
+    HealthProfile,
+    BodyLog,
+    HealthSamples,
+    SyncState,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -48,6 +52,13 @@ class AppDatabase extends _$AppDatabase {
         // Repair cards damaged by pre-v3 promotions (no prev_input_type
         // memory existed): restore core types from the seed definitions.
         await repairCorruptedCoreTypes();
+      }
+      if (from < 5) {
+        // CR-3 Health tables.
+        await m.createTable(healthProfile);
+        await m.createTable(bodyLog);
+        await m.createTable(healthSamples);
+        await m.createTable(syncState);
       }
     },
     beforeOpen: (details) async {
