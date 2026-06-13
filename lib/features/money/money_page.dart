@@ -10,6 +10,7 @@ import '../../theme/app_tokens.dart';
 import '../../theme/glow_background.dart';
 import '../home/home_providers.dart';
 import '../shared/continuous_sparkline.dart';
+import '../shared/period_bar.dart';
 import 'category_donut.dart';
 import 'money_card_body.dart';
 import 'money_providers.dart';
@@ -53,25 +54,14 @@ class _MoneyPageState extends ConsumerState<MoneyPage> {
                   child: MoneyCardBody(key: ValueKey('money-tab-form-$date')),
                 ),
               ),
-            // Month selector for the views below.
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.chevron_left),
-                    onPressed: () =>
-                        ref.read(moneyMonthProvider.notifier).shift(-1),
-                  ),
-                  Text(month, style: Theme.of(context).textTheme.titleMedium),
-                  IconButton(
-                    icon: const Icon(Icons.chevron_right),
-                    onPressed: () =>
-                        ref.read(moneyMonthProvider.notifier).shift(1),
-                  ),
-                ],
-              ),
+            // Unified month selector (CR-3 follow-up #5).
+            PeriodBar(
+              label: month,
+              highlighted: month != currentMonth(),
+              resetLabel: 'This month',
+              onReset: () => ref.read(moneyMonthProvider.notifier).reset(),
+              onPrev: () => ref.read(moneyMonthProvider.notifier).shift(-1),
+              onNext: () => ref.read(moneyMonthProvider.notifier).shift(1),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),

@@ -8,6 +8,7 @@ import '../../theme/app_tokens.dart';
 import '../../theme/glow_background.dart';
 import '../health/health_providers.dart';
 import '../shared/continuous_sparkline.dart';
+import '../shared/period_bar.dart';
 import 'new_program_page.dart';
 import 'sport_providers.dart';
 import '../settings/settings_button.dart';
@@ -29,6 +30,20 @@ class SportPage extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.only(bottom: 24),
           children: [
+            // Unified month selector (CR-3 follow-up #5).
+            Consumer(
+              builder: (context, ref, _) {
+                final month = ref.watch(sportMonthProvider);
+                return PeriodBar(
+                  label: month,
+                  highlighted: month != dateKey(DateTime.now()).substring(0, 7),
+                  resetLabel: 'This month',
+                  onReset: () => ref.read(sportMonthProvider.notifier).reset(),
+                  onPrev: () => ref.read(sportMonthProvider.notifier).shift(-1),
+                  onNext: () => ref.read(sportMonthProvider.notifier).shift(1),
+                );
+              },
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
               child: Row(
