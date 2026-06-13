@@ -14,6 +14,10 @@ class _FakeHealthSource implements HealthSource {
   @override
   Future<bool> isAvailable() async => true;
   @override
+  Future<bool> needsInstall() async => false;
+  @override
+  Future<void> install() async {}
+  @override
   Future<bool> hasPermission() async => granted;
   @override
   Future<bool> requestPermission() async => granted;

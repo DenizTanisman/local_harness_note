@@ -30,9 +30,34 @@ class HealthConnectSource implements HealthSource {
   Future<bool> isAvailable() async {
     try {
       await _ensureConfigured();
-      return _health.isHealthConnectAvailable();
+      return await _health.getHealthConnectSdkStatus() ==
+          HealthConnectSdkStatus.sdkAvailable;
     } on Object {
       return false;
+    }
+  }
+
+  @override
+  Future<bool> needsInstall() async {
+    try {
+      await _ensureConfigured();
+      final status = await _health.getHealthConnectSdkStatus();
+      // Not installed, or installed but too old to use.
+      return status == HealthConnectSdkStatus.sdkUnavailable ||
+          status ==
+              HealthConnectSdkStatus.sdkUnavailableProviderUpdateRequired;
+    } on Object {
+      return true;
+    }
+  }
+
+  @override
+  Future<void> install() async {
+    try {
+      await _ensureConfigured();
+      await _health.installHealthConnect();
+    } on Object {
+      // Best-effort; the UI already told the user what to do.
     }
   }
 
