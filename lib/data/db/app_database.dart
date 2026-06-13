@@ -34,7 +34,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -88,6 +88,11 @@ class AppDatabase extends _$AppDatabase {
       if (from < 8) {
         // CR-4 §3.3 Instagram auto-fill provenance.
         await m.addColumn(entries, entries.valueSource);
+      }
+      if (from < 9) {
+        // Recolor the core heatmap rules to the modern blue scheme and
+        // refresh the Waste option label to 'Energy Waste'.
+        await applyBlueHeatmapRules();
       }
     },
     beforeOpen: (details) async {
@@ -148,6 +153,21 @@ class AppDatabase extends _$AppDatabase {
               ),
       );
     }
+  }
+
+  /// v9 migration body, exposed for tests: rewrite the seeded heatmap rules
+  /// to their current (blue) definitions and rename the Waste option.
+  Future<void> applyBlueHeatmapRules() async {
+    for (final seed in seedMetrics) {
+      if (seed.heatmapRule == null) continue;
+      await (update(metrics)..where((m) => m.key.equals(seed.key))).write(
+        MetricsCompanion(heatmapRule: Value(seed.heatmapRule)),
+      );
+    }
+    await customStatement(
+      "UPDATE metric_options SET label = 'Energy Waste' "
+      "WHERE label = 'Honest energy waste — yes'",
+    );
   }
 
   /// CR-2 v2 migration body, exposed for tests.

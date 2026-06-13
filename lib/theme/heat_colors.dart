@@ -6,11 +6,12 @@ class HeatColors {
   HeatColors._();
 
   static const Map<String, Color> palette = {
-    'black': Color(0xFF161B22),
+    // 0/none → near-black slate; then a modern cyan → azure → indigo ramp.
+    'black': Color(0xFF11151C),
     'white': Color(0xFFE6EDF3),
-    'lightBlue': Color(0xFF79C0FF),
-    'blue': Color(0xFF388BFD),
-    'darkBlue': Color(0xFF1F6FEB),
+    'lightBlue': Color(0xFF56CCF2),
+    'blue': Color(0xFF2F81F7),
+    'darkBlue': Color(0xFF1E40AF),
     'lightYellow': Color(0xFFF8E3A1),
     'yellow': Color(0xFFD4A72C),
     'darkYellow': Color(0xFF9E6A03),

@@ -49,67 +49,67 @@ void main() {
       expect(rule.colorFor(60), 'darkBlue');
     });
 
-    test('Development: filled subcount 0/1/2/3', () {
+    test('Development: filled subcount 0/1/2/3 (blue ramp)', () {
       final rule = _ruleOf('development');
       expect(rule.source, HeatmapSource.filledSubcount);
       expect(rule.colorFor(0), 'black');
-      expect(rule.colorFor(1), 'lightYellow');
-      expect(rule.colorFor(2), 'yellow');
-      expect(rule.colorFor(3), 'darkYellow');
+      expect(rule.colorFor(1), 'lightBlue');
+      expect(rule.colorFor(2), 'blue');
+      expect(rule.colorFor(3), 'darkBlue');
     });
 
     test(
-      'Money: 0-300 darkGreen, 300-600 green, 600-750 lightGreen, 750+ black',
+      'Money: 0 black, 0-300 lightBlue, 300-600 blue, 600+ darkBlue',
       () {
         final rule = _ruleOf('money');
         expect(rule.source, HeatmapSource.txSumHeatmap);
-        expect(rule.colorFor(0), 'darkGreen');
-        expect(rule.colorFor(299), 'darkGreen');
-        expect(rule.colorFor(450), 'green');
-        expect(rule.colorFor(700), 'lightGreen');
-        expect(rule.colorFor(750), 'black');
+        expect(rule.colorFor(0), 'black');
+        expect(rule.colorFor(299), 'lightBlue');
+        expect(rule.colorFor(450), 'blue');
+        expect(rule.colorFor(700), 'darkBlue');
+        expect(rule.colorFor(750), 'darkBlue');
       },
     );
 
-    test('Extra: text exists → orange, else white', () {
+    test('Extra: text exists → blue, else black', () {
       final rule = _ruleOf('extra');
       expect(rule.source, HeatmapSource.textExists);
-      expect(rule.colorFor(0), 'white');
-      expect(rule.colorFor(1), 'orange');
+      expect(rule.colorFor(0), 'black');
+      expect(rule.colorFor(1), 'blue');
     });
 
     test(
-      'Instagram: 0-20 lightPink, 20-30 pink, 30-40 darkPink, 40+ black',
+      'Instagram: 0 black, 0-20 lightBlue, 20-40 blue, 40+ darkBlue',
       () {
         final rule = _ruleOf('instagram');
-        expect(rule.colorFor(10), 'lightPink');
-        expect(rule.colorFor(25), 'pink');
-        expect(rule.colorFor(35), 'darkPink');
-        expect(rule.colorFor(40), 'black');
+        expect(rule.colorFor(0), 'black');
+        expect(rule.colorFor(10), 'lightBlue');
+        expect(rule.colorFor(25), 'blue');
+        expect(rule.colorFor(45), 'darkBlue');
       },
     );
 
-    test('Sport: exactly 0 white, 0-60 blue, 60+ red', () {
+    test('Sport: exactly 0 black, 0-30 lightBlue, 30-60 blue, 60+ darkBlue', () {
       final rule = _ruleOf('sport');
-      expect(rule.colorFor(0), 'white');
-      expect(rule.colorFor(1), 'blue');
-      expect(rule.colorFor(59), 'blue');
-      expect(rule.colorFor(60), 'red');
+      expect(rule.colorFor(0), 'black');
+      expect(rule.colorFor(1), 'lightBlue');
+      expect(rule.colorFor(45), 'blue');
+      expect(rule.colorFor(60), 'darkBlue');
     });
 
-    test('Brushing: 0-1 darkYellow, 2 yellow, 3 white', () {
+    test('Brushing: 0 black, 1 lightBlue, 2 blue, 3 darkBlue', () {
       final rule = _ruleOf('brushing');
       expect(rule.source, HeatmapSource.optionCount);
-      expect(rule.colorFor(0), 'darkYellow');
-      expect(rule.colorFor(1), 'darkYellow');
-      expect(rule.colorFor(2), 'yellow');
-      expect(rule.colorFor(3), 'white');
+      expect(rule.colorFor(0), 'black');
+      expect(rule.colorFor(1), 'lightBlue');
+      expect(rule.colorFor(2), 'blue');
+      expect(rule.colorFor(3), 'darkBlue');
     });
 
-    test('Waste: selected → red, empty → white', () {
+    test('Waste: selected → blue, empty → black', () {
       final rule = _ruleOf('waste');
-      expect(rule.colorFor(0), 'white');
-      expect(rule.colorFor(1), 'red');
+      expect(rule.colorFor(0), 'black');
+      expect(rule.colorFor(1), 'blue');
     });
 
     test('Water: exactly 0 black, 0<x<2 lightBlue, 2-3 blue, 3+ darkBlue', () {

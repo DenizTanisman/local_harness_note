@@ -75,9 +75,9 @@ final List<SeedMetric> seedMetrics = [
     heatmapLabel: 'Development',
     heatmapRule: _rule('filled_subcount', [
       [0, 1, 'black'],
-      [1, 2, 'lightYellow'],
-      [2, 3, 'yellow'],
-      [3, null, 'darkYellow'],
+      [1, 2, 'lightBlue'],
+      [2, 3, 'blue'],
+      [3, null, 'darkBlue'],
     ]),
   ),
   SeedMetric(
@@ -105,11 +105,12 @@ final List<SeedMetric> seedMetrics = [
     unit: 'TL',
     starred: true,
     heatmapLabel: 'Money',
+    // Modern blue ramp: no spend → black; more spend → darker blue.
     heatmapRule: _rule('tx_sum_heatmap', [
-      [0, 300, 'darkGreen'],
-      [300, 600, 'green'],
-      [600, 750, 'lightGreen'],
-      [750, null, 'black'],
+      [0, 0, 'black'],
+      [0, 300, 'lightBlue'],
+      [300, 600, 'blue'],
+      [600, null, 'darkBlue'],
     ]),
   ),
   SeedMetric(
@@ -119,8 +120,8 @@ final List<SeedMetric> seedMetrics = [
     starred: true,
     heatmapLabel: 'Extra',
     heatmapRule: _rule('text_exists', [
-      [0, 1, 'white'],
-      [1, null, 'orange'],
+      [0, 1, 'black'],
+      [1, null, 'blue'],
     ]),
   ),
   SeedMetric(
@@ -131,10 +132,10 @@ final List<SeedMetric> seedMetrics = [
     starred: true,
     heatmapLabel: 'Instagram',
     heatmapRule: _rule('num_value', [
-      [0, 20, 'lightPink'],
-      [20, 30, 'pink'],
-      [30, 40, 'darkPink'],
-      [40, null, 'black'],
+      [0, 0, 'black'],
+      [0, 20, 'lightBlue'],
+      [20, 40, 'blue'],
+      [40, null, 'darkBlue'],
     ]),
   ),
   SeedMetric(
@@ -144,11 +145,12 @@ final List<SeedMetric> seedMetrics = [
     unit: 'min',
     starred: true,
     heatmapLabel: 'Sport',
-    // Degenerate first bucket: exactly 0 → white (spec 5.2).
+    // Degenerate first bucket: exactly 0 → black; then blue ramp.
     heatmapRule: _rule('num_value', [
-      [0, 0, 'white'],
-      [0, 60, 'blue'],
-      [60, null, 'red'],
+      [0, 0, 'black'],
+      [0, 30, 'lightBlue'],
+      [30, 60, 'blue'],
+      [60, null, 'darkBlue'],
     ]),
   ),
   SeedMetric(
@@ -158,9 +160,10 @@ final List<SeedMetric> seedMetrics = [
     starred: true,
     heatmapLabel: 'Brushing',
     heatmapRule: _rule('option_count', [
-      [0, 2, 'darkYellow'],
-      [2, 3, 'yellow'],
-      [3, null, 'white'],
+      [0, 1, 'black'],
+      [1, 2, 'lightBlue'],
+      [2, 3, 'blue'],
+      [3, null, 'darkBlue'],
     ]),
     options: ['Morning', 'Noon', 'Evening'],
   ),
@@ -170,11 +173,12 @@ final List<SeedMetric> seedMetrics = [
     inputType: 'checkbox',
     starred: true,
     heatmapLabel: 'Waste',
+    // Yes/No: not wasted → black, wasted → blue.
     heatmapRule: _rule('option_count', [
-      [0, 1, 'white'],
-      [1, null, 'red'],
+      [0, 1, 'black'],
+      [1, null, 'blue'],
     ]),
-    options: ['Honest energy waste — yes'],
+    options: ['Energy Waste'],
   ),
   SeedMetric(
     key: 'water',
