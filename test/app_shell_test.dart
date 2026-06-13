@@ -52,8 +52,7 @@ void main() {
     await closeApp(tester);
   });
 
-  testWidgets('bottom nav tap switches tabs and stays synced',
-      (tester) async {
+  testWidgets('bottom nav tap switches tabs and stays synced', (tester) async {
     await pump(tester);
 
     await tester.tap(find.text('Analysis').last);
@@ -68,8 +67,9 @@ void main() {
     await closeApp(tester);
   });
 
-  testWidgets('global swipe changes tabs and updates the nav bar',
-      (tester) async {
+  testWidgets('global swipe changes tabs and updates the nav bar', (
+    tester,
+  ) async {
     await pump(tester);
     // Main(2) → swipe left → Health(3).
     await tester.fling(find.byType(PageView), const Offset(-600, 0), 1200);
@@ -93,8 +93,9 @@ void main() {
     await closeApp(tester);
   });
 
-  testWidgets('Analysis preserved at index 1 (heatmap + breakdown render)',
-      (tester) async {
+  testWidgets('Analysis preserved at index 1 (heatmap + breakdown render)', (
+    tester,
+  ) async {
     await pump(tester);
     await tester.tap(find.text('Analysis').last);
     await tester.pumpAndSettle();

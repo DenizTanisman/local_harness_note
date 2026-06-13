@@ -7,10 +7,12 @@ import '../settings/export_import_page.dart';
 import '../settings/settings_page.dart';
 import 'home_providers.dart';
 import 'widgets/add_metric_sheet.dart';
+import 'widgets/dashboard.dart';
 import 'widgets/drag_targets.dart';
 import 'widgets/metric_card.dart';
 
-/// Home (entry) page — spec 6.2.
+/// Main tab (CR-3 §3): dashboard (quick money, today summary, balance)
+/// above the Daily Check-in (the spec §6.2 metric cards).
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
@@ -78,10 +80,21 @@ class HomePage extends ConsumerWidget {
         child: metrics.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Center(child: Text('Error: $e')),
-          data: (rows) => rows.isEmpty
-              ? Center(
+          data: (rows) => ListView(
+            padding: const EdgeInsets.only(top: 4, bottom: 24),
+            children: [
+              // Dashboard (CR-3 §3) — order: quick money → today → balance.
+              const QuickMoneyCard(),
+              const TodaySummaryCard(),
+              const BalanceCard(),
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 16, 16, 4),
+                child: Text('Daily Check-in'),
+              ),
+              if (rows.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(16),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Text('No metrics yet.'),
                       const SizedBox(height: 8),
@@ -93,34 +106,33 @@ class HomePage extends ConsumerWidget {
                     ],
                   ),
                 )
-              : ListView(
-                  padding: const EdgeInsets.only(top: 6, bottom: 24),
-                  children: [
-                    for (var i = 0; i < rows.length; i++) ...[
-                      GapDropTarget(index: i),
-                      DraggableMetricCard(
-                        // Keyed by date too: input controllers must re-seed when
-                        // the active write date changes (CR1-D).
-                        key: ValueKey('metric-card-${rows[i].id}-$date'),
-                        metric: rows[i],
-                        child: MetricCard(
-                          metric: rows[i],
-                          dayEntries: entries.value ?? const {},
-                          selectedOptions: options.value ?? const {},
-                        ),
-                      ),
-                    ],
-                    GapDropTarget(index: rows.length),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
-                      child: OutlinedButton.icon(
-                        onPressed: () => AddMetricSheet.show(context),
-                        icon: const Icon(Icons.add),
-                        label: const Text('ADD'),
-                      ),
+              else ...[
+                for (var i = 0; i < rows.length; i++) ...[
+                  GapDropTarget(index: i),
+                  DraggableMetricCard(
+                    // Keyed by date too: input controllers must re-seed
+                    // when the active write date changes (CR1-D).
+                    key: ValueKey('metric-card-${rows[i].id}-$date'),
+                    metric: rows[i],
+                    child: MetricCard(
+                      metric: rows[i],
+                      dayEntries: entries.value ?? const {},
+                      selectedOptions: options.value ?? const {},
                     ),
-                  ],
+                  ),
+                ],
+                GapDropTarget(index: rows.length),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+                  child: OutlinedButton.icon(
+                    onPressed: () => AddMetricSheet.show(context),
+                    icon: const Icon(Icons.add),
+                    label: const Text('ADD'),
+                  ),
                 ),
+              ],
+            ],
+          ),
         ),
       ),
     );
