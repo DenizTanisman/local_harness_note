@@ -19,13 +19,20 @@ part 'app_database.g.dart';
     BodyLog,
     HealthSamples,
     SyncState,
+    SavedExerciseTitles,
+    SavedFoodTypes,
+    Programs,
+    ProgramExercises,
+    CalorieEntries,
+    CalorieDay,
+    ProgramLog,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -59,6 +66,17 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(bodyLog);
         await m.createTable(healthSamples);
         await m.createTable(syncState);
+      }
+      if (from < 6) {
+        // CR-3 Sport + calorie tables.
+        await m.createTable(savedExerciseTitles);
+        await m.createTable(savedFoodTypes);
+        await m.createTable(programs);
+        await m.createTable(programExercises);
+        await m.createTable(calorieEntries);
+        await m.createTable(calorieDay);
+        await m.createTable(programLog);
+        await _seedFoodTypes();
       }
     },
     beforeOpen: (details) async {
@@ -198,5 +216,20 @@ class AppDatabase extends _$AppDatabase {
         );
       }
     });
+    await _seedFoodTypes();
+  }
+
+  /// Built-in food types (CR-3 §12). Idempotent — safe in onCreate and the
+  /// v6 upgrade.
+  Future<void> _seedFoodTypes() async {
+    for (final name in ['Food', 'FastFood', 'Drink', 'Veg&Fruit']) {
+      await into(savedFoodTypes).insert(
+        SavedFoodTypesCompanion.insert(
+          name: name,
+          isBuiltin: const Value(true),
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+    }
   }
 }
