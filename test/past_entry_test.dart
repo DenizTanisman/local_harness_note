@@ -99,11 +99,11 @@ void main() {
         await pumpHome(tester);
 
         // Today: chip not highlighted, no Today button.
-        expect(find.byKey(const ValueKey('today-button')), findsNothing);
+        expect(find.byKey(const ValueKey('period-reset')), findsNothing);
 
         container.read(homeDateProvider.notifier).select(daysAgo(1));
         await tester.pumpAndSettle();
-        expect(find.byKey(const ValueKey('today-button')), findsOneWidget);
+        expect(find.byKey(const ValueKey('period-reset')), findsOneWidget);
         expect(find.text(daysAgo(1)), findsOneWidget);
 
         final waterField = find.descendant(
@@ -115,9 +115,9 @@ void main() {
         await tester.enterText(waterField, '2');
         await tester.pumpAndSettle();
 
-        await tester.tap(find.byKey(const ValueKey('today-button')));
+        await tester.tap(find.byKey(const ValueKey('period-reset')));
         await tester.pumpAndSettle();
-        expect(find.byKey(const ValueKey('today-button')), findsNothing);
+        expect(find.byKey(const ValueKey('period-reset')), findsNothing);
 
         final reopened = tester.widget<TextField>(
           find.descendant(

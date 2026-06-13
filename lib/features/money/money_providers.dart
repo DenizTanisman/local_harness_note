@@ -53,7 +53,12 @@ class MoneyMonthNotifier extends Notifier<String> {
     state =
         '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}';
   }
+
+  void reset() => state = dateKey(DateTime.now()).substring(0, 7);
 }
+
+/// Current month 'YYYY-MM' (for highlight/reset comparisons).
+String currentMonth() => dateKey(DateTime.now()).substring(0, 7);
 
 final moneyMonthProvider = NotifierProvider<MoneyMonthNotifier, String>(
   MoneyMonthNotifier.new,

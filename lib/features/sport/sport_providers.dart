@@ -27,9 +27,24 @@ final calorieEntriesTodayProvider = StreamProvider<List<CalorieEntry>>(
       .watchCalorieEntries(dateKey(DateTime.now())),
 );
 
-/// The month shown by the Sport sparklines (current month).
-final sportMonthProvider = Provider<String>(
-  (ref) => dateKey(DateTime.now()).substring(0, 7),
+/// The month shown by the Sport sparklines (CR-3 follow-up #5) — own
+/// state, ‹ › navigable, defaults to the current month.
+class SportMonthNotifier extends Notifier<String> {
+  @override
+  String build() => dateKey(DateTime.now()).substring(0, 7);
+
+  void shift(int months) {
+    final parts = state.split('-').map(int.parse).toList();
+    final d = DateTime(parts[0], parts[1] + months, 1);
+    state =
+        '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}';
+  }
+
+  void reset() => state = dateKey(DateTime.now()).substring(0, 7);
+}
+
+final sportMonthProvider = NotifierProvider<SportMonthNotifier, String>(
+  SportMonthNotifier.new,
 );
 
 /// Day-of-month → calorie_day for the sport month (intake + frozen color).

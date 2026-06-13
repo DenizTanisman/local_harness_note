@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/date_key.dart';
 import '../../theme/glow_background.dart';
 import '../settings/settings_button.dart';
+import '../shared/period_bar.dart';
 import 'home_providers.dart';
 import 'widgets/add_metric_sheet.dart';
 import 'widgets/dashboard.dart';
@@ -26,21 +27,7 @@ class HomePage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Daily Tracker'),
-        actions: [
-          // Past-day entry mode (CR1-D): tap the chip to pick a past day;
-          // a visible 'Today' escape appears whenever not on today.
-          if (!isToday)
-            TextButton(
-              key: const ValueKey('today-button'),
-              onPressed: () =>
-                  ref.read(homeDateProvider.notifier).resetToToday(),
-              child: const Text('Today'),
-            ),
-          Center(
-            child: _DateChip(date: date, highlighted: !isToday),
-          ),
-          const SettingsButton(),
-        ],
+        actions: const [SettingsButton()],
       ),
       body: GlowBackground(
         child: metrics.when(
@@ -49,6 +36,39 @@ class HomePage extends ConsumerWidget {
           data: (rows) => ListView(
             padding: const EdgeInsets.only(top: 4, bottom: 24),
             children: [
+              // Unified write-date selector (CR-3 follow-up #5 + CR1-D):
+              // any past day; highlighted + 'Today' reset when not today.
+              PeriodBar(
+                label: date,
+                highlighted: !isToday,
+                canGoNext: !isToday,
+                resetLabel: 'Today',
+                onReset: () =>
+                    ref.read(homeDateProvider.notifier).resetToToday(),
+                onPrev: () => ref
+                    .read(homeDateProvider.notifier)
+                    .select(
+                      dateKey(
+                        parseDateKey(date).subtract(const Duration(days: 1)),
+                      ),
+                    ),
+                onNext: () => ref
+                    .read(homeDateProvider.notifier)
+                    .select(
+                      dateKey(parseDateKey(date).add(const Duration(days: 1))),
+                    ),
+                onTapLabel: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: parseDateKey(date),
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime.now(),
+                  );
+                  if (picked != null) {
+                    ref.read(homeDateProvider.notifier).select(dateKey(picked));
+                  }
+                },
+              ),
               // Dashboard (CR-3 §3) — order: quick money → today → balance.
               const QuickMoneyCard(),
               const TodaySummaryCard(),
@@ -98,53 +118,6 @@ class HomePage extends ConsumerWidget {
                 ),
               ],
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Tappable date chip in the app bar (CR1-D). Highlighted whenever the
-/// active write date is not today — writing to the past must be obvious.
-class _DateChip extends ConsumerWidget {
-  const _DateChip({required this.date, required this.highlighted});
-
-  final String date;
-  final bool highlighted;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final scheme = Theme.of(context).colorScheme;
-    return InkWell(
-      key: const ValueKey('home-date-chip'),
-      borderRadius: BorderRadius.circular(999),
-      onTap: () async {
-        final now = DateTime.now();
-        final picked = await showDatePicker(
-          context: context,
-          initialDate: parseDateKey(date),
-          firstDate: DateTime(2020),
-          lastDate: now, // the future stays blocked
-        );
-        if (picked != null) {
-          ref.read(homeDateProvider.notifier).select(dateKey(picked));
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(999),
-          color: highlighted ? scheme.primary : Colors.transparent,
-          border: Border.all(
-            color: highlighted ? scheme.primary : scheme.outlineVariant,
-          ),
-        ),
-        child: Text(
-          date,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: highlighted ? scheme.onPrimary : null,
-            fontWeight: highlighted ? FontWeight.bold : null,
           ),
         ),
       ),
