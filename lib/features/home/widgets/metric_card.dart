@@ -47,18 +47,23 @@ class MetricCard extends ConsumerWidget {
           children: [
             Row(
               children: [
-                IconButton(
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  onPressed: () => _toggleStar(context, ref),
-                  icon: Icon(
-                    metric.isStarred ? Icons.star : Icons.star_border,
-                    size: 20,
-                    color: metric.isStarred
-                        ? Colors.amber
-                        : theme.colorScheme.outline,
-                  ),
-                ),
+                // Core metrics are fixed on the heatmap, so they show no star
+                // toggle; only later, user-added metrics expose it.
+                if (metric.isDeletable)
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    onPressed: () => _toggleStar(context, ref),
+                    icon: Icon(
+                      metric.isStarred ? Icons.star : Icons.star_border,
+                      size: 20,
+                      color: metric.isStarred
+                          ? Colors.amber
+                          : theme.colorScheme.outline,
+                    ),
+                  )
+                else
+                  const SizedBox(width: 4),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(metric.title, style: theme.textTheme.titleMedium),

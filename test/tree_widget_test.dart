@@ -1,5 +1,6 @@
 import 'package:daily_tracker/data/db/app_database.dart';
 import 'package:daily_tracker/data/db/database_provider.dart';
+import 'package:daily_tracker/data/repositories/entry_repository.dart';
 import 'package:daily_tracker/features/home/home_page.dart';
 import 'package:daily_tracker/features/home/home_providers.dart';
 import 'package:drift/native.dart';
@@ -88,20 +89,32 @@ void main() {
     await closeApp(tester);
   });
 
-  testWidgets('star tap asks for label and stars the metric', (tester) async {
-    // Unstar Extra first via direct toggle, then star again through dialog.
-    final extraCard = find
-        .ancestor(of: find.text('Extra'), matching: find.byType(Card))
+  testWidgets('star toggle only appears on user-added metrics', (tester) async {
+    await pumpHome(tester);
+    // Core metrics (e.g. Software) are fixed on the heatmap → no star button.
+    final softwareCard = find
+        .ancestor(of: find.text('Software'), matching: find.byType(Card))
         .first;
+    expect(
+      find.descendant(of: softwareCard, matching: find.byType(IconButton)),
+      findsNothing,
+      reason: 'core metric shows no star toggle',
+    );
+    await closeApp(tester);
+  });
+
+  testWidgets('star tap asks for label and stars a user-added metric', (
+    tester,
+  ) async {
+    await EntryRepository(db).addMetric(title: 'My Metric', inputType: 'text');
     await pumpHome(tester);
 
-    final starButton = find
-        .descendant(of: extraCard, matching: find.byType(IconButton))
+    final card = find
+        .ancestor(of: find.text('My Metric'), matching: find.byType(Card))
         .first;
-    await tester.tap(starButton);
-    await tester.pumpAndSettle();
-    expect((await byKey('extra')).isStarred, isFalse);
-
+    final starButton = find
+        .descendant(of: card, matching: find.byType(IconButton))
+        .first;
     await tester.tap(starButton);
     await tester.pumpAndSettle();
     expect(find.text('Add to heatmap'), findsOneWidget);
@@ -116,9 +129,11 @@ void main() {
     await tester.tap(find.text('Star'));
     await tester.pumpAndSettle();
 
-    final extra = await byKey('extra');
-    expect(extra.isStarred, isTrue);
-    expect(extra.heatmapLabel, 'My Extra', reason: 'label capped at 2 words');
+    final metric = await (db.select(
+      db.metrics,
+    )..where((m) => m.title.equals('My Metric'))).getSingle();
+    expect(metric.isStarred, isTrue);
+    expect(metric.heatmapLabel, 'My Extra', reason: 'label capped at 2 words');
     await closeApp(tester);
   });
 }
