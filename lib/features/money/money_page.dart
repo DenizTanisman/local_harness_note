@@ -2,7 +2,6 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/secure_window.dart';
 import '../../data/db/app_database.dart';
 import '../../data/db/database_provider.dart';
 import '../../data/repositories/analysis_repository.dart' show formatAmount;
@@ -10,7 +9,6 @@ import '../../data/repositories/money_repository.dart';
 import '../../theme/app_tokens.dart';
 import '../../theme/glow_background.dart';
 import '../home/home_providers.dart';
-import '../settings/settings_providers.dart';
 import '../shared/continuous_sparkline.dart';
 import 'category_donut.dart';
 import 'money_card_body.dart';
@@ -18,6 +16,7 @@ import 'money_providers.dart';
 
 /// Money tab (CR-3 §4): shared entry form on top, then a tap-only inner
 /// nav (Overview / Transactions / Categories). Global swipe stays free.
+/// FLAG_SECURE is handled app-wide by AppShell (CR-3 §14).
 class MoneyPage extends ConsumerStatefulWidget {
   const MoneyPage({super.key});
 
@@ -29,26 +28,6 @@ enum _MoneyView { overview, transactions, categories }
 
 class _MoneyPageState extends ConsumerState<MoneyPage> {
   _MoneyView _view = _MoneyView.overview;
-  bool _secured = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // FLAG_SECURE only while a Money page is open (spec §11.6, default off).
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final settings = await ref.read(settingsRepositoryProvider).loadAll();
-      if (mounted && settings['flag_secure'] == 'true') {
-        _secured = true;
-        await SecureWindow.enable();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    if (_secured) SecureWindow.disable();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {

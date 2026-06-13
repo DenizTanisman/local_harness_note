@@ -85,7 +85,7 @@ class SettingsPage extends ConsumerWidget {
             const Divider(),
             const _SectionHeader('Privacy'),
             SwitchListTile(
-              title: const Text('Block screenshots on Money pages'),
+              title: const Text('Block screenshots (Money & Health)'),
               subtitle: const Text('FLAG_SECURE, off by default'),
               value: settings['flag_secure'] == 'true',
               onChanged: (on) => repo.set('flag_secure', on.toString()),

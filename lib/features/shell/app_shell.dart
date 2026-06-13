@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/secure_window.dart';
 import '../analysis/analysis_page.dart';
 import '../detail/metric_detail_page.dart';
 import '../health/health_page.dart';
 import '../home/home_page.dart';
 import '../money/money_page.dart';
+import '../settings/settings_providers.dart';
 import '../sport/sport_page.dart';
 import 'tab_index.dart';
 
@@ -22,9 +24,25 @@ class _AppShellState extends ConsumerState<AppShell> {
   late final PageController _controller = PageController(
     initialPage: AppTab.initial,
   );
+  bool _secured = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // FLAG_SECURE (spec §11.6 / CR-3 §14) — app-wide when enabled, since
+    // both Money and Health live in the always-built PageView. Default off.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final settings = await ref.read(settingsRepositoryProvider).loadAll();
+      if (mounted && settings['flag_secure'] == 'true') {
+        _secured = true;
+        await SecureWindow.enable();
+      }
+    });
+  }
 
   @override
   void dispose() {
+    if (_secured) SecureWindow.disable();
     _controller.dispose();
     super.dispose();
   }
