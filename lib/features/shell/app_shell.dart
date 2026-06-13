@@ -7,6 +7,7 @@ import '../detail/metric_detail_page.dart';
 import '../health/health_page.dart';
 import '../home/home_page.dart';
 import '../money/money_page.dart';
+import '../money/money_reveal.dart';
 import '../settings/settings_providers.dart';
 import '../sport/sport_page.dart';
 import 'tab_index.dart';
@@ -20,7 +21,8 @@ class AppShell extends ConsumerStatefulWidget {
   ConsumerState<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends ConsumerState<AppShell> {
+class _AppShellState extends ConsumerState<AppShell>
+    with WidgetsBindingObserver {
   late final PageController _controller = PageController(
     initialPage: AppTab.initial,
   );
@@ -29,6 +31,7 @@ class _AppShellState extends ConsumerState<AppShell> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // FLAG_SECURE (spec §11.6 / CR-3 §14) — app-wide when enabled, since
     // both Money and Health live in the always-built PageView. Default off.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -41,7 +44,19 @@ class _AppShellState extends ConsumerState<AppShell> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Money is sensitive: re-mask all amounts as soon as the app leaves the
+    // foreground, so returning to it requires the password again.
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.detached) {
+      ref.read(moneyRevealProvider.notifier).reset();
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     if (_secured) SecureWindow.disable();
     _controller.dispose();
     super.dispose();

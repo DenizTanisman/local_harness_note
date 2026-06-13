@@ -10,6 +10,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/money_test_support.dart';
+
 /// Phase 5 acceptance (UI level): money card save flow with reminder ask,
 /// General blocks with subtype breakdown, Monthly table.
 void main() {
@@ -24,6 +26,7 @@ void main() {
       overrides: [
         databaseProvider.overrideWithValue(db),
         debounceDurationProvider.overrideWithValue(Duration.zero),
+        revealAllOverride,
       ],
     );
     addTearDown(container.dispose);

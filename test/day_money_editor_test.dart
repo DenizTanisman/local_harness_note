@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/money_test_support.dart';
+
 /// The editable per-day breakdown under the money form: one collapsible
 /// dropdown per direction, totalled, expanding to each entry.
 void main() {
@@ -19,7 +21,7 @@ void main() {
 
   Widget app(Widget home) {
     container = ProviderContainer(
-      overrides: [databaseProvider.overrideWithValue(db)],
+      overrides: [databaseProvider.overrideWithValue(db), revealAllOverride],
     );
     addTearDown(container.dispose);
     return UncontrolledProviderScope(

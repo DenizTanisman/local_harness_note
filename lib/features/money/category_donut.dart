@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../data/repositories/analysis_repository.dart' show formatAmount;
 import '../../data/repositories/money_repository.dart';
 import '../../theme/app_tokens.dart';
+import 'money_reveal.dart';
 
 /// Outcome-category donut for the Money Overview (CR-3 §4). CustomPainter,
 /// no external chart package. Wrapped in a horizontal-drag absorber so a
@@ -40,8 +41,9 @@ class CategoryDonut extends StatelessWidget {
               child: CustomPaint(
                 painter: _DonutPainter(categories: categories, total: total),
                 child: Center(
-                  child: Text(
-                    formatAmount(total),
+                  child: MoneyText(
+                    id: 'money-donut-total',
+                    amount: formatAmount(total),
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                 ),
@@ -93,8 +95,9 @@ class _Legend extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Expanded(child: Text(label, overflow: TextOverflow.ellipsis)),
-          Text(
-            formatAmount(value),
+          MoneyText(
+            id: 'money-donut-$label',
+            amount: formatAmount(value),
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],

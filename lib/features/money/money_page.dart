@@ -15,6 +15,7 @@ import 'category_donut.dart';
 import 'day_money_editor.dart';
 import 'money_card_body.dart';
 import 'money_providers.dart';
+import 'money_reveal.dart';
 import '../settings/settings_button.dart';
 
 /// Money tab (CR-3 §4): shared entry form on top, then a tap-only inner
@@ -123,9 +124,11 @@ class _OverviewSection extends ConsumerWidget {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text(
-                'Balance: ${balance >= 0 ? '+' : '−'}'
-                '${formatAmount(balance.abs())} ₺',
+              child: MoneyText(
+                id: 'money-balance',
+                prefix: 'Balance: ',
+                amount:
+                    '${balance >= 0 ? '+' : '−'}${formatAmount(balance.abs())} ₺',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
             ),
@@ -155,21 +158,27 @@ class _OverviewSection extends ConsumerWidget {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-              child: Text(
-                'Daily budget: ${formatAmount(data.dailyBudget)} ₺ '
-                '(red = luxury above budget)',
+              child: MoneyText(
+                id: 'money-daily-budget',
+                prefix: 'Daily budget: ',
+                amount: '${formatAmount(data.dailyBudget)} ₺',
+                suffix: ' (red = luxury above budget)',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
             CategoryDonut(categories: data.outcome),
             _CategoryBlock(
               key: const ValueKey('income-block'),
-              title: 'Income: ${formatAmount(incomeTotal)}',
+              label: 'Income',
+              idPrefix: 'income',
+              total: incomeTotal,
               categories: data.income,
             ),
             _CategoryBlock(
               key: const ValueKey('outcome-block'),
-              title: 'Outcome: ${formatAmount(outcomeTotal)}',
+              label: 'Outcome',
+              idPrefix: 'outcome',
+              total: outcomeTotal,
               categories: data.outcome,
             ),
           ],
@@ -180,30 +189,42 @@ class _OverviewSection extends ConsumerWidget {
 }
 
 /// Collapsible Income/Outcome breakdown (CR1-A style): category total with
-/// a 'Bill (home)' subtype breakdown underneath.
+/// a 'Bill (home)' subtype breakdown underneath. All amounts masked until
+/// revealed (privacy).
 class _CategoryBlock extends StatelessWidget {
   const _CategoryBlock({
     super.key,
-    required this.title,
+    required this.label,
+    required this.idPrefix,
+    required this.total,
     required this.categories,
   });
 
-  final String title;
+  final String label;
+  final String idPrefix;
+  final double total;
   final List<CategoryTotal> categories;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return ExpansionTile(
-      title: Text(title, style: theme.textTheme.titleMedium),
+      title: MoneyText(
+        id: 'money-$idPrefix-total',
+        prefix: '$label: ',
+        amount: formatAmount(total),
+        style: theme.textTheme.titleMedium,
+      ),
       initiallyExpanded: true,
       childrenPadding: const EdgeInsets.only(left: 32, bottom: 8, right: 16),
       children: [
         for (final category in categories) ...[
           Align(
             alignment: Alignment.centerLeft,
-            child: Text(
-              '> ${category.name}: ${formatAmount(category.total)}',
+            child: MoneyText(
+              id: 'money-$idPrefix-${category.name}',
+              prefix: '> ${category.name}: ',
+              amount: formatAmount(category.total),
               style: theme.textTheme.bodyMedium,
             ),
           ),
@@ -212,8 +233,10 @@ class _CategoryBlock extends StatelessWidget {
               padding: const EdgeInsets.only(left: 16),
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: Text(
-                  '>> ${sub.label}: ${formatAmount(sub.total)}',
+                child: MoneyText(
+                  id: 'money-$idPrefix-sub-${sub.label}',
+                  prefix: '>> ${sub.label}: ',
+                  amount: formatAmount(sub.total),
                   style: theme.textTheme.bodySmall,
                 ),
               ),
@@ -289,18 +312,26 @@ class _TableRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final reveal = ref.watch(moneyRevealProvider);
     Widget cell(Transaction? tx, bool income) {
       if (tx == null) return const SizedBox.shrink();
+      final id = 'money-tx-${tx.id}';
+      final shown = reveal.shows(id);
       return InkWell(
-        onTap: () => editTransactionFlow(context, ref, tx),
+        // Masked → reveal (password); revealed → edit (password). Both gated.
+        onTap: () => shown
+            ? editTransactionFlow(context, ref, tx)
+            : revealMoneyFlow(context, ref, id),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Column(
             crossAxisAlignment:
                 income ? CrossAxisAlignment.start : CrossAxisAlignment.end,
             children: [
-              Text(
-                '${income ? '+' : '−'}${formatAmount(tx.amount)} ₺',
+              MoneyText(
+                id: id,
+                interactive: false,
+                amount: '${income ? '+' : '−'}${formatAmount(tx.amount)} ₺',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: income ? AppTokens.moneyGreen : AppTokens.danger,
                 ),

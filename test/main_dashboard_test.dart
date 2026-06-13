@@ -11,6 +11,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/money_test_support.dart';
+
 /// CR3-P1 acceptance: dashboard summary cards deep-link to tabs; the
 /// Main quick-money form writes the same data as the Money tab; Daily
 /// Check-in keeps its behaviors; sensor summaries show '—'.
@@ -26,6 +28,7 @@ void main() {
       overrides: [
         databaseProvider.overrideWithValue(db),
         debounceDurationProvider.overrideWithValue(Duration.zero),
+        revealAllOverride,
       ],
     );
     addTearDown(container.dispose);
