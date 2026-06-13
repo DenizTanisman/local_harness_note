@@ -72,6 +72,8 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   drift_dev: ^2.34.0
   build_runner: ^2.15.0
+  flutter_launcher_icons: ^0.14.4
+  image: ^4.3.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -118,3 +120,13 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# App launcher icon (deep navy + blue glow + neon-green sparkline).
+# Sources rendered by test/render_icon_test.dart.
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/icon_full.png"
+  adaptive_icon_background: "assets/icon/icon_background.png"
+  adaptive_icon_foreground: "assets/icon/icon_foreground.png"
+  min_sdk_android: 26
