@@ -150,7 +150,9 @@ class EntryRepository {
     return query.watchSingle().map((row) => (row.read(count) ?? 0) > 0);
   }
 
-  /// Debounce target — single upsert keeps one row per metric × day.
+  /// Debounce target — single upsert keeps one row per metric × day. A
+  /// save through this path is a MANUAL edit, so it pins value_source =
+  /// 'manual' (CR-4 §3.3) and screen-time auto-fill won't overwrite it.
   Future<void> saveEntry({
     required int metricId,
     required String date,
@@ -168,6 +170,7 @@ class EntryRepository {
         EntriesCompanion(
           numValue: keepExistingNum ? const Value.absent() : Value(numValue),
           textValue: keepExistingText ? const Value.absent() : Value(textValue),
+          valueSource: const Value('manual'),
           updatedAt: Value(now),
         ),
       );
@@ -178,11 +181,53 @@ class EntryRepository {
           date: date,
           numValue: Value(numValue),
           textValue: Value(textValue),
+          valueSource: const Value('manual'),
           createdAt: now,
           updatedAt: now,
         ),
       );
     }
+  }
+
+  /// Screen-time auto-fill for the Instagram metric (CR-4 §3.3): writes the
+  /// measured [minutes] into that day's num_value ONLY when there is no
+  /// entry yet or the existing entry is itself auto. A manual edit wins and
+  /// is never overwritten. The free-text "why" (text_value) is preserved.
+  /// Returns true if it wrote.
+  Future<bool> autofillInstagram({
+    required String date,
+    required double minutes,
+  }) async {
+    final metric = await (db.select(
+      db.metrics,
+    )..where((m) => m.key.equals('instagram'))).getSingleOrNull();
+    if (metric == null) return false;
+    final existing = await _entryFor(metric.id, date);
+    if (existing != null && existing.valueSource != 'auto') return false;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (existing != null) {
+      await (db.update(
+        db.entries,
+      )..where((e) => e.id.equals(existing.id))).write(
+        EntriesCompanion(
+          numValue: Value(minutes),
+          valueSource: const Value('auto'),
+          updatedAt: Value(now),
+        ),
+      );
+    } else {
+      await db.upsertEntry(
+        EntriesCompanion.insert(
+          metricId: metric.id,
+          date: date,
+          numValue: Value(minutes),
+          valueSource: const Value('auto'),
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+    }
+    return true;
   }
 
   Future<Entry?> _entryFor(int metricId, String date) =>

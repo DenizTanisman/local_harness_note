@@ -1290,6 +1290,18 @@ class $EntriesTable extends Entries with TableInfo<$EntriesTable, Entry> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _valueSourceMeta = const VerificationMeta(
+    'valueSource',
+  );
+  @override
+  late final GeneratedColumn<String> valueSource = GeneratedColumn<String>(
+    'value_source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('manual'),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -1319,6 +1331,7 @@ class $EntriesTable extends Entries with TableInfo<$EntriesTable, Entry> {
     date,
     numValue,
     textValue,
+    valueSource,
     createdAt,
     updatedAt,
   ];
@@ -1363,6 +1376,15 @@ class $EntriesTable extends Entries with TableInfo<$EntriesTable, Entry> {
       context.handle(
         _textValueMeta,
         textValue.isAcceptableOrUnknown(data['text_value']!, _textValueMeta),
+      );
+    }
+    if (data.containsKey('value_source')) {
+      context.handle(
+        _valueSourceMeta,
+        valueSource.isAcceptableOrUnknown(
+          data['value_source']!,
+          _valueSourceMeta,
+        ),
       );
     }
     if (data.containsKey('created_at')) {
@@ -1414,6 +1436,10 @@ class $EntriesTable extends Entries with TableInfo<$EntriesTable, Entry> {
         DriftSqlType.string,
         data['${effectivePrefix}text_value'],
       ),
+      valueSource: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}value_source'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}created_at'],
@@ -1439,6 +1465,10 @@ class Entry extends DataClass implements Insertable<Entry> {
   final String date;
   final double? numValue;
   final String? textValue;
+
+  /// 'manual' | 'auto' (CR-4 §3.3): a manual edit pins the day so
+  /// screen-time auto-fill never overwrites it again.
+  final String valueSource;
   final int createdAt;
   final int updatedAt;
   const Entry({
@@ -1447,6 +1477,7 @@ class Entry extends DataClass implements Insertable<Entry> {
     required this.date,
     this.numValue,
     this.textValue,
+    required this.valueSource,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -1462,6 +1493,7 @@ class Entry extends DataClass implements Insertable<Entry> {
     if (!nullToAbsent || textValue != null) {
       map['text_value'] = Variable<String>(textValue);
     }
+    map['value_source'] = Variable<String>(valueSource);
     map['created_at'] = Variable<int>(createdAt);
     map['updated_at'] = Variable<int>(updatedAt);
     return map;
@@ -1478,6 +1510,7 @@ class Entry extends DataClass implements Insertable<Entry> {
       textValue: textValue == null && nullToAbsent
           ? const Value.absent()
           : Value(textValue),
+      valueSource: Value(valueSource),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -1494,6 +1527,7 @@ class Entry extends DataClass implements Insertable<Entry> {
       date: serializer.fromJson<String>(json['date']),
       numValue: serializer.fromJson<double?>(json['numValue']),
       textValue: serializer.fromJson<String?>(json['textValue']),
+      valueSource: serializer.fromJson<String>(json['valueSource']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
     );
@@ -1507,6 +1541,7 @@ class Entry extends DataClass implements Insertable<Entry> {
       'date': serializer.toJson<String>(date),
       'numValue': serializer.toJson<double?>(numValue),
       'textValue': serializer.toJson<String?>(textValue),
+      'valueSource': serializer.toJson<String>(valueSource),
       'createdAt': serializer.toJson<int>(createdAt),
       'updatedAt': serializer.toJson<int>(updatedAt),
     };
@@ -1518,6 +1553,7 @@ class Entry extends DataClass implements Insertable<Entry> {
     String? date,
     Value<double?> numValue = const Value.absent(),
     Value<String?> textValue = const Value.absent(),
+    String? valueSource,
     int? createdAt,
     int? updatedAt,
   }) => Entry(
@@ -1526,6 +1562,7 @@ class Entry extends DataClass implements Insertable<Entry> {
     date: date ?? this.date,
     numValue: numValue.present ? numValue.value : this.numValue,
     textValue: textValue.present ? textValue.value : this.textValue,
+    valueSource: valueSource ?? this.valueSource,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -1536,6 +1573,9 @@ class Entry extends DataClass implements Insertable<Entry> {
       date: data.date.present ? data.date.value : this.date,
       numValue: data.numValue.present ? data.numValue.value : this.numValue,
       textValue: data.textValue.present ? data.textValue.value : this.textValue,
+      valueSource: data.valueSource.present
+          ? data.valueSource.value
+          : this.valueSource,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -1549,6 +1589,7 @@ class Entry extends DataClass implements Insertable<Entry> {
           ..write('date: $date, ')
           ..write('numValue: $numValue, ')
           ..write('textValue: $textValue, ')
+          ..write('valueSource: $valueSource, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -1562,6 +1603,7 @@ class Entry extends DataClass implements Insertable<Entry> {
     date,
     numValue,
     textValue,
+    valueSource,
     createdAt,
     updatedAt,
   );
@@ -1574,6 +1616,7 @@ class Entry extends DataClass implements Insertable<Entry> {
           other.date == this.date &&
           other.numValue == this.numValue &&
           other.textValue == this.textValue &&
+          other.valueSource == this.valueSource &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -1584,6 +1627,7 @@ class EntriesCompanion extends UpdateCompanion<Entry> {
   final Value<String> date;
   final Value<double?> numValue;
   final Value<String?> textValue;
+  final Value<String> valueSource;
   final Value<int> createdAt;
   final Value<int> updatedAt;
   const EntriesCompanion({
@@ -1592,6 +1636,7 @@ class EntriesCompanion extends UpdateCompanion<Entry> {
     this.date = const Value.absent(),
     this.numValue = const Value.absent(),
     this.textValue = const Value.absent(),
+    this.valueSource = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
@@ -1601,6 +1646,7 @@ class EntriesCompanion extends UpdateCompanion<Entry> {
     required String date,
     this.numValue = const Value.absent(),
     this.textValue = const Value.absent(),
+    this.valueSource = const Value.absent(),
     required int createdAt,
     required int updatedAt,
   }) : metricId = Value(metricId),
@@ -1613,6 +1659,7 @@ class EntriesCompanion extends UpdateCompanion<Entry> {
     Expression<String>? date,
     Expression<double>? numValue,
     Expression<String>? textValue,
+    Expression<String>? valueSource,
     Expression<int>? createdAt,
     Expression<int>? updatedAt,
   }) {
@@ -1622,6 +1669,7 @@ class EntriesCompanion extends UpdateCompanion<Entry> {
       if (date != null) 'date': date,
       if (numValue != null) 'num_value': numValue,
       if (textValue != null) 'text_value': textValue,
+      if (valueSource != null) 'value_source': valueSource,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
@@ -1633,6 +1681,7 @@ class EntriesCompanion extends UpdateCompanion<Entry> {
     Value<String>? date,
     Value<double?>? numValue,
     Value<String?>? textValue,
+    Value<String>? valueSource,
     Value<int>? createdAt,
     Value<int>? updatedAt,
   }) {
@@ -1642,6 +1691,7 @@ class EntriesCompanion extends UpdateCompanion<Entry> {
       date: date ?? this.date,
       numValue: numValue ?? this.numValue,
       textValue: textValue ?? this.textValue,
+      valueSource: valueSource ?? this.valueSource,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -1665,6 +1715,9 @@ class EntriesCompanion extends UpdateCompanion<Entry> {
     if (textValue.present) {
       map['text_value'] = Variable<String>(textValue.value);
     }
+    if (valueSource.present) {
+      map['value_source'] = Variable<String>(valueSource.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<int>(createdAt.value);
     }
@@ -1682,6 +1735,7 @@ class EntriesCompanion extends UpdateCompanion<Entry> {
           ..write('date: $date, ')
           ..write('numValue: $numValue, ')
           ..write('textValue: $textValue, ')
+          ..write('valueSource: $valueSource, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -8999,6 +9053,7 @@ typedef $$EntriesTableCreateCompanionBuilder =
       required String date,
       Value<double?> numValue,
       Value<String?> textValue,
+      Value<String> valueSource,
       required int createdAt,
       required int updatedAt,
     });
@@ -9009,6 +9064,7 @@ typedef $$EntriesTableUpdateCompanionBuilder =
       Value<String> date,
       Value<double?> numValue,
       Value<String?> textValue,
+      Value<String> valueSource,
       Value<int> createdAt,
       Value<int> updatedAt,
     });
@@ -9079,6 +9135,11 @@ class $$EntriesTableFilterComposer
 
   ColumnFilters<String> get textValue => $composableBuilder(
     column: $table.textValue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get valueSource => $composableBuilder(
+    column: $table.valueSource,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -9170,6 +9231,11 @@ class $$EntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get valueSource => $composableBuilder(
+    column: $table.valueSource,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -9224,6 +9290,11 @@ class $$EntriesTableAnnotationComposer
 
   GeneratedColumn<String> get textValue =>
       $composableBuilder(column: $table.textValue, builder: (column) => column);
+
+  GeneratedColumn<String> get valueSource => $composableBuilder(
+    column: $table.valueSource,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<int> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -9313,6 +9384,7 @@ class $$EntriesTableTableManager
                 Value<String> date = const Value.absent(),
                 Value<double?> numValue = const Value.absent(),
                 Value<String?> textValue = const Value.absent(),
+                Value<String> valueSource = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
               }) => EntriesCompanion(
@@ -9321,6 +9393,7 @@ class $$EntriesTableTableManager
                 date: date,
                 numValue: numValue,
                 textValue: textValue,
+                valueSource: valueSource,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),
@@ -9331,6 +9404,7 @@ class $$EntriesTableTableManager
                 required String date,
                 Value<double?> numValue = const Value.absent(),
                 Value<String?> textValue = const Value.absent(),
+                Value<String> valueSource = const Value.absent(),
                 required int createdAt,
                 required int updatedAt,
               }) => EntriesCompanion.insert(
@@ -9339,6 +9413,7 @@ class $$EntriesTableTableManager
                 date: date,
                 numValue: numValue,
                 textValue: textValue,
+                valueSource: valueSource,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),

@@ -34,7 +34,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -84,6 +84,10 @@ class AppDatabase extends _$AppDatabase {
         // CR-4 screen-time tables.
         await m.createTable(screenTimeDay);
         await m.createTable(screenTimeApp);
+      }
+      if (from < 8) {
+        // CR-4 §3.3 Instagram auto-fill provenance.
+        await m.addColumn(entries, entries.valueSource);
       }
     },
     beforeOpen: (details) async {
@@ -162,6 +166,7 @@ class AppDatabase extends _$AppDatabase {
         (old) => EntriesCompanion(
           numValue: entry.numValue,
           textValue: entry.textValue,
+          valueSource: entry.valueSource,
           updatedAt: entry.updatedAt,
         ),
         target: [entries.metricId, entries.date],
