@@ -1,5 +1,7 @@
+import 'package:drift/drift.dart' show OrderingTerm;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/date_key.dart';
 import '../../data/db/app_database.dart';
 import '../../data/db/database_provider.dart';
 import '../../data/repositories/money_repository.dart';
@@ -38,3 +40,39 @@ double monthBalance(MoneyGeneral general) {
   final outcome = general.outcome.fold<double>(0, (a, c) => a + c.total);
   return income - outcome;
 }
+
+/// The month shown in the Money tab (CR-3 §4) — own state, not the
+/// Analysis date. Defaults to the current month; ‹ › step it.
+class MoneyMonthNotifier extends Notifier<String> {
+  @override
+  String build() => dateKey(DateTime.now()).substring(0, 7);
+
+  void shift(int months) {
+    final parts = state.split('-').map(int.parse).toList();
+    final d = DateTime(parts[0], parts[1] + months, 1);
+    state =
+        '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}';
+  }
+}
+
+final moneyMonthProvider = NotifierProvider<MoneyMonthNotifier, String>(
+  MoneyMonthNotifier.new,
+);
+
+/// Money-tab transaction list (newest first).
+final moneyTabTransactionsProvider = StreamProvider<List<Transaction>>((ref) {
+  return ref
+      .watch(moneyRepositoryProvider)
+      .watchTransactions(ref.watch(moneyMonthProvider));
+});
+
+/// All money categories (both directions) for the Categories sub-tab.
+final allMoneyCategoriesProvider = StreamProvider<List<MoneyCategory>>((ref) {
+  final db = ref.watch(databaseProvider);
+  final query = db.select(db.moneyCategories)
+    ..orderBy([
+      (c) => OrderingTerm.asc(c.direction),
+      (c) => OrderingTerm.asc(c.sortOrder),
+    ]);
+  return query.watch();
+});
