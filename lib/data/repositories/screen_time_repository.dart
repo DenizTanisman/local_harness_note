@@ -3,6 +3,13 @@ import 'package:drift/drift.dart';
 import '../../core/date_key.dart';
 import '../db/app_database.dart';
 
+/// Minutes → 'Xh Ym' / 'Ym' (CR-4 UI).
+String formatMinutes(int minutes) {
+  final h = minutes ~/ 60;
+  final m = minutes % 60;
+  return h > 0 ? '${h}h ${m}m' : '${m}m';
+}
+
 /// One app's daily foreground time (CR-4 §4).
 class AppUsage {
   const AppUsage({

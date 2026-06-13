@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/date_key.dart';
 import '../../data/repositories/health_repository.dart';
 import '../../theme/glow_background.dart';
+import '../screentime/digital_wellbeing_card.dart';
 import 'health_calc.dart';
 import 'health_providers.dart';
 import '../settings/settings_button.dart';
@@ -25,7 +26,12 @@ class HealthPage extends ConsumerWidget {
       body: GlowBackground(
         child: ListView(
           padding: const EdgeInsets.only(bottom: 24),
-          children: const [_ProfileCard(), _BodyCard(), _VitalsCard()],
+          children: const [
+            _ProfileCard(),
+            _BodyCard(),
+            _VitalsCard(),
+            DigitalWellbeingCard(),
+          ],
         ),
       ),
     );

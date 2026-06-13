@@ -134,6 +134,11 @@ void main() {
     tester,
   ) async {
     await db.delete(db.metrics).go();
+    // Tall viewport so the lazy ListView builds the empty-state row below
+    // the dashboard.
+    tester.view.physicalSize = const Size(1080, 4000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
     final container = ProviderContainer(
       overrides: [databaseProvider.overrideWithValue(db)],
     );
