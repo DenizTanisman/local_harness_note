@@ -55,10 +55,12 @@ void main() {
     await closeApp(tester);
   });
 
-  testWidgets('selected date defaults to yesterday', (tester) async {
+  testWidgets('selected date defaults to today (shared across pages)', (
+    tester,
+  ) async {
     await tester.pumpWidget(app(const AnalysisPage()));
     await tester.pumpAndSettle();
-    expect(find.text(daysAgo(1)), findsOneWidget);
+    expect(find.text(daysAgo(0)), findsOneWidget);
     await closeApp(tester);
   });
 
@@ -110,7 +112,7 @@ void main() {
     )..where((m) => m.key.equals('software'))).getSingle();
     await EntryRepository(db).saveEntry(
       metricId: software.id,
-      date: daysAgo(1),
+      date: daysAgo(0),
       numValue: 35,
       textValue: 'refactored parser',
     );

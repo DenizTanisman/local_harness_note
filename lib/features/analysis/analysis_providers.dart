@@ -3,21 +3,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/date_key.dart';
 import '../../data/db/database_provider.dart';
 import '../../data/repositories/analysis_repository.dart';
+import '../home/home_providers.dart';
 
 final analysisRepositoryProvider = Provider<AnalysisRepository>(
   (ref) => AnalysisRepository(ref.watch(databaseProvider)),
 );
 
-/// Selected analysis date — defaults to yesterday, never in the future
-/// (spec 6.3). Shared by analysis, detail and money pages.
+/// Selected calendar day — one shared day across the whole app. Picking a day
+/// in any page's calendar moves it everywhere (month pages show that day's
+/// month). Backed by [homeDateProvider]; never in the future.
 class SelectedDateNotifier extends Notifier<String> {
   @override
-  String build() => dateKey(DateTime.now().subtract(const Duration(days: 1)));
+  String build() => ref.watch(homeDateProvider);
 
-  void select(String date) {
-    if (date.compareTo(dateKey(DateTime.now())) > 0) return; // future blocked
-    state = date;
-  }
+  void select(String date) =>
+      ref.read(homeDateProvider.notifier).select(date);
 }
 
 final selectedDateProvider = NotifierProvider<SelectedDateNotifier, String>(

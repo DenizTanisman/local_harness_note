@@ -4,6 +4,7 @@ import '../../core/date_key.dart';
 import '../../data/db/app_database.dart';
 import '../../data/db/database_provider.dart';
 import '../../data/repositories/sport_repository.dart';
+import '../home/home_providers.dart';
 
 final sportRepositoryProvider = Provider<SportRepository>(
   (ref) => SportRepository(ref.watch(databaseProvider)),
@@ -27,20 +28,16 @@ final calorieEntriesTodayProvider = StreamProvider<List<CalorieEntry>>(
       .watchCalorieEntries(dateKey(DateTime.now())),
 );
 
-/// The month shown by the Sport sparklines (CR-3 follow-up #5) — own
-/// state, ‹ › navigable, defaults to the current month.
+/// The month shown by the Sport sparklines (CR-3 follow-up #5) — the month
+/// of the shared selected day, so ‹ › keep every page in sync.
 class SportMonthNotifier extends Notifier<String> {
   @override
-  String build() => dateKey(DateTime.now()).substring(0, 7);
+  String build() => ref.watch(homeDateProvider).substring(0, 7);
 
-  void shift(int months) {
-    final parts = state.split('-').map(int.parse).toList();
-    final d = DateTime(parts[0], parts[1] + months, 1);
-    state =
-        '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}';
-  }
+  void shift(int months) =>
+      ref.read(homeDateProvider.notifier).shiftMonths(months);
 
-  void reset() => state = dateKey(DateTime.now()).substring(0, 7);
+  void reset() => ref.read(homeDateProvider.notifier).resetToToday();
 }
 
 final sportMonthProvider = NotifierProvider<SportMonthNotifier, String>(
