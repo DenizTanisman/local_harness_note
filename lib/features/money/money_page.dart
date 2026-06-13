@@ -12,6 +12,7 @@ import '../home/home_providers.dart';
 import '../shared/continuous_sparkline.dart';
 import '../shared/period_bar.dart';
 import 'category_donut.dart';
+import 'day_money_editor.dart';
 import 'money_card_body.dart';
 import 'money_providers.dart';
 import '../settings/settings_button.dart';
@@ -73,7 +74,7 @@ class _MoneyPageState extends ConsumerState<MoneyPage> {
                   ),
                   ButtonSegment(
                     value: _MoneyView.transactions,
-                    label: Text('Transactions'),
+                    label: Text('Table'),
                   ),
                   ButtonSegment(
                     value: _MoneyView.categories,
@@ -87,7 +88,7 @@ class _MoneyPageState extends ConsumerState<MoneyPage> {
             const SizedBox(height: 8),
             switch (_view) {
               _MoneyView.overview => const _OverviewSection(),
-              _MoneyView.transactions => const _TransactionsSection(),
+              _MoneyView.transactions => const _MonthlyTableSection(),
               _MoneyView.categories => const _CategoriesSection(),
             },
           ],
@@ -223,15 +224,17 @@ class _CategoryBlock extends StatelessWidget {
   }
 }
 
-// ------------------------------------------------------------- Transactions
+// ------------------------------------------------------------- Monthly table
 
-class _TransactionsSection extends ConsumerWidget {
-  const _TransactionsSection();
+/// Income | Date | Outcome table for the Money tab's month (spec 6.5).
+/// Tap any income/outcome cell to edit it (password required).
+class _MonthlyTableSection extends ConsumerWidget {
+  const _MonthlyTableSection();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final txs = ref.watch(moneyTabTransactionsProvider);
-    return txs.when(
+    final table = ref.watch(moneyTabTableProvider);
+    return table.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) =>
           Padding(padding: const EdgeInsets.all(16), child: Text('Error: $e')),
@@ -239,136 +242,97 @@ class _TransactionsSection extends ConsumerWidget {
         if (rows.isEmpty) {
           return const Padding(
             padding: EdgeInsets.all(16),
-            child: Text('No transactions this month.'),
+            child: Text('No entries this month.'),
           );
         }
-        return Column(
-          children: [for (final tx in rows) _TransactionTile(tx: tx)],
+        final theme = Theme.of(context);
+        final head = theme.textTheme.labelLarge;
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text('Income', style: head, textAlign: TextAlign.left),
+                    ),
+                    Expanded(
+                      child: Text('Date', style: head, textAlign: TextAlign.center),
+                    ),
+                    Expanded(
+                      child: Text(
+                        'Outcome',
+                        style: head,
+                        textAlign: TextAlign.right,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              for (final row in rows) _TableRow(row: row),
+            ],
+          ),
         );
       },
     );
   }
 }
 
-class _TransactionTile extends ConsumerWidget {
-  const _TransactionTile({required this.tx});
+class _TableRow extends ConsumerWidget {
+  const _TableRow({required this.row});
 
-  final Transaction tx;
+  final MonthlyTableRow row;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final income = tx.direction == 'income';
-    final color = income ? AppTokens.moneyGreen : AppTokens.danger;
-    return ListTile(
-      leading: Icon(income ? Icons.south_west : Icons.north_east, color: color),
-      title: Text(displayCategory(tx)),
-      subtitle: Text(tx.date),
-      trailing: Text(
-        '${income ? '+' : '−'}${formatAmount(tx.amount)} ₺',
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(color: color),
-      ),
-      onLongPress: () => _editOrDelete(context, ref),
-    );
-  }
+    final theme = Theme.of(context);
+    Widget cell(Transaction? tx, bool income) {
+      if (tx == null) return const SizedBox.shrink();
+      return InkWell(
+        onTap: () => editTransactionFlow(context, ref, tx),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            crossAxisAlignment:
+                income ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${income ? '+' : '−'}${formatAmount(tx.amount)} ₺',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: income ? AppTokens.moneyGreen : AppTokens.danger,
+                ),
+              ),
+              Text(
+                displayCategory(tx),
+                style: theme.textTheme.bodySmall,
+                textAlign: income ? TextAlign.start : TextAlign.end,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
-  Future<void> _editOrDelete(BuildContext context, WidgetRef ref) async {
-    final action = await showModalBottomSheet<String>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+    return Column(
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            ListTile(
-              leading: const Icon(Icons.edit),
-              title: Text('Edit ${displayCategory(tx)}'),
-              onTap: () => Navigator.pop(context, 'edit'),
+            Expanded(child: cell(row.income, true)),
+            Expanded(
+              child: Text(
+                row.date.substring(8), // day of month
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall,
+              ),
             ),
-            ListTile(
-              leading: const Icon(Icons.delete),
-              title: const Text('Delete'),
-              onTap: () => Navigator.pop(context, 'delete'),
-            ),
+            Expanded(child: cell(row.outcome, false)),
           ],
         ),
-      ),
-    );
-    if (action == 'delete') {
-      await ref.read(moneyRepositoryProvider).deleteTransaction(tx.id);
-    } else if (action == 'edit' && context.mounted) {
-      final updated = await showDialog<({double amount, String subtype})>(
-        context: context,
-        builder: (context) => _EditTransactionDialog(tx: tx),
-      );
-      if (updated != null) {
-        await ref
-            .read(moneyRepositoryProvider)
-            .updateTransaction(
-              tx.id,
-              amount: updated.amount,
-              category: tx.category,
-              subtype: updated.subtype,
-              note: tx.note,
-            );
-      }
-    }
-  }
-}
-
-class _EditTransactionDialog extends StatefulWidget {
-  const _EditTransactionDialog({required this.tx});
-
-  final Transaction tx;
-
-  @override
-  State<_EditTransactionDialog> createState() => _EditTransactionDialogState();
-}
-
-class _EditTransactionDialogState extends State<_EditTransactionDialog> {
-  late final TextEditingController _amount = TextEditingController(
-    text: widget.tx.amount.toString(),
-  );
-  late final TextEditingController _subtype = TextEditingController(
-    text: widget.tx.subtype ?? '',
-  );
-
-  @override
-  void dispose() {
-    _amount.dispose();
-    _subtype.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('Edit ${widget.tx.category}'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _amount,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(labelText: 'Amount'),
-          ),
-          TextField(
-            controller: _subtype,
-            decoration: const InputDecoration(labelText: 'Subtype (optional)'),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: () {
-            final amount = double.tryParse(_amount.text.replaceAll(',', '.'));
-            if (amount == null || amount < 0) return;
-            Navigator.pop(context, (amount: amount, subtype: _subtype.text));
-          },
-          child: const Text('Save'),
-        ),
+        const Divider(height: 1),
       ],
     );
   }

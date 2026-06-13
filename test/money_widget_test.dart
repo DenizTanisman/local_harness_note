@@ -131,7 +131,7 @@ void main() {
     await closeApp(tester);
   });
 
-  testWidgets('Transactions sub-tab lists the month entries', (tester) async {
+  testWidgets('Table sub-tab lists the month entries', (tester) async {
     final money = MoneyRepository(db);
     final month = dateKey(DateTime.now()).substring(0, 7);
     await money.addTransaction(
@@ -142,7 +142,7 @@ void main() {
     );
 
     await pump(tester, const MoneyPage());
-    await tester.tap(find.text('Transactions'));
+    await tester.tap(find.text('Table'));
     await tester.pumpAndSettle();
 
     expect(find.text('Food'), findsOneWidget);

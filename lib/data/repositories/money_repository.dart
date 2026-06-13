@@ -110,6 +110,15 @@ class MoneyRepository {
     return query.watchSingle().map((row) => row.read(sum) ?? 0.0);
   }
 
+  /// All of one [date]'s transactions, oldest first — the editable
+  /// per-day breakdown under the money form.
+  Stream<List<Transaction>> watchDayTransactions(String date) {
+    final query = db.select(db.transactions)
+      ..where((t) => t.date.equals(date))
+      ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]);
+    return query.watch();
+  }
+
   /// Flat list of [month]'s transactions, newest first (CR-3 §4 İşlemler).
   Stream<List<Transaction>> watchTransactions(String month) {
     final query = db.select(db.transactions)

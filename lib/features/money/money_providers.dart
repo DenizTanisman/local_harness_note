@@ -69,6 +69,18 @@ final dayOutcomeProvider = StreamProvider.family<double, String>(
   (ref, date) => ref.watch(moneyRepositoryProvider).watchDayOutcome(date),
 );
 
+/// One day's transactions — the editable breakdown under the money form.
+final dayTransactionsProvider = StreamProvider.family<List<Transaction>, String>(
+  (ref, date) => ref.watch(moneyRepositoryProvider).watchDayTransactions(date),
+);
+
+/// Monthly table (income | date | outcome) for the Money tab's month.
+final moneyTabTableProvider = StreamProvider<List<MonthlyTableRow>>((ref) {
+  return ref
+      .watch(moneyRepositoryProvider)
+      .watchMonthlyTable(ref.watch(moneyMonthProvider));
+});
+
 /// Money-tab transaction list (newest first).
 final moneyTabTransactionsProvider = StreamProvider<List<Transaction>>((ref) {
   return ref

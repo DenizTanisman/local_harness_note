@@ -57,7 +57,7 @@ void main() {
     expect(find.text('Outcome categories'), findsOneWidget);
     expect(find.text('Income categories'), findsOneWidget);
 
-    await tester.tap(find.text('Transactions'));
+    await tester.tap(find.text('Table'));
     await tester.pumpAndSettle();
     expect(find.textContaining('Balance:'), findsNothing);
     await closeApp(tester);

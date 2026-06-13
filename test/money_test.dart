@@ -1,3 +1,4 @@
+import 'package:daily_tracker/core/date_key.dart';
 import 'package:daily_tracker/data/db/app_database.dart';
 import 'package:daily_tracker/data/repositories/money_repository.dart';
 import 'package:drift/native.dart';
@@ -158,8 +159,13 @@ void main() {
     test(
       'outcome offsets queue reminder rows dated before the transaction',
       () async {
+        // Future-relative so the "skip remind dates before today" rule
+        // (CR1-D) never trims a date as the calendar advances.
+        final now = DateTime.now();
+        final txDate = dateKey(now.add(const Duration(days: 5)));
+        final twoBefore = dateKey(now.add(const Duration(days: 3)));
         final id = await money.addTransaction(
-          date: '2026-06-15',
+          date: txDate,
           direction: 'outcome',
           amount: 2500,
           category: 'Bill',
@@ -170,7 +176,7 @@ void main() {
         )..where((r) => r.transactionId.equals(id))).get();
         expect(
           reminders.map((r) => r.remindDate),
-          unorderedEquals(['2026-06-15', '2026-06-13']),
+          unorderedEquals([txDate, twoBefore]),
         );
         expect(reminders.every((r) => !r.fired), isTrue);
       },
@@ -189,7 +195,7 @@ void main() {
 
     test('deleting a transaction cascades its reminders', () async {
       final id = await money.addTransaction(
-        date: '2026-06-15',
+        date: dateKey(DateTime.now().add(const Duration(days: 5))),
         direction: 'outcome',
         amount: 10,
         category: 'Food',
