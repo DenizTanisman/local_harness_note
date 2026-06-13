@@ -35,14 +35,13 @@ void main() {
     expect(waste.inputType, 'checkbox');
     expect(waste.prevInputType, isNull);
     // Its options were never touched — the card is fully usable again.
-    final options = await (db.select(db.metricOptions)
-          ..where((o) => o.metricId.equals(waste.id)))
-        .get();
+    final options = await (db.select(
+      db.metricOptions,
+    )..where((o) => o.metricId.equals(waste.id))).get();
     expect(options, hasLength(1));
   });
 
-  test('every damaged childless core leaf returns to its seed type',
-      () async {
+  test('every damaged childless core leaf returns to its seed type', () async {
     for (final key in ['software', 'water', 'extra', 'brushing', 'sport']) {
       await damage(key);
     }
@@ -63,7 +62,8 @@ void main() {
     // Pre-v3 style: child attached, no memory.
     await tree.makeChildOf(childId: extra.id, parentId: waste.id);
     await (db.update(db.metrics)..where((m) => m.id.equals(waste.id))).write(
-        const MetricsCompanion(prevInputType: Value(null))); // wipe memory
+      const MetricsCompanion(prevInputType: Value(null)),
+    ); // wipe memory
 
     await db.repairCorruptedCoreTypes();
 
@@ -73,12 +73,14 @@ void main() {
 
     await tree.detach(extra.id);
     repaired = await byKey('waste');
-    expect(repaired.inputType, 'checkbox',
-        reason: 'detach now restores thanks to repaired memory');
+    expect(
+      repaired.inputType,
+      'checkbox',
+      reason: 'detach now restores thanks to repaired memory',
+    );
   });
 
-  test('development (natural composite) and healthy cards untouched',
-      () async {
+  test('development (natural composite) and healthy cards untouched', () async {
     final before = {
       for (final m in await db.select(db.metrics).get()) m.key: m.inputType,
     };
@@ -93,14 +95,18 @@ void main() {
     final entries = EntryRepository(db);
     final id = await entries.addMetric(title: 'Reading', inputType: 'int');
     await (db.update(db.metrics)..where((m) => m.id.equals(id))).write(
-        const MetricsCompanion(inputType: Value('composite')));
+      const MetricsCompanion(inputType: Value('composite')),
+    );
 
     await db.repairCorruptedCoreTypes();
 
-    final reading = await (db.select(db.metrics)
-          ..where((m) => m.id.equals(id)))
-        .getSingle();
-    expect(reading.inputType, 'composite',
-        reason: 'non-core types are unknown; repair only covers the seed');
+    final reading = await (db.select(
+      db.metrics,
+    )..where((m) => m.id.equals(id))).getSingle();
+    expect(
+      reading.inputType,
+      'composite',
+      reason: 'non-core types are unknown; repair only covers the seed',
+    );
   });
 }

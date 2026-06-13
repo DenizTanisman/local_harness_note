@@ -55,8 +55,11 @@ void main() {
     await tree.makeChildOf(childId: extra.id, parentId: sport.id);
 
     await tree.detach(water.id);
-    expect((await byKey('sport')).inputType, 'composite',
-        reason: 'still has Extra');
+    expect(
+      (await byKey('sport')).inputType,
+      'composite',
+      reason: 'still has Extra',
+    );
 
     await tree.detach(extra.id);
     expect((await byKey('sport')).inputType, 'int_text');
@@ -71,25 +74,31 @@ void main() {
     expect((await byKey('sport')).inputType, 'int_text');
   });
 
-  test('re-parenting the only child to another card restores the old parent',
-      () async {
-    final water = await byKey('water');
-    final sport = await byKey('sport');
-    final instagram = await byKey('instagram');
-    await tree.makeChildOf(childId: water.id, parentId: sport.id);
-    await tree.makeChildOf(childId: water.id, parentId: instagram.id);
+  test(
+    're-parenting the only child to another card restores the old parent',
+    () async {
+      final water = await byKey('water');
+      final sport = await byKey('sport');
+      final instagram = await byKey('instagram');
+      await tree.makeChildOf(childId: water.id, parentId: sport.id);
+      await tree.makeChildOf(childId: water.id, parentId: instagram.id);
 
-    expect((await byKey('sport')).inputType, 'int_text',
-        reason: 'old parent demoted');
-    expect((await byKey('instagram')).inputType, 'composite');
-    expect((await byKey('instagram')).prevInputType, 'int_text');
-  });
+      expect(
+        (await byKey('sport')).inputType,
+        'int_text',
+        reason: 'old parent demoted',
+      );
+      expect((await byKey('instagram')).inputType, 'composite');
+      expect((await byKey('instagram')).prevInputType, 'int_text');
+    },
+  );
 
-  test('deleting the last (user-created) child restores the parent',
-      () async {
+  test('deleting the last (user-created) child restores the parent', () async {
     final entries = EntryRepository(db);
-    final readingId =
-        await entries.addMetric(title: 'Reading', inputType: 'int');
+    final readingId = await entries.addMetric(
+      title: 'Reading',
+      inputType: 'int',
+    );
     final water = await byKey('water'); // int leaf target
     await tree.makeChildOf(childId: readingId, parentId: water.id);
     expect((await byKey('water')).inputType, 'composite');
@@ -105,8 +114,11 @@ void main() {
       await tree.detach(child.id);
     }
     final dev = await byKey('development');
-    expect(dev.inputType, 'composite',
-        reason: 'prev_input_type is NULL for natural groups');
+    expect(
+      dev.inputType,
+      'composite',
+      reason: 'prev_input_type is NULL for natural groups',
+    );
     expect(dev.prevInputType, isNull);
   });
 
@@ -114,7 +126,10 @@ void main() {
     final entries = EntryRepository(db);
     final sport = await byKey('sport');
     await entries.saveEntry(
-        metricId: sport.id, date: '2026-06-10', numValue: 45);
+      metricId: sport.id,
+      date: '2026-06-10',
+      numValue: 45,
+    );
     final ruleBefore = sport.heatmapRule;
 
     final water = await byKey('water');
@@ -123,14 +138,15 @@ void main() {
 
     final after = await byKey('sport');
     expect(after.heatmapRule, ruleBefore);
-    final rows = await (db.select(db.entries)
-          ..where((e) => e.metricId.equals(sport.id)))
-        .get();
+    final rows = await (db.select(
+      db.entries,
+    )..where((e) => e.metricId.equals(sport.id))).get();
     expect(rows, hasLength(1));
   });
 
-  testWidgets('UI: Sport shows its number field again after ungrouping',
-      (tester) async {
+  testWidgets('UI: Sport shows its number field again after ungrouping', (
+    tester,
+  ) async {
     final container = ProviderContainer(
       overrides: [
         databaseProvider.overrideWithValue(db),
@@ -146,10 +162,12 @@ void main() {
     final sport = await byKey('sport');
     await tree.makeChildOf(childId: water.id, parentId: sport.id);
 
-    await tester.pumpWidget(UncontrolledProviderScope(
-      container: container,
-      child: const MaterialApp(home: HomePage()),
-    ));
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: HomePage()),
+      ),
+    );
     await tester.pumpAndSettle();
 
     Finder sportCard() => find
@@ -157,17 +175,21 @@ void main() {
         .first;
     // Promoted: chip visible, no TextField of its own.
     expect(
-        find.descendant(
-            of: sportCard(), matching: find.widgetWithText(FilterChip, 'Water')),
-        findsOneWidget);
+      find.descendant(
+        of: sportCard(),
+        matching: find.widgetWithText(FilterChip, 'Water'),
+      ),
+      findsOneWidget,
+    );
 
     await tree.detach(water.id);
     await tester.pumpAndSettle();
 
     expect(
-        find.descendant(of: sportCard(), matching: find.byType(TextField)),
-        findsOneWidget,
-        reason: 'int_text number field is back');
+      find.descendant(of: sportCard(), matching: find.byType(TextField)),
+      findsOneWidget,
+      reason: 'int_text number field is back',
+    );
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 100));
