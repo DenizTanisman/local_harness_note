@@ -7,6 +7,7 @@ import '../shared/calendar_row.dart';
 import 'analysis_providers.dart';
 import 'breakdown_toggle.dart';
 import 'heatmap_widget.dart';
+import '../settings/settings_button.dart';
 
 /// Analysis page (spec 6.3): calendar, heatmap, daily breakdown.
 class AnalysisPage extends ConsumerWidget {
@@ -19,7 +20,10 @@ class AnalysisPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final breakdown = ref.watch(breakdownProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Analysis')),
+      appBar: AppBar(
+        title: const Text('Analysis'),
+        actions: const [SettingsButton()],
+      ),
       body: GlowBackground(
         child: ListView(
           children: [

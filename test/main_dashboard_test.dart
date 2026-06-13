@@ -128,13 +128,13 @@ void main() {
     await closeApp(tester);
   });
 
-  testWidgets('money metric in check-in is a read-only deep link', (
+  testWidgets('money metric in check-in is a read-only spend summary', (
     tester,
   ) async {
     await pump(tester, const AppShell());
-    // The check-in money row deep-links; no second Income/Outcome form.
+    // The check-in money row shows the day's spend; no second form.
     expect(find.text('Income'), findsOneWidget); // only the quick-money one
-    expect(find.text('Open Money'), findsOneWidget);
+    expect(find.text('Spent today'), findsOneWidget);
     await closeApp(tester);
   });
 }

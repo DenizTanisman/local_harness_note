@@ -11,8 +11,9 @@ import '../../data/db/app_database.dart';
 import '../../data/db/database_provider.dart';
 import '../../data/heatmap/heatmap_rule.dart';
 import '../../main.dart' show notificationServiceProvider;
-import '../backup/backup_worker.dart';
 import '../../theme/glow_background.dart';
+import '../backup/backup_worker.dart';
+import 'export_import_page.dart';
 import 'settings_providers.dart';
 
 const _backupPasswordKey = 'backup_password';
@@ -49,6 +50,15 @@ class SettingsPage extends ConsumerWidget {
       body: GlowBackground(
         child: ListView(
           children: [
+            const _SectionHeader('Data'),
+            ListTile(
+              leading: const Icon(Icons.import_export),
+              title: const Text('Export / Import'),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ExportImportPage()),
+              ),
+            ),
             const _SectionHeader('Notifications'),
             ListTile(
               title: const Text('Morning quote time'),

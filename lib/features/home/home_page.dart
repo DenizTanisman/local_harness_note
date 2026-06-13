@@ -3,8 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/date_key.dart';
 import '../../theme/glow_background.dart';
-import '../settings/export_import_page.dart';
-import '../settings/settings_page.dart';
+import '../settings/settings_button.dart';
 import 'home_providers.dart';
 import 'widgets/add_metric_sheet.dart';
 import 'widgets/dashboard.dart';
@@ -38,43 +37,10 @@ class HomePage extends ConsumerWidget {
               child: const Text('Today'),
             ),
           Center(
-            child: Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: _DateChip(date: date, highlighted: !isToday),
-            ),
+            child: _DateChip(date: date, highlighted: !isToday),
           ),
+          const SettingsButton(),
         ],
-      ),
-      drawer: Drawer(
-        child: SafeArea(
-          child: ListView(
-            children: [
-              const DrawerHeader(child: Text('Daily Tracker')),
-              ListTile(
-                leading: const Icon(Icons.settings),
-                title: const Text('Settings'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const SettingsPage()),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.import_export),
-                title: const Text('Export / Import'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ExportImportPage()),
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
       ),
       body: GlowBackground(
         child: metrics.when(

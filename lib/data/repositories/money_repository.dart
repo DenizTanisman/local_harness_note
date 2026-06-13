@@ -98,6 +98,18 @@ class MoneyRepository {
 
   // ---------- transactions ----------
 
+  /// Total outcome for a single [date] — read-only Daily Check-in summary.
+  Stream<double> watchDayOutcome(String date) {
+    final sum = db.transactions.amount.sum();
+    final query = db.selectOnly(db.transactions)
+      ..addColumns([sum])
+      ..where(
+        db.transactions.date.equals(date) &
+            db.transactions.direction.equals('outcome'),
+      );
+    return query.watchSingle().map((row) => row.read(sum) ?? 0.0);
+  }
+
   /// Flat list of [month]'s transactions, newest first (CR-3 §4 İşlemler).
   Stream<List<Transaction>> watchTransactions(String month) {
     final query = db.select(db.transactions)

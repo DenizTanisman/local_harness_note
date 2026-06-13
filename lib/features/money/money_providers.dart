@@ -59,6 +59,11 @@ final moneyMonthProvider = NotifierProvider<MoneyMonthNotifier, String>(
   MoneyMonthNotifier.new,
 );
 
+/// Total outcome for a given day (Daily Check-in read-only summary).
+final dayOutcomeProvider = StreamProvider.family<double, String>(
+  (ref, date) => ref.watch(moneyRepositoryProvider).watchDayOutcome(date),
+);
+
 /// Money-tab transaction list (newest first).
 final moneyTabTransactionsProvider = StreamProvider<List<Transaction>>((ref) {
   return ref

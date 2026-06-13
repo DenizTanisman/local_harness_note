@@ -71,15 +71,19 @@ void main() {
     tester,
   ) async {
     await pump(tester);
+    // Fling from the top (AppBar band) so the gesture never lands on a
+    // card TextField that would win the gesture arena.
+    final w = tester.view.physicalSize.width / tester.view.devicePixelRatio;
+    final top = Offset(w / 2, 90);
     // Main(2) → swipe left → Health(3).
-    await tester.fling(find.byType(PageView), const Offset(-600, 0), 1200);
+    await tester.flingFrom(top, const Offset(-600, 0), 1200);
     await tester.pumpAndSettle();
     expect(container.read(tabIndexProvider), AppTab.health);
 
     // Swipe right twice → Analysis(1).
-    await tester.fling(find.byType(PageView), const Offset(600, 0), 1200);
+    await tester.flingFrom(top, const Offset(600, 0), 1200);
     await tester.pumpAndSettle();
-    await tester.fling(find.byType(PageView), const Offset(600, 0), 1200);
+    await tester.flingFrom(top, const Offset(600, 0), 1200);
     await tester.pumpAndSettle();
     expect(container.read(tabIndexProvider), AppTab.analysis);
     await closeApp(tester);
