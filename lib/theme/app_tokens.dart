@@ -43,6 +43,9 @@ class AppTokens {
   static const moneyRed = Color(0xFFDA3633);
   static const moneyGreen = Color(0xFF2EA043);
 
+  /// Calorie-day "under target" warning (CR-3 §11 yellow).
+  static const warn = Color(0xFFD4A72C);
+
   // Radii
   static const radiusCard = 20.0;
   static const radiusPill = 999.0;

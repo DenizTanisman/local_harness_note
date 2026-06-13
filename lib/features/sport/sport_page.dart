@@ -4,7 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/date_key.dart';
 import '../../data/db/app_database.dart';
+import '../../theme/app_tokens.dart';
 import '../../theme/glow_background.dart';
+import '../health/health_providers.dart';
+import '../shared/continuous_sparkline.dart';
 import 'new_program_page.dart';
 import 'sport_providers.dart';
 
@@ -62,10 +65,95 @@ class SportPage extends ConsumerWidget {
                       ],
                     ),
             ),
+            const _ProgramsSparkline(),
+            const _CalorieSparkline(),
             const Divider(height: 32),
             const _CalorieEntryCard(),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Programs sparkline (CR-3 §6/§11): daily volume; tap a height to see
+/// which program it was.
+class _ProgramsSparkline extends ConsumerWidget {
+  const _ProgramsSparkline();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final month = ref.watch(sportMonthProvider);
+    final data = ref.watch(programMonthProvider).value ?? const {};
+    if (data.isEmpty) return const SizedBox.shrink();
+    final parts = month.split('-').map(int.parse).toList();
+    final days = DateTime(parts[0], parts[1] + 1, 0).day;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Programs', style: Theme.of(context).textTheme.bodySmall),
+          ContinuousSparkline(
+            key: const ValueKey('programs-sparkline'),
+            daysInMonth: days,
+            values: {for (final e in data.entries) e.key: e.value.volume},
+            selectedDay: 1,
+            onDayTap: (day) {
+              final entry = data[day];
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    entry == null
+                        ? 'No program on day $day'
+                        : 'Day $day: program #${entry.programId}',
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Calorie sparkline (CR-3 §6/§11): daily intake with the FROZEN per-day
+/// color (green/yellow/red).
+class _CalorieSparkline extends ConsumerWidget {
+  const _CalorieSparkline();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final month = ref.watch(sportMonthProvider);
+    final data = ref.watch(calorieMonthProvider).value ?? const {};
+    if (data.isEmpty) return const SizedBox.shrink();
+    final parts = month.split('-').map(int.parse).toList();
+    final days = DateTime(parts[0], parts[1] + 1, 0).day;
+    Color colorFor(String? name) => switch (name) {
+      'red' => AppTokens.moneyRed,
+      'yellow' => AppTokens.warn,
+      'green' => AppTokens.moneyGreen,
+      _ => AppTokens.sparkline,
+    };
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Calories', style: Theme.of(context).textTheme.bodySmall),
+          ContinuousSparkline(
+            key: const ValueKey('calorie-sparkline'),
+            daysInMonth: days,
+            values: {for (final e in data.entries) e.key: e.value.intake},
+            // Per-day frozen colors (index 0 unused; 1..N).
+            dayColors: [
+              AppTokens.sparkline,
+              for (var d = 1; d <= days; d++) colorFor(data[d]?.color),
+            ],
+            selectedDay: 1,
+          ),
+        ],
       ),
     );
   }
@@ -101,15 +189,28 @@ class _ProgramTile extends ConsumerWidget {
                     ].join('  ·  '),
                   ),
                 ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  onPressed: () => ref
-                      .read(sportRepositoryProvider)
-                      .deleteProgram(program.id),
-                  icon: const Icon(Icons.delete_outline, size: 18),
-                  label: const Text('Delete'),
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton.icon(
+                    onPressed: () => ref
+                        .read(sportRepositoryProvider)
+                        .logProgram(
+                          date: dateKey(DateTime.now()),
+                          programId: program.id,
+                          volume: rows.length.toDouble(),
+                        ),
+                    icon: const Icon(Icons.check, size: 18),
+                    label: const Text('Log today'),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => ref
+                        .read(sportRepositoryProvider)
+                        .deleteProgram(program.id),
+                    icon: const Icon(Icons.delete_outline, size: 18),
+                    label: const Text('Delete'),
+                  ),
+                ],
               ),
             ],
           ),
@@ -247,6 +348,8 @@ class _CalorieEntryCardState extends ConsumerState<_CalorieEntryCard> {
   }
 
   Future<void> _add() async {
+    // The frozen target snapshot (§11) is today's live TDEE_static.
+    final target = ref.read(bodyStatsProvider).tdeeStatic;
     await ref
         .read(sportRepositoryProvider)
         .addCalorieEntry(
@@ -254,6 +357,7 @@ class _CalorieEntryCardState extends ConsumerState<_CalorieEntryCard> {
           meal: _meal,
           kcal: double.parse(_kcal.text),
           type: _type!,
+          currentTarget: target,
         );
     _kcal.clear();
     setState(() {});
