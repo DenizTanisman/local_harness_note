@@ -10,6 +10,7 @@ import '../health/health_providers.dart';
 import '../shared/continuous_sparkline.dart';
 import 'new_program_page.dart';
 import 'sport_providers.dart';
+import '../settings/settings_button.dart';
 
 /// Sport tab (CR-3 §6): programs list + calorie entry. The Programs and
 /// calorie sparklines arrive in CR3-P6.
@@ -20,7 +21,10 @@ class SportPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final programs = ref.watch(programsProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Sport')),
+      appBar: AppBar(
+        title: const Text('Sport'),
+        actions: const [SettingsButton()],
+      ),
       body: GlowBackground(
         child: ListView(
           padding: const EdgeInsets.only(bottom: 24),
@@ -86,6 +90,8 @@ class _ProgramsSparkline extends ConsumerWidget {
     final month = ref.watch(sportMonthProvider);
     final data = ref.watch(programMonthProvider).value ?? const {};
     if (data.isEmpty) return const SizedBox.shrink();
+    final programs = ref.watch(programsProvider).value ?? const [];
+    final nameById = {for (final p in programs) p.id: p.name};
     final parts = month.split('-').map(int.parse).toList();
     final days = DateTime(parts[0], parts[1] + 1, 0).day;
     return Padding(
@@ -101,12 +107,13 @@ class _ProgramsSparkline extends ConsumerWidget {
             selectedDay: 1,
             onDayTap: (day) {
               final entry = data[day];
+              final name = entry == null
+                  ? null
+                  : (nameById[entry.programId] ?? 'program');
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    entry == null
-                        ? 'No program on day $day'
-                        : 'Day $day: program #${entry.programId}',
+                    name == null ? 'No program on day $day' : 'Day $day: $name',
                   ),
                 ),
               );

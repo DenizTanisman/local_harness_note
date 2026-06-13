@@ -13,6 +13,7 @@ import '../shared/continuous_sparkline.dart';
 import 'category_donut.dart';
 import 'money_card_body.dart';
 import 'money_providers.dart';
+import '../settings/settings_button.dart';
 
 /// Money tab (CR-3 §4): shared entry form on top, then a tap-only inner
 /// nav (Overview / Transactions / Categories). Global swipe stays free.
@@ -34,20 +35,24 @@ class _MoneyPageState extends ConsumerState<MoneyPage> {
     final month = ref.watch(moneyMonthProvider);
     final date = ref.watch(homeDateProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Money')),
+      appBar: AppBar(
+        title: const Text('Money'),
+        actions: const [SettingsButton()],
+      ),
       body: GlowBackground(
         child: ListView(
           padding: const EdgeInsets.only(bottom: 24),
           children: [
-            // Shared entry form (writes at the active date, with the
-            // outcome reminder flow — spec §6.2).
-            Card(
-              margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-                child: MoneyCardBody(key: ValueKey('money-tab-form-$date')),
+            // Shared entry form — only on Overview so Transactions /
+            // Categories aren't crowded by it (CR-3 follow-up #7).
+            if (_view == _MoneyView.overview)
+              Card(
+                margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                  child: MoneyCardBody(key: ValueKey('money-tab-form-$date')),
+                ),
               ),
-            ),
             // Month selector for the views below.
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),

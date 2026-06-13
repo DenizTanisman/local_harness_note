@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/db/app_database.dart';
+import '../../../data/repositories/analysis_repository.dart' show formatAmount;
 import '../../../theme/app_tokens.dart';
+import '../../money/money_providers.dart';
 import '../../shell/tab_index.dart';
 import '../home_providers.dart';
 import 'composite_body.dart';
@@ -221,12 +223,22 @@ class _MoneyDeepLink extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: TextButton.icon(
-        onPressed: () => ref.read(tabIndexProvider.notifier).goTo(AppTab.money),
-        icon: const Icon(Icons.open_in_new, size: 18),
-        label: const Text('Open Money'),
+    final date = ref.watch(homeDateProvider);
+    final total = ref.watch(dayOutcomeProvider(date)).value ?? 0;
+    return InkWell(
+      onTap: () => ref.read(tabIndexProvider.notifier).goTo(AppTab.money),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Text('Spent today', style: Theme.of(context).textTheme.bodyMedium),
+            const Spacer(),
+            Text(
+              '${formatAmount(total)} ₺',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ],
+        ),
       ),
     );
   }

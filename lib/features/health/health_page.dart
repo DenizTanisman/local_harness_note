@@ -7,6 +7,7 @@ import '../../data/repositories/health_repository.dart';
 import '../../theme/glow_background.dart';
 import 'health_calc.dart';
 import 'health_providers.dart';
+import '../settings/settings_button.dart';
 
 /// Health tab (CR-3 §5): manual profile + body (which feed the live
 /// BMI/BMR/TDEE), then a read-only fetched-vitals block (placeholder
@@ -17,7 +18,10 @@ class HealthPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Health')),
+      appBar: AppBar(
+        title: const Text('Health'),
+        actions: const [SettingsButton()],
+      ),
       body: GlowBackground(
         child: ListView(
           padding: const EdgeInsets.only(bottom: 24),
