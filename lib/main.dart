@@ -8,6 +8,7 @@ import 'data/db/database_provider.dart';
 import 'features/backup/backup_worker.dart';
 import 'features/home/home_providers.dart';
 import 'features/notifications/notification_service.dart';
+import 'features/screentime/screentime_providers.dart';
 import 'features/shell/app_shell.dart';
 import 'features/shell/tab_index.dart';
 import 'theme/app_theme.dart';
@@ -53,6 +54,9 @@ void main() {
         final service = container.read(notificationServiceProvider);
         await service.init();
         await service.rescheduleAll();
+        // CR-4 §6: pull today's screen time on open (silent without
+        // permission — no repeated prompts).
+        await container.read(screenTimeRepositoryProvider).sync();
       });
     },
     (error, stack) {
