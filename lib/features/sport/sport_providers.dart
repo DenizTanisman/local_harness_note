@@ -26,3 +26,23 @@ final calorieEntriesTodayProvider = StreamProvider<List<CalorieEntry>>(
       .watch(sportRepositoryProvider)
       .watchCalorieEntries(dateKey(DateTime.now())),
 );
+
+/// The month shown by the Sport sparklines (current month).
+final sportMonthProvider = Provider<String>(
+  (ref) => dateKey(DateTime.now()).substring(0, 7),
+);
+
+/// Day-of-month → calorie_day for the sport month (intake + frozen color).
+final calorieMonthProvider = StreamProvider<Map<int, CalorieDayData>>(
+  (ref) => ref
+      .watch(sportRepositoryProvider)
+      .watchCalorieMonth(ref.watch(sportMonthProvider)),
+);
+
+/// Day-of-month → (volume, programId) for the sport month.
+final programMonthProvider =
+    StreamProvider<Map<int, ({double volume, int programId})>>(
+      (ref) => ref
+          .watch(sportRepositoryProvider)
+          .watchProgramMonth(ref.watch(sportMonthProvider)),
+    );
