@@ -549,3 +549,14 @@ Sonraki fazlar için aynı kalıp: "Faz N'i uygula, kabul kriterleri Bölüm 12 
 - **4.3 Seed:** Çekirdek 12 kayıt `is_deletable = 0` ile yazılır; mevcut kurulumlar şema v2 migration'ında `UPDATE ... WHERE key IN (çekirdek 12)` ile korunur (key üzerinden, id'ye güvenilmez).
 - **6.2 Del:** Del butonu yalnızca `is_deletable = 1` metriklerde render edilir (yokluk, disabled değil). Repository katmanı da silmeyi reddeder (savunma katmanı).
 - **13 Açık Nokta #2:** KAPANDI — çekirdek korunur.
+## CR-3 Güncellemeleri (2026-06-13, uygulandı)
+
+- **Navigasyon (§2):** 2 sayfa yerine 5 sekme — Money(0)/Analysis(1)/Main(2)/Health(3)/Sport(4); PageView + BottomNav senkron, Main'de açılır. Bildirim/deep-link tab index ile yönlenir. (Açık Nokta #1: Daily Check-in Main'de — onaylandı. #2: Sport-dk metriği ile Sport sekmesi AYRI — onaylandı.)
+- **Main (§3):** Dashboard (hızlı para = paylaşılan form, bugün özeti = sensör placeholder '—', bu ay bakiye) + Daily Check-in (eski §6.2 kartları; money satırı salt-okunur deep link).
+- **Money (§4):** Overview/Transactions/Categories iç-nav (tap-only); kendi ay state'i; gesture-safe kategori donut'u; bütçe sparkline'ı (§6.5 General alt görünüm); kategori essential/heatmap yönetimi.
+- **Health (§5, §10):** Profil + vücut → BMI/BMR/TDEE_static (renklendirme hedefi, alınan kaloriden bağımsız — §10 düzeltmesi) + VO2max fallback; sensör bloğu placeholder (Health Connect P4'e ertelendi). Tablolar: health_profile, body_log, health_samples, sync_state.
+- **Sport (§6):** Programlar + New Program (blok + set/duration validasyonu + süperset) + kalori girişi; exercise/food autocomplete (INSERT OR IGNORE). Programs + kalori sparkline'ları (CR1-C motoru). Tablolar: programs, program_exercises, saved_exercise_titles, saved_food_types, calorie_entries, calorie_day, program_log.
+- **Kalori hedef versiyonlama (§11):** calorie_day.target_snapshot ilk girişte donar; renk donmuş snapshot'a göre; hedef değişince eski günler yeniden renklenmez.
+- **Analysis (§7):** DEĞİŞMEDİ — yalnızca index 1'e taşındı; money döküm satırı salt-okunur.
+- **Güvenlik (§14):** Sağlık/finans değerleri log/analytics'e ASLA yazılmaz (statik tarama testi); FLAG_SECURE app-wide (Money & Health) opsiyonel, varsayılan kapalı; SQLCipher korunur.
+- **Kapsam dışı (bu turda):** P4 Health Connect canlı çekme — HealthRepository arayüzü hazır, gerçek pull ertelendi.
