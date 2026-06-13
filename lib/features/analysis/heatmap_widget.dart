@@ -29,6 +29,10 @@ class HeatmapWidget extends ConsumerStatefulWidget {
 class _HeatmapWidgetState extends ConsumerState<HeatmapWidget> {
   final _scroll = ScrollController();
 
+  /// The date the grid is currently centered on, so we only re-scroll when
+  /// the selection actually moves to a new day/month.
+  String? _centeredOn;
+
   @override
   void dispose() {
     _scroll.dispose();
@@ -51,14 +55,21 @@ class _HeatmapWidgetState extends ConsumerState<HeatmapWidget> {
             child: Text('Star a metric to see it here.'),
           );
         }
-        // Newest day sits at the right edge on first build.
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (_scroll.hasClients &&
-              _scroll.position.maxScrollExtent > 0 &&
-              _scroll.position.pixels == 0) {
-            _scroll.jumpTo(_scroll.position.maxScrollExtent);
-          }
-        });
+        final selectedDate = ref.watch(selectedDateProvider);
+        final selectedCol = data.dates.indexOf(selectedDate);
+        // Bring the selected day into view whenever the selection moves to a
+        // new day/month.
+        if (selectedDate != _centeredOn && selectedCol >= 0) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!_scroll.hasClients) return;
+            _centeredOn = selectedDate;
+            final target = (selectedCol * _rowHeight - 120).clamp(
+              0.0,
+              _scroll.position.maxScrollExtent,
+            );
+            _scroll.jumpTo(target);
+          });
+        }
         final height = data.metrics.length * _rowHeight + _dateBandHeight;
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -94,6 +105,7 @@ class _HeatmapWidgetState extends ConsumerState<HeatmapWidget> {
                     size: Size(data.dates.length * _rowHeight, height),
                     painter: HeatmapPainter(
                       matrix: data,
+                      selectedCol: selectedCol,
                       emptyBorderColor: AppTokens.surfaceCardBorder,
                       emptyFillColor: AppTokens.surfaceCard,
                       labelColor: Theme.of(
@@ -121,6 +133,7 @@ class _HeatmapWidgetState extends ConsumerState<HeatmapWidget> {
 class HeatmapPainter extends CustomPainter {
   HeatmapPainter({
     required this.matrix,
+    required this.selectedCol,
     required this.emptyBorderColor,
     required this.labelColor,
     required this.selectedColor,
@@ -128,6 +141,9 @@ class HeatmapPainter extends CustomPainter {
   });
 
   final HeatmapMatrix matrix;
+
+  /// Index of the selected date within [matrix.dates], or -1.
+  final int selectedCol;
   final Color emptyBorderColor;
   final Color? emptyFillColor;
   final Color labelColor;
@@ -142,8 +158,6 @@ class HeatmapPainter extends CustomPainter {
       ..color = emptyBorderColor;
 
     // Day-of-month labels every other column; '1' marks a new month.
-    // The rightmost column is the selected date (window ends there).
-    final selectedCol = matrix.dates.length - 1;
     for (var col = 0; col < matrix.dates.length; col++) {
       final day = matrix.dates[col].substring(8);
       final isMonthStart = day == '01';
@@ -203,25 +217,27 @@ class HeatmapPainter extends CustomPainter {
       }
     }
 
-    // Selected-day column outline.
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(
-          selectedCol * _rowHeight - 1.5,
-          _dateBandHeight - 1.5,
-          _cellSize + 3,
-          matrix.metrics.length * _rowHeight - _cellGap + 3,
+    // Selected-day column outline (only when the day is in this month).
+    if (selectedCol >= 0) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            selectedCol * _rowHeight - 1.5,
+            _dateBandHeight - 1.5,
+            _cellSize + 3,
+            matrix.metrics.length * _rowHeight - _cellGap + 3,
+          ),
+          const Radius.circular(7),
         ),
-        const Radius.circular(7),
-      ),
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5
-        ..color = selectedColor.withValues(alpha: 0.7),
-    );
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5
+          ..color = selectedColor.withValues(alpha: 0.7),
+      );
+    }
   }
 
   @override
   bool shouldRepaint(HeatmapPainter oldDelegate) =>
-      oldDelegate.matrix != matrix;
+      oldDelegate.matrix != matrix || oldDelegate.selectedCol != selectedCol;
 }

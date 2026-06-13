@@ -75,8 +75,14 @@ class AnalysisRepository {
       .watch()
       .map((_) {});
 
-  Stream<HeatmapMatrix> watchHeatmap(String endDate, int days) =>
-      _changes().asyncMap((_) => loadHeatmap(endDate, days));
+  Stream<HeatmapMatrix> watchHeatmap(
+    String endDate,
+    int days, {
+    String Function(String key)? floorFor,
+    String? todayKey,
+  }) => _changes().asyncMap(
+    (_) => loadHeatmap(endDate, days, floorFor: floorFor, todayKey: todayKey),
+  );
 
   /// Starred rows in display order: the core 9 first (fixed order), then
   /// later-starred metrics by star time (spec 5.3).
@@ -101,7 +107,19 @@ class AnalysisRepository {
     return starred;
   }
 
-  Future<HeatmapMatrix> loadHeatmap(String endDate, int days) async {
+  /// [floorFor] gives each metric the first date it has data for; days
+  /// before it stay EMPTY (no zero-fill) — tracking hadn't started. Days
+  /// after [todayKey] are also empty (the future hasn't happened). Defaults
+  /// are permissive (no floor / no future cap) so repository tests keep
+  /// exercising the plain zero-fill; the app passes the real config.
+  Future<HeatmapMatrix> loadHeatmap(
+    String endDate,
+    int days, {
+    String Function(String key)? floorFor,
+    String? todayKey,
+  }) async {
+    final floor = floorFor ?? (_) => '0000-01-01';
+    final today = todayKey ?? '9999-12-31';
     final metrics = await starredInDisplayOrder();
     final end = parseDateKey(endDate);
     final dates = [
@@ -127,11 +145,15 @@ class AnalysisRepository {
         startDate,
         endDate,
       );
-      // End-of-day-zero rule: a day with no entry counts as 0 (Waste/
-      // checkbox = NO = 0 options). Every cell in the window is ≤ the
-      // selected date, so all get a real value and are colored by the 0
-      // bucket instead of shown as an empty cell.
-      values[metric.id] = {for (final d in dates) d: present[d] ?? 0.0};
+      final metricFloor = floor(metric.key);
+      // End-of-day-zero rule: within the tracked window a blank day counts
+      // as 0 (Waste/checkbox = NO). Outside it — before the metric's data
+      // floor or after today — the cell is omitted (empty), not zero.
+      values[metric.id] = {
+        for (final d in dates)
+          if (d.compareTo(metricFloor) >= 0 && d.compareTo(today) <= 0)
+            d: present[d] ?? 0.0,
+      };
     }
     return HeatmapMatrix(
       metrics: metrics,

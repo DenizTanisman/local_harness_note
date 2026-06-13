@@ -62,21 +62,29 @@ void main() {
     await closeApp(tester);
   });
 
-  testWidgets('tapping a heatmap cell selects that date', (tester) async {
+  testWidgets('tapping a heatmap cell selects that day of the month', (
+    tester,
+  ) async {
     await tester.pumpWidget(app(const AnalysisPage()));
     await tester.pumpAndSettle();
 
-    final grid = find.byKey(const ValueKey('heatmap-grid'));
-    expect(grid, findsOneWidget);
-    // Rightmost visible column is the selected date (yesterday); tap a few
-    // columns to its left.
-    final box = tester.getRect(grid);
-    const cell = 29.0; // _rowHeight
-    final target = Offset(box.right - cell * 3.5, box.top + 10);
-    await tester.tapAt(target);
+    // Use last month so every column is a past, selectable day and the
+    // month view sits scrolled to the left (selected near day 3).
+    final now = DateTime.now();
+    final prev = DateTime(now.year, now.month - 1, 1);
+    final month =
+        '${prev.year.toString().padLeft(4, '0')}-${prev.month.toString().padLeft(2, '0')}';
+    container.read(selectedDateProvider.notifier).select('$month-03');
     await tester.pumpAndSettle();
 
-    expect(container.read(selectedDateProvider), daysAgo(4));
+    final grid = find.byKey(const ValueKey('heatmap-grid'));
+    final box = tester.getRect(grid);
+    const cell = 29.0; // _rowHeight
+    // Column index 6 == day 7 (1-based).
+    await tester.tapAt(Offset(box.left + cell * 6 + cell / 2, box.top + 10));
+    await tester.pumpAndSettle();
+
+    expect(container.read(selectedDateProvider), '$month-07');
     await closeApp(tester);
   });
 

@@ -24,14 +24,29 @@ final selectedDateProvider = NotifierProvider<SelectedDateNotifier, String>(
   SelectedDateNotifier.new,
 );
 
-/// Visible day window of the heatmap (scrollable, ends at selected date).
-const heatmapWindowDays = 60;
+/// Per-metric data floor: the first day a metric has meaningful data, so
+/// the heatmap doesn't invent zero-history before tracking began. Temporary
+/// ("şimdilik") — Money tracked since 15 Apr 2026, everything else since
+/// 13 Jun 2026.
+String heatmapDataFloor(String metricKey) =>
+    metricKey == 'money' ? '2026-04-15' : '2026-06-13';
 
+/// The heatmap shows exactly one calendar month — the month of the selected
+/// date (1..N), instead of a rolling window.
 final heatmapProvider = StreamProvider<HeatmapMatrix>((ref) {
   final date = ref.watch(selectedDateProvider);
+  final parts = date.substring(0, 7).split('-').map(int.parse).toList();
+  final daysInMonth = DateTime(parts[0], parts[1] + 1, 0).day;
+  final endDate =
+      '${date.substring(0, 7)}-${daysInMonth.toString().padLeft(2, '0')}';
   return ref
       .watch(analysisRepositoryProvider)
-      .watchHeatmap(date, heatmapWindowDays);
+      .watchHeatmap(
+        endDate,
+        daysInMonth,
+        floorFor: heatmapDataFloor,
+        todayKey: dateKey(DateTime.now()),
+      );
 });
 
 final breakdownProvider = StreamProvider<List<BreakdownNode>>((ref) {
