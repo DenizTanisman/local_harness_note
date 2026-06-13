@@ -7073,6 +7073,686 @@ class ProgramLogCompanion extends UpdateCompanion<ProgramLogData> {
   }
 }
 
+class $ScreenTimeDayTable extends ScreenTimeDay
+    with TableInfo<$ScreenTimeDayTable, ScreenTimeDayData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ScreenTimeDayTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _dateMeta = const VerificationMeta('date');
+  @override
+  late final GeneratedColumn<String> date = GeneratedColumn<String>(
+    'date',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _totalMinMeta = const VerificationMeta(
+    'totalMin',
+  );
+  @override
+  late final GeneratedColumn<int> totalMin = GeneratedColumn<int>(
+    'total_min',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _capturedAtMeta = const VerificationMeta(
+    'capturedAt',
+  );
+  @override
+  late final GeneratedColumn<int> capturedAt = GeneratedColumn<int>(
+    'captured_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [date, totalMin, capturedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'screen_time_day';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ScreenTimeDayData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('date')) {
+      context.handle(
+        _dateMeta,
+        date.isAcceptableOrUnknown(data['date']!, _dateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dateMeta);
+    }
+    if (data.containsKey('total_min')) {
+      context.handle(
+        _totalMinMeta,
+        totalMin.isAcceptableOrUnknown(data['total_min']!, _totalMinMeta),
+      );
+    }
+    if (data.containsKey('captured_at')) {
+      context.handle(
+        _capturedAtMeta,
+        capturedAt.isAcceptableOrUnknown(data['captured_at']!, _capturedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_capturedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {date};
+  @override
+  ScreenTimeDayData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ScreenTimeDayData(
+      date: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}date'],
+      )!,
+      totalMin: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total_min'],
+      )!,
+      capturedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}captured_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ScreenTimeDayTable createAlias(String alias) {
+    return $ScreenTimeDayTable(attachedDatabase, alias);
+  }
+}
+
+class ScreenTimeDayData extends DataClass
+    implements Insertable<ScreenTimeDayData> {
+  final String date;
+  final int totalMin;
+  final int capturedAt;
+  const ScreenTimeDayData({
+    required this.date,
+    required this.totalMin,
+    required this.capturedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['date'] = Variable<String>(date);
+    map['total_min'] = Variable<int>(totalMin);
+    map['captured_at'] = Variable<int>(capturedAt);
+    return map;
+  }
+
+  ScreenTimeDayCompanion toCompanion(bool nullToAbsent) {
+    return ScreenTimeDayCompanion(
+      date: Value(date),
+      totalMin: Value(totalMin),
+      capturedAt: Value(capturedAt),
+    );
+  }
+
+  factory ScreenTimeDayData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ScreenTimeDayData(
+      date: serializer.fromJson<String>(json['date']),
+      totalMin: serializer.fromJson<int>(json['totalMin']),
+      capturedAt: serializer.fromJson<int>(json['capturedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'date': serializer.toJson<String>(date),
+      'totalMin': serializer.toJson<int>(totalMin),
+      'capturedAt': serializer.toJson<int>(capturedAt),
+    };
+  }
+
+  ScreenTimeDayData copyWith({String? date, int? totalMin, int? capturedAt}) =>
+      ScreenTimeDayData(
+        date: date ?? this.date,
+        totalMin: totalMin ?? this.totalMin,
+        capturedAt: capturedAt ?? this.capturedAt,
+      );
+  ScreenTimeDayData copyWithCompanion(ScreenTimeDayCompanion data) {
+    return ScreenTimeDayData(
+      date: data.date.present ? data.date.value : this.date,
+      totalMin: data.totalMin.present ? data.totalMin.value : this.totalMin,
+      capturedAt: data.capturedAt.present
+          ? data.capturedAt.value
+          : this.capturedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ScreenTimeDayData(')
+          ..write('date: $date, ')
+          ..write('totalMin: $totalMin, ')
+          ..write('capturedAt: $capturedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(date, totalMin, capturedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ScreenTimeDayData &&
+          other.date == this.date &&
+          other.totalMin == this.totalMin &&
+          other.capturedAt == this.capturedAt);
+}
+
+class ScreenTimeDayCompanion extends UpdateCompanion<ScreenTimeDayData> {
+  final Value<String> date;
+  final Value<int> totalMin;
+  final Value<int> capturedAt;
+  final Value<int> rowid;
+  const ScreenTimeDayCompanion({
+    this.date = const Value.absent(),
+    this.totalMin = const Value.absent(),
+    this.capturedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ScreenTimeDayCompanion.insert({
+    required String date,
+    this.totalMin = const Value.absent(),
+    required int capturedAt,
+    this.rowid = const Value.absent(),
+  }) : date = Value(date),
+       capturedAt = Value(capturedAt);
+  static Insertable<ScreenTimeDayData> custom({
+    Expression<String>? date,
+    Expression<int>? totalMin,
+    Expression<int>? capturedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (date != null) 'date': date,
+      if (totalMin != null) 'total_min': totalMin,
+      if (capturedAt != null) 'captured_at': capturedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ScreenTimeDayCompanion copyWith({
+    Value<String>? date,
+    Value<int>? totalMin,
+    Value<int>? capturedAt,
+    Value<int>? rowid,
+  }) {
+    return ScreenTimeDayCompanion(
+      date: date ?? this.date,
+      totalMin: totalMin ?? this.totalMin,
+      capturedAt: capturedAt ?? this.capturedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (date.present) {
+      map['date'] = Variable<String>(date.value);
+    }
+    if (totalMin.present) {
+      map['total_min'] = Variable<int>(totalMin.value);
+    }
+    if (capturedAt.present) {
+      map['captured_at'] = Variable<int>(capturedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ScreenTimeDayCompanion(')
+          ..write('date: $date, ')
+          ..write('totalMin: $totalMin, ')
+          ..write('capturedAt: $capturedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ScreenTimeAppTable extends ScreenTimeApp
+    with TableInfo<$ScreenTimeAppTable, ScreenTimeAppData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ScreenTimeAppTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _dateMeta = const VerificationMeta('date');
+  @override
+  late final GeneratedColumn<String> date = GeneratedColumn<String>(
+    'date',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES screen_time_day (date) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _packageNameMeta = const VerificationMeta(
+    'packageName',
+  );
+  @override
+  late final GeneratedColumn<String> packageName = GeneratedColumn<String>(
+    'package_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _appLabelMeta = const VerificationMeta(
+    'appLabel',
+  );
+  @override
+  late final GeneratedColumn<String> appLabel = GeneratedColumn<String>(
+    'app_label',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _foregroundMinMeta = const VerificationMeta(
+    'foregroundMin',
+  );
+  @override
+  late final GeneratedColumn<int> foregroundMin = GeneratedColumn<int>(
+    'foreground_min',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _rankMeta = const VerificationMeta('rank');
+  @override
+  late final GeneratedColumn<int> rank = GeneratedColumn<int>(
+    'rank',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    date,
+    packageName,
+    appLabel,
+    foregroundMin,
+    rank,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'screen_time_app';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ScreenTimeAppData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('date')) {
+      context.handle(
+        _dateMeta,
+        date.isAcceptableOrUnknown(data['date']!, _dateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dateMeta);
+    }
+    if (data.containsKey('package_name')) {
+      context.handle(
+        _packageNameMeta,
+        packageName.isAcceptableOrUnknown(
+          data['package_name']!,
+          _packageNameMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_packageNameMeta);
+    }
+    if (data.containsKey('app_label')) {
+      context.handle(
+        _appLabelMeta,
+        appLabel.isAcceptableOrUnknown(data['app_label']!, _appLabelMeta),
+      );
+    }
+    if (data.containsKey('foreground_min')) {
+      context.handle(
+        _foregroundMinMeta,
+        foregroundMin.isAcceptableOrUnknown(
+          data['foreground_min']!,
+          _foregroundMinMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_foregroundMinMeta);
+    }
+    if (data.containsKey('rank')) {
+      context.handle(
+        _rankMeta,
+        rank.isAcceptableOrUnknown(data['rank']!, _rankMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_rankMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {date, packageName},
+  ];
+  @override
+  ScreenTimeAppData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ScreenTimeAppData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      date: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}date'],
+      )!,
+      packageName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}package_name'],
+      )!,
+      appLabel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}app_label'],
+      ),
+      foregroundMin: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}foreground_min'],
+      )!,
+      rank: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rank'],
+      )!,
+    );
+  }
+
+  @override
+  $ScreenTimeAppTable createAlias(String alias) {
+    return $ScreenTimeAppTable(attachedDatabase, alias);
+  }
+}
+
+class ScreenTimeAppData extends DataClass
+    implements Insertable<ScreenTimeAppData> {
+  final int id;
+  final String date;
+  final String packageName;
+  final String? appLabel;
+  final int foregroundMin;
+  final int rank;
+  const ScreenTimeAppData({
+    required this.id,
+    required this.date,
+    required this.packageName,
+    this.appLabel,
+    required this.foregroundMin,
+    required this.rank,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['date'] = Variable<String>(date);
+    map['package_name'] = Variable<String>(packageName);
+    if (!nullToAbsent || appLabel != null) {
+      map['app_label'] = Variable<String>(appLabel);
+    }
+    map['foreground_min'] = Variable<int>(foregroundMin);
+    map['rank'] = Variable<int>(rank);
+    return map;
+  }
+
+  ScreenTimeAppCompanion toCompanion(bool nullToAbsent) {
+    return ScreenTimeAppCompanion(
+      id: Value(id),
+      date: Value(date),
+      packageName: Value(packageName),
+      appLabel: appLabel == null && nullToAbsent
+          ? const Value.absent()
+          : Value(appLabel),
+      foregroundMin: Value(foregroundMin),
+      rank: Value(rank),
+    );
+  }
+
+  factory ScreenTimeAppData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ScreenTimeAppData(
+      id: serializer.fromJson<int>(json['id']),
+      date: serializer.fromJson<String>(json['date']),
+      packageName: serializer.fromJson<String>(json['packageName']),
+      appLabel: serializer.fromJson<String?>(json['appLabel']),
+      foregroundMin: serializer.fromJson<int>(json['foregroundMin']),
+      rank: serializer.fromJson<int>(json['rank']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'date': serializer.toJson<String>(date),
+      'packageName': serializer.toJson<String>(packageName),
+      'appLabel': serializer.toJson<String?>(appLabel),
+      'foregroundMin': serializer.toJson<int>(foregroundMin),
+      'rank': serializer.toJson<int>(rank),
+    };
+  }
+
+  ScreenTimeAppData copyWith({
+    int? id,
+    String? date,
+    String? packageName,
+    Value<String?> appLabel = const Value.absent(),
+    int? foregroundMin,
+    int? rank,
+  }) => ScreenTimeAppData(
+    id: id ?? this.id,
+    date: date ?? this.date,
+    packageName: packageName ?? this.packageName,
+    appLabel: appLabel.present ? appLabel.value : this.appLabel,
+    foregroundMin: foregroundMin ?? this.foregroundMin,
+    rank: rank ?? this.rank,
+  );
+  ScreenTimeAppData copyWithCompanion(ScreenTimeAppCompanion data) {
+    return ScreenTimeAppData(
+      id: data.id.present ? data.id.value : this.id,
+      date: data.date.present ? data.date.value : this.date,
+      packageName: data.packageName.present
+          ? data.packageName.value
+          : this.packageName,
+      appLabel: data.appLabel.present ? data.appLabel.value : this.appLabel,
+      foregroundMin: data.foregroundMin.present
+          ? data.foregroundMin.value
+          : this.foregroundMin,
+      rank: data.rank.present ? data.rank.value : this.rank,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ScreenTimeAppData(')
+          ..write('id: $id, ')
+          ..write('date: $date, ')
+          ..write('packageName: $packageName, ')
+          ..write('appLabel: $appLabel, ')
+          ..write('foregroundMin: $foregroundMin, ')
+          ..write('rank: $rank')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, date, packageName, appLabel, foregroundMin, rank);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ScreenTimeAppData &&
+          other.id == this.id &&
+          other.date == this.date &&
+          other.packageName == this.packageName &&
+          other.appLabel == this.appLabel &&
+          other.foregroundMin == this.foregroundMin &&
+          other.rank == this.rank);
+}
+
+class ScreenTimeAppCompanion extends UpdateCompanion<ScreenTimeAppData> {
+  final Value<int> id;
+  final Value<String> date;
+  final Value<String> packageName;
+  final Value<String?> appLabel;
+  final Value<int> foregroundMin;
+  final Value<int> rank;
+  const ScreenTimeAppCompanion({
+    this.id = const Value.absent(),
+    this.date = const Value.absent(),
+    this.packageName = const Value.absent(),
+    this.appLabel = const Value.absent(),
+    this.foregroundMin = const Value.absent(),
+    this.rank = const Value.absent(),
+  });
+  ScreenTimeAppCompanion.insert({
+    this.id = const Value.absent(),
+    required String date,
+    required String packageName,
+    this.appLabel = const Value.absent(),
+    required int foregroundMin,
+    required int rank,
+  }) : date = Value(date),
+       packageName = Value(packageName),
+       foregroundMin = Value(foregroundMin),
+       rank = Value(rank);
+  static Insertable<ScreenTimeAppData> custom({
+    Expression<int>? id,
+    Expression<String>? date,
+    Expression<String>? packageName,
+    Expression<String>? appLabel,
+    Expression<int>? foregroundMin,
+    Expression<int>? rank,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (date != null) 'date': date,
+      if (packageName != null) 'package_name': packageName,
+      if (appLabel != null) 'app_label': appLabel,
+      if (foregroundMin != null) 'foreground_min': foregroundMin,
+      if (rank != null) 'rank': rank,
+    });
+  }
+
+  ScreenTimeAppCompanion copyWith({
+    Value<int>? id,
+    Value<String>? date,
+    Value<String>? packageName,
+    Value<String?>? appLabel,
+    Value<int>? foregroundMin,
+    Value<int>? rank,
+  }) {
+    return ScreenTimeAppCompanion(
+      id: id ?? this.id,
+      date: date ?? this.date,
+      packageName: packageName ?? this.packageName,
+      appLabel: appLabel ?? this.appLabel,
+      foregroundMin: foregroundMin ?? this.foregroundMin,
+      rank: rank ?? this.rank,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (date.present) {
+      map['date'] = Variable<String>(date.value);
+    }
+    if (packageName.present) {
+      map['package_name'] = Variable<String>(packageName.value);
+    }
+    if (appLabel.present) {
+      map['app_label'] = Variable<String>(appLabel.value);
+    }
+    if (foregroundMin.present) {
+      map['foreground_min'] = Variable<int>(foregroundMin.value);
+    }
+    if (rank.present) {
+      map['rank'] = Variable<int>(rank.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ScreenTimeAppCompanion(')
+          ..write('id: $id, ')
+          ..write('date: $date, ')
+          ..write('packageName: $packageName, ')
+          ..write('appLabel: $appLabel, ')
+          ..write('foregroundMin: $foregroundMin, ')
+          ..write('rank: $rank')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -7102,6 +7782,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CalorieEntriesTable calorieEntries = $CalorieEntriesTable(this);
   late final $CalorieDayTable calorieDay = $CalorieDayTable(this);
   late final $ProgramLogTable programLog = $ProgramLogTable(this);
+  late final $ScreenTimeDayTable screenTimeDay = $ScreenTimeDayTable(this);
+  late final $ScreenTimeAppTable screenTimeApp = $ScreenTimeAppTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -7126,6 +7808,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     calorieEntries,
     calorieDay,
     programLog,
+    screenTimeDay,
+    screenTimeApp,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -7184,6 +7868,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('program_log', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'screen_time_day',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('screen_time_app', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -12668,6 +13359,617 @@ typedef $$ProgramLogTableProcessedTableManager =
       ProgramLogData,
       PrefetchHooks Function({bool programId})
     >;
+typedef $$ScreenTimeDayTableCreateCompanionBuilder =
+    ScreenTimeDayCompanion Function({
+      required String date,
+      Value<int> totalMin,
+      required int capturedAt,
+      Value<int> rowid,
+    });
+typedef $$ScreenTimeDayTableUpdateCompanionBuilder =
+    ScreenTimeDayCompanion Function({
+      Value<String> date,
+      Value<int> totalMin,
+      Value<int> capturedAt,
+      Value<int> rowid,
+    });
+
+final class $$ScreenTimeDayTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $ScreenTimeDayTable, ScreenTimeDayData> {
+  $$ScreenTimeDayTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static MultiTypedResultKey<$ScreenTimeAppTable, List<ScreenTimeAppData>>
+  _screenTimeAppRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.screenTimeApp,
+    aliasName: 'screen_time_day__date__screen_time_app__date',
+  );
+
+  $$ScreenTimeAppTableProcessedTableManager get screenTimeAppRefs {
+    final manager = $$ScreenTimeAppTableTableManager(
+      $_db,
+      $_db.screenTimeApp,
+    ).filter((f) => f.date.date.sqlEquals($_itemColumn<String>('date')!));
+
+    final cache = $_typedResult.readTableOrNull(_screenTimeAppRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$ScreenTimeDayTableFilterComposer
+    extends Composer<_$AppDatabase, $ScreenTimeDayTable> {
+  $$ScreenTimeDayTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get totalMin => $composableBuilder(
+    column: $table.totalMin,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get capturedAt => $composableBuilder(
+    column: $table.capturedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> screenTimeAppRefs(
+    Expression<bool> Function($$ScreenTimeAppTableFilterComposer f) f,
+  ) {
+    final $$ScreenTimeAppTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.date,
+      referencedTable: $db.screenTimeApp,
+      getReferencedColumn: (t) => t.date,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ScreenTimeAppTableFilterComposer(
+            $db: $db,
+            $table: $db.screenTimeApp,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ScreenTimeDayTableOrderingComposer
+    extends Composer<_$AppDatabase, $ScreenTimeDayTable> {
+  $$ScreenTimeDayTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get totalMin => $composableBuilder(
+    column: $table.totalMin,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get capturedAt => $composableBuilder(
+    column: $table.capturedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ScreenTimeDayTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ScreenTimeDayTable> {
+  $$ScreenTimeDayTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<int> get totalMin =>
+      $composableBuilder(column: $table.totalMin, builder: (column) => column);
+
+  GeneratedColumn<int> get capturedAt => $composableBuilder(
+    column: $table.capturedAt,
+    builder: (column) => column,
+  );
+
+  Expression<T> screenTimeAppRefs<T extends Object>(
+    Expression<T> Function($$ScreenTimeAppTableAnnotationComposer a) f,
+  ) {
+    final $$ScreenTimeAppTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.date,
+      referencedTable: $db.screenTimeApp,
+      getReferencedColumn: (t) => t.date,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ScreenTimeAppTableAnnotationComposer(
+            $db: $db,
+            $table: $db.screenTimeApp,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ScreenTimeDayTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ScreenTimeDayTable,
+          ScreenTimeDayData,
+          $$ScreenTimeDayTableFilterComposer,
+          $$ScreenTimeDayTableOrderingComposer,
+          $$ScreenTimeDayTableAnnotationComposer,
+          $$ScreenTimeDayTableCreateCompanionBuilder,
+          $$ScreenTimeDayTableUpdateCompanionBuilder,
+          (ScreenTimeDayData, $$ScreenTimeDayTableReferences),
+          ScreenTimeDayData,
+          PrefetchHooks Function({bool screenTimeAppRefs})
+        > {
+  $$ScreenTimeDayTableTableManager(_$AppDatabase db, $ScreenTimeDayTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ScreenTimeDayTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ScreenTimeDayTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ScreenTimeDayTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> date = const Value.absent(),
+                Value<int> totalMin = const Value.absent(),
+                Value<int> capturedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ScreenTimeDayCompanion(
+                date: date,
+                totalMin: totalMin,
+                capturedAt: capturedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String date,
+                Value<int> totalMin = const Value.absent(),
+                required int capturedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => ScreenTimeDayCompanion.insert(
+                date: date,
+                totalMin: totalMin,
+                capturedAt: capturedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ScreenTimeDayTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({screenTimeAppRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (screenTimeAppRefs) db.screenTimeApp,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (screenTimeAppRefs)
+                    await $_getPrefetchedData<
+                      ScreenTimeDayData,
+                      $ScreenTimeDayTable,
+                      ScreenTimeAppData
+                    >(
+                      currentTable: table,
+                      referencedTable: $$ScreenTimeDayTableReferences
+                          ._screenTimeAppRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$ScreenTimeDayTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).screenTimeAppRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.date == item.date),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ScreenTimeDayTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ScreenTimeDayTable,
+      ScreenTimeDayData,
+      $$ScreenTimeDayTableFilterComposer,
+      $$ScreenTimeDayTableOrderingComposer,
+      $$ScreenTimeDayTableAnnotationComposer,
+      $$ScreenTimeDayTableCreateCompanionBuilder,
+      $$ScreenTimeDayTableUpdateCompanionBuilder,
+      (ScreenTimeDayData, $$ScreenTimeDayTableReferences),
+      ScreenTimeDayData,
+      PrefetchHooks Function({bool screenTimeAppRefs})
+    >;
+typedef $$ScreenTimeAppTableCreateCompanionBuilder =
+    ScreenTimeAppCompanion Function({
+      Value<int> id,
+      required String date,
+      required String packageName,
+      Value<String?> appLabel,
+      required int foregroundMin,
+      required int rank,
+    });
+typedef $$ScreenTimeAppTableUpdateCompanionBuilder =
+    ScreenTimeAppCompanion Function({
+      Value<int> id,
+      Value<String> date,
+      Value<String> packageName,
+      Value<String?> appLabel,
+      Value<int> foregroundMin,
+      Value<int> rank,
+    });
+
+final class $$ScreenTimeAppTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $ScreenTimeAppTable, ScreenTimeAppData> {
+  $$ScreenTimeAppTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ScreenTimeDayTable _dateTable(_$AppDatabase db) => db.screenTimeDay
+      .createAlias('screen_time_app__date__screen_time_day__date');
+
+  $$ScreenTimeDayTableProcessedTableManager get date {
+    final $_column = $_itemColumn<String>('date')!;
+
+    final manager = $$ScreenTimeDayTableTableManager(
+      $_db,
+      $_db.screenTimeDay,
+    ).filter((f) => f.date.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_dateTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ScreenTimeAppTableFilterComposer
+    extends Composer<_$AppDatabase, $ScreenTimeAppTable> {
+  $$ScreenTimeAppTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get packageName => $composableBuilder(
+    column: $table.packageName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get appLabel => $composableBuilder(
+    column: $table.appLabel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get foregroundMin => $composableBuilder(
+    column: $table.foregroundMin,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rank => $composableBuilder(
+    column: $table.rank,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ScreenTimeDayTableFilterComposer get date {
+    final $$ScreenTimeDayTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.date,
+      referencedTable: $db.screenTimeDay,
+      getReferencedColumn: (t) => t.date,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ScreenTimeDayTableFilterComposer(
+            $db: $db,
+            $table: $db.screenTimeDay,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ScreenTimeAppTableOrderingComposer
+    extends Composer<_$AppDatabase, $ScreenTimeAppTable> {
+  $$ScreenTimeAppTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get packageName => $composableBuilder(
+    column: $table.packageName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get appLabel => $composableBuilder(
+    column: $table.appLabel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get foregroundMin => $composableBuilder(
+    column: $table.foregroundMin,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rank => $composableBuilder(
+    column: $table.rank,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ScreenTimeDayTableOrderingComposer get date {
+    final $$ScreenTimeDayTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.date,
+      referencedTable: $db.screenTimeDay,
+      getReferencedColumn: (t) => t.date,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ScreenTimeDayTableOrderingComposer(
+            $db: $db,
+            $table: $db.screenTimeDay,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ScreenTimeAppTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ScreenTimeAppTable> {
+  $$ScreenTimeAppTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get packageName => $composableBuilder(
+    column: $table.packageName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get appLabel =>
+      $composableBuilder(column: $table.appLabel, builder: (column) => column);
+
+  GeneratedColumn<int> get foregroundMin => $composableBuilder(
+    column: $table.foregroundMin,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get rank =>
+      $composableBuilder(column: $table.rank, builder: (column) => column);
+
+  $$ScreenTimeDayTableAnnotationComposer get date {
+    final $$ScreenTimeDayTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.date,
+      referencedTable: $db.screenTimeDay,
+      getReferencedColumn: (t) => t.date,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ScreenTimeDayTableAnnotationComposer(
+            $db: $db,
+            $table: $db.screenTimeDay,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ScreenTimeAppTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ScreenTimeAppTable,
+          ScreenTimeAppData,
+          $$ScreenTimeAppTableFilterComposer,
+          $$ScreenTimeAppTableOrderingComposer,
+          $$ScreenTimeAppTableAnnotationComposer,
+          $$ScreenTimeAppTableCreateCompanionBuilder,
+          $$ScreenTimeAppTableUpdateCompanionBuilder,
+          (ScreenTimeAppData, $$ScreenTimeAppTableReferences),
+          ScreenTimeAppData,
+          PrefetchHooks Function({bool date})
+        > {
+  $$ScreenTimeAppTableTableManager(_$AppDatabase db, $ScreenTimeAppTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ScreenTimeAppTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ScreenTimeAppTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ScreenTimeAppTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> date = const Value.absent(),
+                Value<String> packageName = const Value.absent(),
+                Value<String?> appLabel = const Value.absent(),
+                Value<int> foregroundMin = const Value.absent(),
+                Value<int> rank = const Value.absent(),
+              }) => ScreenTimeAppCompanion(
+                id: id,
+                date: date,
+                packageName: packageName,
+                appLabel: appLabel,
+                foregroundMin: foregroundMin,
+                rank: rank,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String date,
+                required String packageName,
+                Value<String?> appLabel = const Value.absent(),
+                required int foregroundMin,
+                required int rank,
+              }) => ScreenTimeAppCompanion.insert(
+                id: id,
+                date: date,
+                packageName: packageName,
+                appLabel: appLabel,
+                foregroundMin: foregroundMin,
+                rank: rank,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ScreenTimeAppTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({date = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (date) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.date,
+                                referencedTable: $$ScreenTimeAppTableReferences
+                                    ._dateTable(db),
+                                referencedColumn: $$ScreenTimeAppTableReferences
+                                    ._dateTable(db)
+                                    .date,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ScreenTimeAppTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ScreenTimeAppTable,
+      ScreenTimeAppData,
+      $$ScreenTimeAppTableFilterComposer,
+      $$ScreenTimeAppTableOrderingComposer,
+      $$ScreenTimeAppTableAnnotationComposer,
+      $$ScreenTimeAppTableCreateCompanionBuilder,
+      $$ScreenTimeAppTableUpdateCompanionBuilder,
+      (ScreenTimeAppData, $$ScreenTimeAppTableReferences),
+      ScreenTimeAppData,
+      PrefetchHooks Function({bool date})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -12710,4 +14012,8 @@ class $AppDatabaseManager {
       $$CalorieDayTableTableManager(_db, _db.calorieDay);
   $$ProgramLogTableTableManager get programLog =>
       $$ProgramLogTableTableManager(_db, _db.programLog);
+  $$ScreenTimeDayTableTableManager get screenTimeDay =>
+      $$ScreenTimeDayTableTableManager(_db, _db.screenTimeDay);
+  $$ScreenTimeAppTableTableManager get screenTimeApp =>
+      $$ScreenTimeAppTableTableManager(_db, _db.screenTimeApp);
 }

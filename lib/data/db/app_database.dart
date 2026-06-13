@@ -26,13 +26,15 @@ part 'app_database.g.dart';
     CalorieEntries,
     CalorieDay,
     ProgramLog,
+    ScreenTimeDay,
+    ScreenTimeApp,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -77,6 +79,11 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(calorieDay);
         await m.createTable(programLog);
         await _seedFoodTypes();
+      }
+      if (from < 7) {
+        // CR-4 screen-time tables.
+        await m.createTable(screenTimeDay);
+        await m.createTable(screenTimeApp);
       }
     },
     beforeOpen: (details) async {

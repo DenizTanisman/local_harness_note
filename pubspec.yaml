@@ -49,6 +49,7 @@ dependencies:
   archive: ^3.6.1
   cryptography: ^2.9.0
   workmanager: ^0.9.0+3
+  usage_stats: ^2.0.1
 
 # Build sqlite3 natives with SQLite3 Multiple Ciphers — at-rest encryption
 # (spec 11.1). sqlcipher_flutter_libs is EOL with sqlite3 3.x; sqlite3mc is

@@ -267,3 +267,32 @@ class ProgramLog extends Table {
       integer().references(Programs, #id, onDelete: KeyAction.cascade)();
   RealColumn get volume => real().withDefault(const Constant(0))();
 }
+
+// ------------------------------------------------ CR-4 Screen time
+
+/// Daily screen-time total (CR-4 §5). Top-5 apps live in [ScreenTimeApp].
+class ScreenTimeDay extends Table {
+  TextColumn get date => text()(); // 'YYYY-MM-DD'
+  IntColumn get totalMin => integer().withDefault(const Constant(0))();
+  IntColumn get capturedAt => integer()();
+
+  @override
+  Set<Column> get primaryKey => {date};
+}
+
+/// Per-app foreground minutes for a day — only the top 5 are stored
+/// (data minimization, CR-4 §5).
+class ScreenTimeApp extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get date =>
+      text().references(ScreenTimeDay, #date, onDelete: KeyAction.cascade)();
+  TextColumn get packageName => text()();
+  TextColumn get appLabel => text().nullable()();
+  IntColumn get foregroundMin => integer()();
+  IntColumn get rank => integer()(); // 1..5
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+    {date, packageName},
+  ];
+}
