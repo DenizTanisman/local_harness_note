@@ -168,7 +168,7 @@ void main() {
 
       final matrix = await analysis.loadHeatmap('2026-06-10', 7);
       expect(matrix.values[dev.id]!['2026-06-09'], 2);
-      expect(matrix.rules[dev.id]!.colorFor(2), 'yellow');
+      expect(matrix.rules[dev.id]!.colorFor(2), 'blue');
     });
 
     test(
@@ -187,18 +187,18 @@ void main() {
         final money = await byKey('money');
         final matrix = await analysis.loadHeatmap('2026-06-10', 7);
         expect(matrix.values[money.id]!['2026-06-09'], 350);
-        expect(matrix.rules[money.id]!.colorFor(350), 'green');
+        expect(matrix.rules[money.id]!.colorFor(350), 'blue');
       },
     );
 
     test(
-      'a day with only essential outcome is filled with sum 0 (darkGreen)',
+      'a day with only essential outcome is filled with sum 0 (black)',
       () async {
         await addTx('2026-06-09', 'outcome', 'Rent', 8000);
         final money = await byKey('money');
         final matrix = await analysis.loadHeatmap('2026-06-10', 7);
         expect(matrix.values[money.id]!['2026-06-09'], 0);
-        expect(matrix.rules[money.id]!.colorFor(0), 'darkGreen');
+        expect(matrix.rules[money.id]!.colorFor(0), 'black');
       },
     );
   });
