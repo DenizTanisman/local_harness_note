@@ -88,7 +88,7 @@ void main() {
 
   group('heatmap value sources', () {
     test(
-      'num_value: entry values land on their dates; empty days missing',
+      'num_value: entered day keeps its value; empty days count as 0',
       () async {
         final software = await byKey('software');
         await entries.saveEntry(
@@ -100,11 +100,14 @@ void main() {
         final matrix = await analysis.loadHeatmap('2026-06-10', 7);
         final values = matrix.values[software.id]!;
         expect(values['2026-06-08'], 35);
-        expect(values.containsKey('2026-06-09'), isFalse);
+        // End-of-day-zero: empty days are present as 0, not absent.
+        expect(values['2026-06-09'], 0);
+        expect(values.length, 7); // every day in the window
         expect(
           matrix.rules[software.id]!.colorFor(values['2026-06-08']!),
           'lightBlue',
         ); // spec: 35 is NOT blue
+        expect(matrix.rules[software.id]!.colorFor(0), 'black'); // 0 → black
       },
     );
 

@@ -121,12 +121,17 @@ class AnalysisRepository {
     for (final metric in metrics) {
       final rule = rules[metric.id];
       if (rule == null) continue;
-      values[metric.id] = await sourceValues(
+      final present = await sourceValues(
         metric,
         rule.source,
         startDate,
         endDate,
       );
+      // End-of-day-zero rule: a day with no entry counts as 0 (Waste/
+      // checkbox = NO = 0 options). Every cell in the window is ≤ the
+      // selected date, so all get a real value and are colored by the 0
+      // bucket instead of shown as an empty cell.
+      values[metric.id] = {for (final d in dates) d: present[d] ?? 0.0};
     }
     return HeatmapMatrix(
       metrics: metrics,
