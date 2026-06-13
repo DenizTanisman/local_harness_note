@@ -7,6 +7,7 @@ import 'package:workmanager/workmanager.dart';
 import 'data/db/database_provider.dart';
 import 'features/backup/backup_worker.dart';
 import 'features/home/home_providers.dart';
+import 'features/health/health_providers.dart';
 import 'features/notifications/notification_service.dart';
 import 'features/screentime/screentime_providers.dart';
 import 'features/shell/app_shell.dart';
@@ -57,6 +58,9 @@ void main() {
         // CR-4 §6: pull today's screen time on open (silent without
         // permission — no repeated prompts).
         await container.read(screenTimeRepositoryProvider).sync();
+        // CR-3 §9: pull Health Connect vitals on open (silent without
+        // permission).
+        await container.read(healthRepositoryProvider).sync();
       });
     },
     (error, stack) {
