@@ -7,9 +7,9 @@ import 'package:workmanager/workmanager.dart';
 import 'data/db/database_provider.dart';
 import 'features/backup/backup_worker.dart';
 import 'features/home/home_providers.dart';
-import 'features/money/money_page.dart';
 import 'features/notifications/notification_service.dart';
-import 'features/shell/root_pager.dart';
+import 'features/shell/app_shell.dart';
+import 'features/shell/tab_index.dart';
 import 'theme/app_theme.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
@@ -20,13 +20,12 @@ final notificationServiceProvider = Provider<NotificationService>((ref) {
     onTapPayload: (payload) {
       // Notification entry always lands on TODAY (CR1-D).
       ref.read(homeDateProvider.notifier).resetToToday();
-      final navigator = navigatorKey.currentState;
-      if (navigator == null) return;
-      // Always land on the home page first (spec 6.1/§8).
-      navigator.popUntil((route) => route.isFirst);
-      if (payload == 'money') {
-        navigator.push(MaterialPageRoute(builder: (_) => const MoneyPage()));
-      }
+      navigatorKey.currentState?.popUntil((route) => route.isFirst);
+      // Land on Main, or jump to the Money tab for an expense reminder
+      // (CR-3 §2 — a tab switch, not a pushed route).
+      ref
+          .read(tabIndexProvider.notifier)
+          .goTo(payload == 'money' ? AppTab.money : AppTab.main);
     },
   );
 });
@@ -72,7 +71,7 @@ class DailyTrackerApp extends StatelessWidget {
       navigatorKey: navigatorKey,
       // Single dark theme built from tokens (CR1-B rule 7).
       theme: buildAppTheme(),
-      home: const RootPager(),
+      home: const AppShell(),
     );
   }
 }

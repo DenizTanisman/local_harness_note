@@ -5,7 +5,7 @@ import 'package:daily_tracker/data/repositories/entry_repository.dart';
 import 'package:daily_tracker/features/analysis/analysis_page.dart';
 import 'package:daily_tracker/features/analysis/analysis_providers.dart';
 import 'package:daily_tracker/features/analysis/heatmap_widget.dart';
-import 'package:daily_tracker/features/shell/root_pager.dart';
+import 'package:daily_tracker/features/shell/app_shell.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -39,20 +39,19 @@ void main() {
 
   String daysAgo(int n) => dateKey(DateTime.now().subtract(Duration(days: n)));
 
-  testWidgets('swiping the root pager reaches the analysis page', (
+  testWidgets('app shell opens on Main; bottom nav reaches Analysis', (
     tester,
   ) async {
-    await tester.pumpWidget(app(const RootPager()));
+    await tester.pumpWidget(app(const AppShell()));
     await tester.pumpAndSettle();
+    // Opens on Main (index 2).
     expect(find.text('Daily Tracker'), findsOneWidget);
 
-    await tester.fling(find.byType(PageView), const Offset(-600, 0), 1200);
-    // Bounded pumps: the analysis page may briefly show an indeterminate
-    // spinner, which pumpAndSettle would wait on forever.
+    await tester.tap(find.text('Analysis').last);
     for (var i = 0; i < 10; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
-    expect(find.text('Analysis'), findsOneWidget);
+    expect(find.widgetWithText(AppBar, 'Analysis'), findsOneWidget);
     await closeApp(tester);
   });
 

@@ -4,7 +4,7 @@ import 'package:daily_tracker/data/db/database_provider.dart';
 import 'package:daily_tracker/data/repositories/entry_repository.dart';
 import 'package:daily_tracker/features/analysis/analysis_providers.dart';
 import 'package:daily_tracker/features/detail/metric_detail_page.dart';
-import 'package:daily_tracker/features/shell/root_pager.dart';
+import 'package:daily_tracker/features/shell/app_shell.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -43,11 +43,10 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(app(const RootPager()));
+    await tester.pumpWidget(app(const AppShell()));
     await tester.pumpAndSettle();
-    // Fling from the AppBar title: a fling over a card body can land on
-    // a TextField whose horizontal drag recognizer beats the PageView.
-    await tester.fling(find.text('Daily Tracker'), const Offset(-600, 0), 1200);
+    // Reach Analysis (index 1) via the bottom nav.
+    await tester.tap(find.text('Analysis').last);
     for (var i = 0; i < 10; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
@@ -81,11 +80,10 @@ void main() {
       db,
     ).saveEntry(metricId: software.id, date: daysAgo(1), numValue: 42);
 
-    await tester.pumpWidget(app(const RootPager()));
+    await tester.pumpWidget(app(const AppShell()));
     await tester.pumpAndSettle();
-    // Fling from the AppBar title: a fling over a card body can land on
-    // a TextField whose horizontal drag recognizer beats the PageView.
-    await tester.fling(find.text('Daily Tracker'), const Offset(-600, 0), 1200);
+    // Reach Analysis (index 1) via the bottom nav.
+    await tester.tap(find.text('Analysis').last);
     for (var i = 0; i < 10; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
@@ -96,7 +94,7 @@ void main() {
 
     await tester.pageBack();
     await tester.pumpAndSettle();
-    expect(find.text('Analysis'), findsOneWidget);
+    expect(find.widgetWithText(AppBar, 'Analysis'), findsOneWidget);
     await closeApp(tester);
   });
 

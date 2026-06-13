@@ -59,15 +59,16 @@ class AppDatabase extends _$AppDatabase {
   /// children left. Natural composites (prev_input_type NULL) are
   /// untouched. Called by every flow that removes a child from a parent.
   Future<void> demoteIfChildless(int metricId) async {
-    final metric = await (select(metrics)
-          ..where((m) => m.id.equals(metricId)))
-        .getSingleOrNull();
+    final metric = await (select(
+      metrics,
+    )..where((m) => m.id.equals(metricId))).getSingleOrNull();
     if (metric == null || metric.prevInputType == null) return;
     final childCount = metrics.id.count();
-    final row = await (selectOnly(metrics)
-          ..addColumns([childCount])
-          ..where(metrics.parentId.equals(metricId)))
-        .getSingle();
+    final row =
+        await (selectOnly(metrics)
+              ..addColumns([childCount])
+              ..where(metrics.parentId.equals(metricId)))
+            .getSingle();
     if ((row.read(childCount) ?? 0) > 0) return;
     await (update(metrics)..where((m) => m.id.equals(metricId))).write(
       MetricsCompanion(
@@ -87,15 +88,16 @@ class AppDatabase extends _$AppDatabase {
   Future<void> repairCorruptedCoreTypes() async {
     for (final seed in seedMetrics) {
       if (seed.inputType == 'composite') continue; // development is natural
-      final row = await (select(metrics)
-            ..where((m) => m.key.equals(seed.key)))
-          .getSingleOrNull();
+      final row = await (select(
+        metrics,
+      )..where((m) => m.key.equals(seed.key))).getSingleOrNull();
       if (row == null || row.inputType != 'composite') continue;
       final childCount = metrics.id.count();
-      final children = await (selectOnly(metrics)
-            ..addColumns([childCount])
-            ..where(metrics.parentId.equals(row.id)))
-          .getSingle();
+      final children =
+          await (selectOnly(metrics)
+                ..addColumns([childCount])
+                ..where(metrics.parentId.equals(row.id)))
+              .getSingle();
       final hasChildren = (children.read(childCount) ?? 0) > 0;
       await (update(metrics)..where((m) => m.id.equals(row.id))).write(
         hasChildren
