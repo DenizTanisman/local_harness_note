@@ -78,7 +78,7 @@ void main() {
     )..where((m) => m.key.equals('software'))).getSingle();
     await EntryRepository(
       db,
-    ).saveEntry(metricId: software.id, date: daysAgo(1), numValue: 42);
+    ).saveEntry(metricId: software.id, date: daysAgo(0), numValue: 42);
 
     await tester.pumpWidget(app(const AppShell()));
     await tester.pumpAndSettle();

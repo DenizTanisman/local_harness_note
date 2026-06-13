@@ -6,6 +6,7 @@ import '../../data/db/app_database.dart';
 import '../../data/db/database_provider.dart';
 import '../../data/repositories/money_repository.dart';
 import '../analysis/analysis_providers.dart';
+import '../home/home_providers.dart';
 
 final moneyRepositoryProvider = Provider<MoneyRepository>(
   (ref) => MoneyRepository(ref.watch(databaseProvider)),
@@ -41,20 +42,17 @@ double monthBalance(MoneyGeneral general) {
   return income - outcome;
 }
 
-/// The month shown in the Money tab (CR-3 §4) — own state, not the
-/// Analysis date. Defaults to the current month; ‹ › step it.
+/// The month shown in the Money tab (CR-3 §4) — the month of the shared
+/// selected day. ‹ › move the shared day by a month so every page stays in
+/// sync; reset jumps back to today.
 class MoneyMonthNotifier extends Notifier<String> {
   @override
-  String build() => dateKey(DateTime.now()).substring(0, 7);
+  String build() => ref.watch(homeDateProvider).substring(0, 7);
 
-  void shift(int months) {
-    final parts = state.split('-').map(int.parse).toList();
-    final d = DateTime(parts[0], parts[1] + months, 1);
-    state =
-        '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}';
-  }
+  void shift(int months) =>
+      ref.read(homeDateProvider.notifier).shiftMonths(months);
 
-  void reset() => state = dateKey(DateTime.now()).substring(0, 7);
+  void reset() => ref.read(homeDateProvider.notifier).resetToToday();
 }
 
 /// Current month 'YYYY-MM' (for highlight/reset comparisons).

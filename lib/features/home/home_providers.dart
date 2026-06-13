@@ -38,6 +38,15 @@ class ActiveWriteDateNotifier extends Notifier<String> {
     state = date;
   }
 
+  /// Move the selected day by whole months, keeping the day-of-month (clamped
+  /// to the target month's length). The future stays blocked.
+  void shiftMonths(int months) {
+    final parts = state.split('-').map(int.parse).toList();
+    final targetLen = DateTime(parts[0], parts[1] + months + 1, 0).day;
+    final day = parts[2] < targetLen ? parts[2] : targetLen;
+    select(dateKey(DateTime(parts[0], parts[1] + months, day)));
+  }
+
   void resetToToday() => state = dateKey(DateTime.now());
 
   bool get isToday => state == dateKey(DateTime.now());

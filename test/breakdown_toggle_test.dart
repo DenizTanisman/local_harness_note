@@ -41,7 +41,8 @@ void main() {
 
   Future<void> seedThreeLevels() async {
     final money = MoneyRepository(db);
-    final date = daysAgo(1);
+    // Shared selected day now defaults to today, so seed the day under view.
+    final date = daysAgo(0);
     await money.addTransaction(
       date: date,
       direction: 'outcome',
