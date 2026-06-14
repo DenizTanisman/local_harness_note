@@ -257,24 +257,44 @@ class _CalorieEntryCard extends ConsumerStatefulWidget {
 }
 
 class _CalorieEntryCardState extends ConsumerState<_CalorieEntryCard> {
-  final _kcal = TextEditingController();
+  final _name = TextEditingController();
+  final _cal = TextEditingController(); // calories for ONE item/portion
+  final _qty = TextEditingController(text: '1'); // ×N
   String _meal = 'breakfast';
-  String? _type;
+  String? _category; // selected category chip (filters + tags new foods)
 
   @override
   void dispose() {
-    _kcal.dispose();
+    _name.dispose();
+    _cal.dispose();
+    _qty.dispose();
     super.dispose();
   }
 
-  bool get _canAdd => _type != null && (double.tryParse(_kcal.text) ?? -1) >= 0;
+  double? get _perUnit => double.tryParse(_cal.text);
+  int get _quantity => int.tryParse(_qty.text) ?? 0;
+  bool get _canAdd =>
+      _name.text.trim().isNotEmpty && (_perUnit ?? -1) >= 0 && _quantity >= 1;
+
+  /// Tap a saved food → its name + per-unit calories fill the top row; the
+  /// user just sets ×N and saves.
+  void _pickFood(SavedFoodType food) {
+    setState(() {
+      _name.text = food.name;
+      _cal.text = food.kcalPerUnit == null ? '' : _kcalText(food.kcalPerUnit!);
+      _category = food.category ?? _category;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final types = ref.watch(foodTypesProvider).value ?? const [];
-    _type ??= types.isNotEmpty ? types.first : null;
+    final theme = Theme.of(context);
+    final foods = ref.watch(foodsProvider).value ?? const [];
     final entries = ref.watch(calorieEntriesTodayProvider).value ?? const [];
     final total = entries.fold<double>(0, (a, e) => a + e.kcal);
+    final inCategory = _category == null
+        ? const <SavedFoodType>[]
+        : foods.where((f) => f.category == _category).toList();
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12),
@@ -283,144 +303,174 @@ class _CalorieEntryCardState extends ConsumerState<_CalorieEntryCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              'Calorie intake',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+            Text('Calorie intake', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
-            DropdownButtonFormField<String>(
-              initialValue: _meal,
-              decoration: const InputDecoration(labelText: 'Meal'),
-              items: const [
-                DropdownMenuItem(value: 'breakfast', child: Text('Breakfast')),
-                DropdownMenuItem(value: 'lunch', child: Text('Lunch')),
-                DropdownMenuItem(value: 'dinner', child: Text('Dinner')),
-              ],
-              onChanged: (v) => setState(() => _meal = v ?? 'breakfast'),
-            ),
-            const SizedBox(height: 8),
+            // Name + per-item calories + ×N quantity.
             Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Expanded(
+                  flex: 3,
                   child: TextField(
-                    controller: _kcal,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
-                    ],
-                    decoration: const InputDecoration(
-                      labelText: 'Calories',
-                      suffixText: 'kcal',
-                    ),
+                    key: const ValueKey('calorie-name'),
+                    controller: _name,
+                    decoration: const InputDecoration(labelText: 'Name'),
                     onChanged: (_) => setState(() {}),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          key: const ValueKey('food-type'),
-                          initialValue: types.contains(_type) ? _type : null,
-                          isExpanded: true,
-                          decoration: const InputDecoration(labelText: 'Type'),
-                          items: [
-                            for (final t in types)
-                              DropdownMenuItem(value: t, child: Text(t)),
-                          ],
-                          onChanged: (v) => setState(() => _type = v),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.add),
-                        tooltip: 'New type',
-                        onPressed: _newType,
-                      ),
+                  flex: 2,
+                  child: TextField(
+                    key: const ValueKey('calorie-cal'),
+                    controller: _cal,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
                     ],
+                    decoration: const InputDecoration(
+                      labelText: 'cal',
+                      suffixText: '/ea',
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 14),
+                  child: Text('×'),
+                ),
+                SizedBox(
+                  width: 40,
+                  child: TextField(
+                    key: const ValueKey('calorie-qty'),
+                    controller: _qty,
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    onChanged: (_) => setState(() {}),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            FilledButton(
-              onPressed: _canAdd ? _add : null,
-              child: const Text('Add'),
+            const SizedBox(height: 10),
+            // Category chips — tap to browse previously saved foods under it.
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: [
+                for (final c in calorieCategories)
+                  ChoiceChip(
+                    label: Text(c),
+                    selected: _category == c,
+                    onSelected: (_) =>
+                        setState(() => _category = _category == c ? null : c),
+                  ),
+              ],
             ),
-            if (entries.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text('Today: ${total.toStringAsFixed(0)} kcal'),
+            if (_category != null) ...[
+              const SizedBox(height: 6),
+              if (inCategory.isEmpty)
+                Text(
+                  'No saved $_category foods yet — type a name + cal to add one.',
+                  style: theme.textTheme.bodySmall,
+                )
+              else
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: [
+                    for (final f in inCategory)
+                      ActionChip(
+                        label: Text(
+                          f.kcalPerUnit == null
+                              ? f.name
+                              : '${f.name} · ${_kcalText(f.kcalPerUnit!)}',
+                        ),
+                        onPressed: () => _pickFood(f),
+                      ),
+                  ],
+                ),
+            ],
+            const SizedBox(height: 10),
+            // Meal time.
+            Wrap(
+              spacing: 6,
+              children: [
+                for (final m in const ['breakfast', 'lunch', 'dinner'])
+                  ChoiceChip(
+                    label: Text('${m[0].toUpperCase()}${m.substring(1)}'),
+                    selected: _meal == m,
+                    onSelected: (_) => setState(() => _meal = m),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            FilledButton(
+              key: const ValueKey('calorie-save'),
+              onPressed: _canAdd ? _add : null,
+              child: Text(
+                _canAdd && _quantity >= 1
+                    ? 'Save (${_kcalText((_perUnit ?? 0) * _quantity)} kcal)'
+                    : 'Save',
               ),
+            ),
+            if (entries.isNotEmpty) ...[
+              const Divider(),
+              for (final e in entries)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          e.quantity > 1 ? '${e.type} ×${e.quantity}' : e.type,
+                        ),
+                      ),
+                      Text(
+                        '${_kcalText(e.kcal)} kcal',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Today: ${total.toStringAsFixed(0)} kcal',
+                  style: theme.textTheme.titleSmall,
+                ),
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 
-  Future<void> _newType() async {
-    final name = await showDialog<String>(
-      context: context,
-      builder: (context) => const _NewTypeDialog(),
-    );
-    if (name != null && name.trim().isNotEmpty) {
-      await ref.read(sportRepositoryProvider).addFoodType(name);
-      setState(() => _type = name.trim());
-    }
-  }
-
   Future<void> _add() async {
     // The frozen target snapshot (§11) is today's live TDEE_static.
     final target = ref.read(bodyStatsProvider).tdeeStatic;
+    final perUnit = _perUnit!;
+    final qty = _quantity;
     await ref
         .read(sportRepositoryProvider)
         .addCalorieEntry(
           date: dateKey(DateTime.now()),
           meal: _meal,
-          kcal: double.parse(_kcal.text),
-          type: _type!,
+          kcal: perUnit * qty, // total
+          type: _name.text.trim(),
+          quantity: qty,
+          category: _category,
+          kcalPerUnit: perUnit,
           currentTarget: target,
         );
-    _kcal.clear();
+    _name.clear();
+    _cal.clear();
+    _qty.text = '1';
     setState(() {});
   }
 }
 
-class _NewTypeDialog extends StatefulWidget {
-  const _NewTypeDialog();
-
-  @override
-  State<_NewTypeDialog> createState() => _NewTypeDialogState();
-}
-
-class _NewTypeDialogState extends State<_NewTypeDialog> {
-  final _controller = TextEditingController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('New food type'),
-      content: TextField(
-        controller: _controller,
-        autofocus: true,
-        decoration: const InputDecoration(labelText: 'Name'),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(context, _controller.text),
-          child: const Text('Add'),
-        ),
-      ],
-    );
-  }
-}
+/// '20' not '20.0'; keeps one decimal only when fractional.
+String _kcalText(double v) =>
+    v == v.roundToDouble() ? v.toInt().toString() : v.toString();

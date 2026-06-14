@@ -78,33 +78,72 @@ void main() {
     await closeApp(tester);
   });
 
-  testWidgets('new food type added in the dialog reappears in the dropdown', (
+  testWidgets('calorie entry: name + cal + ×N + category saves a food', (
     tester,
   ) async {
     await pump(tester, const SportPage());
 
     await tester.scrollUntilVisible(
-      find.byTooltip('New type'),
+      find.byKey(const ValueKey('calorie-name')),
       300,
       scrollable: find.byType(Scrollable).first,
     );
-    await tester.tap(find.byTooltip('New type'));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField).last, 'Smoothie');
-    await tester.tap(
-      find.descendant(
-        of: find.byType(AlertDialog),
-        matching: find.widgetWithText(FilledButton, 'Add'),
-      ),
+    await tester.enterText(
+      find.byKey(const ValueKey('calorie-name')),
+      'Apple',
     );
+    await tester.enterText(find.byKey(const ValueKey('calorie-cal')), '20');
+    await tester.enterText(find.byKey(const ValueKey('calorie-qty')), '3');
+    await tester.pump();
+
+    // Tag the food's category.
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Fruit'));
+    await tester.pump();
+
+    await tester.tap(find.byKey(const ValueKey('calorie-save')));
     await tester.pumpAndSettle();
 
-    final types = await SportRepository(db).exerciseTitles(); // unrelated
-    expect(types, isEmpty);
-    final food = await (db.select(
+    final entry = (await db.select(db.calorieEntries).get()).single;
+    expect(entry.type, 'Apple');
+    expect(entry.quantity, 3);
+    expect(entry.kcal, 60); // 20 × 3
+
+    final apple = await (db.select(
       db.savedFoodTypes,
-    )..where((t) => t.name.equals('Smoothie'))).get();
-    expect(food, hasLength(1));
+    )..where((t) => t.name.equals('Apple'))).getSingle();
+    expect(apple.category, 'Fruit');
+    expect(apple.kcalPerUnit, 20);
+    await closeApp(tester);
+  });
+
+  testWidgets('tapping a saved food fills its name + per-unit calories', (
+    tester,
+  ) async {
+    await SportRepository(
+      db,
+    ).upsertFood(name: 'Banana', category: 'Fruit', kcalPerUnit: 90);
+
+    await pump(tester, const SportPage());
+    await tester.scrollUntilVisible(
+      find.widgetWithText(ChoiceChip, 'Fruit'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Fruit'));
+    await tester.pumpAndSettle();
+
+    // The saved food shows as a chip; tapping fills the top row.
+    await tester.tap(find.widgetWithText(ActionChip, 'Banana · 90'));
+    await tester.pump();
+
+    expect(
+      tester.widget<TextField>(find.byKey(const ValueKey('calorie-name'))).controller!.text,
+      'Banana',
+    );
+    expect(
+      tester.widget<TextField>(find.byKey(const ValueKey('calorie-cal'))).controller!.text,
+      '90',
+    );
     await closeApp(tester);
   });
 }

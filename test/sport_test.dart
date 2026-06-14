@@ -139,5 +139,50 @@ void main() {
       )..where((t) => t.name.equals('Homemade'))).get();
       expect(types, hasLength(1));
     });
+
+    test('×N entry stores quantity + total and remembers category/per-unit',
+        () async {
+      await sport.addCalorieEntry(
+        date: '2026-06-13',
+        meal: 'breakfast',
+        type: 'Apple',
+        category: 'Fruit',
+        kcalPerUnit: 20,
+        quantity: 3,
+        kcal: 60, // total = 20 × 3
+      );
+
+      final entry = (await db.select(db.calorieEntries).get()).single;
+      expect(entry.quantity, 3);
+      expect(entry.kcal, 60);
+      expect(entry.type, 'Apple');
+
+      final apple = await (db.select(
+        db.savedFoodTypes,
+      )..where((t) => t.name.equals('Apple'))).getSingle();
+      expect(apple.category, 'Fruit');
+      expect(apple.kcalPerUnit, 20);
+
+      // The day intake reflects the total.
+      final day = await sport.calorieDayFor('2026-06-13');
+      expect(day!.intake, 60);
+    });
+
+    test('re-picking a saved food keeps its category, updates per-unit',
+        () async {
+      await sport.upsertFood(name: 'Banana', category: 'Fruit', kcalPerUnit: 90);
+      // A later entry without a category must not wipe the remembered one.
+      await sport.addCalorieEntry(
+        date: '2026-06-13',
+        type: 'Banana',
+        kcalPerUnit: 95,
+        kcal: 95,
+      );
+      final banana = await (db.select(
+        db.savedFoodTypes,
+      )..where((t) => t.name.equals('Banana'))).getSingle();
+      expect(banana.category, 'Fruit', reason: 'category preserved');
+      expect(banana.kcalPerUnit, 95, reason: 'per-unit updated');
+    });
   });
 }

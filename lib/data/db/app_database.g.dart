@@ -5089,8 +5089,35 @@ class $SavedFoodTypesTable extends SavedFoodTypes
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _categoryMeta = const VerificationMeta(
+    'category',
+  );
   @override
-  List<GeneratedColumn> get $columns => [name, isBuiltin];
+  late final GeneratedColumn<String> category = GeneratedColumn<String>(
+    'category',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _kcalPerUnitMeta = const VerificationMeta(
+    'kcalPerUnit',
+  );
+  @override
+  late final GeneratedColumn<double> kcalPerUnit = GeneratedColumn<double>(
+    'kcal_per_unit',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    name,
+    isBuiltin,
+    category,
+    kcalPerUnit,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -5117,6 +5144,21 @@ class $SavedFoodTypesTable extends SavedFoodTypes
         isBuiltin.isAcceptableOrUnknown(data['is_builtin']!, _isBuiltinMeta),
       );
     }
+    if (data.containsKey('category')) {
+      context.handle(
+        _categoryMeta,
+        category.isAcceptableOrUnknown(data['category']!, _categoryMeta),
+      );
+    }
+    if (data.containsKey('kcal_per_unit')) {
+      context.handle(
+        _kcalPerUnitMeta,
+        kcalPerUnit.isAcceptableOrUnknown(
+          data['kcal_per_unit']!,
+          _kcalPerUnitMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -5134,6 +5176,14 @@ class $SavedFoodTypesTable extends SavedFoodTypes
         DriftSqlType.bool,
         data['${effectivePrefix}is_builtin'],
       )!,
+      category: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category'],
+      ),
+      kcalPerUnit: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}kcal_per_unit'],
+      ),
     );
   }
 
@@ -5146,12 +5196,29 @@ class $SavedFoodTypesTable extends SavedFoodTypes
 class SavedFoodType extends DataClass implements Insertable<SavedFoodType> {
   final String name;
   final bool isBuiltin;
-  const SavedFoodType({required this.name, required this.isBuiltin});
+
+  /// Grouping for the calorie picker (e.g. 'Fruit'); null = uncategorised.
+  final String? category;
+
+  /// Calories for one item/portion; null when never recorded with a value.
+  final double? kcalPerUnit;
+  const SavedFoodType({
+    required this.name,
+    required this.isBuiltin,
+    this.category,
+    this.kcalPerUnit,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['name'] = Variable<String>(name);
     map['is_builtin'] = Variable<bool>(isBuiltin);
+    if (!nullToAbsent || category != null) {
+      map['category'] = Variable<String>(category);
+    }
+    if (!nullToAbsent || kcalPerUnit != null) {
+      map['kcal_per_unit'] = Variable<double>(kcalPerUnit);
+    }
     return map;
   }
 
@@ -5159,6 +5226,12 @@ class SavedFoodType extends DataClass implements Insertable<SavedFoodType> {
     return SavedFoodTypesCompanion(
       name: Value(name),
       isBuiltin: Value(isBuiltin),
+      category: category == null && nullToAbsent
+          ? const Value.absent()
+          : Value(category),
+      kcalPerUnit: kcalPerUnit == null && nullToAbsent
+          ? const Value.absent()
+          : Value(kcalPerUnit),
     );
   }
 
@@ -5170,6 +5243,8 @@ class SavedFoodType extends DataClass implements Insertable<SavedFoodType> {
     return SavedFoodType(
       name: serializer.fromJson<String>(json['name']),
       isBuiltin: serializer.fromJson<bool>(json['isBuiltin']),
+      category: serializer.fromJson<String?>(json['category']),
+      kcalPerUnit: serializer.fromJson<double?>(json['kcalPerUnit']),
     );
   }
   @override
@@ -5178,17 +5253,30 @@ class SavedFoodType extends DataClass implements Insertable<SavedFoodType> {
     return <String, dynamic>{
       'name': serializer.toJson<String>(name),
       'isBuiltin': serializer.toJson<bool>(isBuiltin),
+      'category': serializer.toJson<String?>(category),
+      'kcalPerUnit': serializer.toJson<double?>(kcalPerUnit),
     };
   }
 
-  SavedFoodType copyWith({String? name, bool? isBuiltin}) => SavedFoodType(
+  SavedFoodType copyWith({
+    String? name,
+    bool? isBuiltin,
+    Value<String?> category = const Value.absent(),
+    Value<double?> kcalPerUnit = const Value.absent(),
+  }) => SavedFoodType(
     name: name ?? this.name,
     isBuiltin: isBuiltin ?? this.isBuiltin,
+    category: category.present ? category.value : this.category,
+    kcalPerUnit: kcalPerUnit.present ? kcalPerUnit.value : this.kcalPerUnit,
   );
   SavedFoodType copyWithCompanion(SavedFoodTypesCompanion data) {
     return SavedFoodType(
       name: data.name.present ? data.name.value : this.name,
       isBuiltin: data.isBuiltin.present ? data.isBuiltin.value : this.isBuiltin,
+      category: data.category.present ? data.category.value : this.category,
+      kcalPerUnit: data.kcalPerUnit.present
+          ? data.kcalPerUnit.value
+          : this.kcalPerUnit,
     );
   }
 
@@ -5196,43 +5284,57 @@ class SavedFoodType extends DataClass implements Insertable<SavedFoodType> {
   String toString() {
     return (StringBuffer('SavedFoodType(')
           ..write('name: $name, ')
-          ..write('isBuiltin: $isBuiltin')
+          ..write('isBuiltin: $isBuiltin, ')
+          ..write('category: $category, ')
+          ..write('kcalPerUnit: $kcalPerUnit')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(name, isBuiltin);
+  int get hashCode => Object.hash(name, isBuiltin, category, kcalPerUnit);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is SavedFoodType &&
           other.name == this.name &&
-          other.isBuiltin == this.isBuiltin);
+          other.isBuiltin == this.isBuiltin &&
+          other.category == this.category &&
+          other.kcalPerUnit == this.kcalPerUnit);
 }
 
 class SavedFoodTypesCompanion extends UpdateCompanion<SavedFoodType> {
   final Value<String> name;
   final Value<bool> isBuiltin;
+  final Value<String?> category;
+  final Value<double?> kcalPerUnit;
   final Value<int> rowid;
   const SavedFoodTypesCompanion({
     this.name = const Value.absent(),
     this.isBuiltin = const Value.absent(),
+    this.category = const Value.absent(),
+    this.kcalPerUnit = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SavedFoodTypesCompanion.insert({
     required String name,
     this.isBuiltin = const Value.absent(),
+    this.category = const Value.absent(),
+    this.kcalPerUnit = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : name = Value(name);
   static Insertable<SavedFoodType> custom({
     Expression<String>? name,
     Expression<bool>? isBuiltin,
+    Expression<String>? category,
+    Expression<double>? kcalPerUnit,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (name != null) 'name': name,
       if (isBuiltin != null) 'is_builtin': isBuiltin,
+      if (category != null) 'category': category,
+      if (kcalPerUnit != null) 'kcal_per_unit': kcalPerUnit,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -5240,11 +5342,15 @@ class SavedFoodTypesCompanion extends UpdateCompanion<SavedFoodType> {
   SavedFoodTypesCompanion copyWith({
     Value<String>? name,
     Value<bool>? isBuiltin,
+    Value<String?>? category,
+    Value<double?>? kcalPerUnit,
     Value<int>? rowid,
   }) {
     return SavedFoodTypesCompanion(
       name: name ?? this.name,
       isBuiltin: isBuiltin ?? this.isBuiltin,
+      category: category ?? this.category,
+      kcalPerUnit: kcalPerUnit ?? this.kcalPerUnit,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -5258,6 +5364,12 @@ class SavedFoodTypesCompanion extends UpdateCompanion<SavedFoodType> {
     if (isBuiltin.present) {
       map['is_builtin'] = Variable<bool>(isBuiltin.value);
     }
+    if (category.present) {
+      map['category'] = Variable<String>(category.value);
+    }
+    if (kcalPerUnit.present) {
+      map['kcal_per_unit'] = Variable<double>(kcalPerUnit.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -5269,6 +5381,8 @@ class SavedFoodTypesCompanion extends UpdateCompanion<SavedFoodType> {
     return (StringBuffer('SavedFoodTypesCompanion(')
           ..write('name: $name, ')
           ..write('isBuiltin: $isBuiltin, ')
+          ..write('category: $category, ')
+          ..write('kcalPerUnit: $kcalPerUnit, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -6186,6 +6300,18 @@ class $CalorieEntriesTable extends CalorieEntries
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _quantityMeta = const VerificationMeta(
+    'quantity',
+  );
+  @override
+  late final GeneratedColumn<int> quantity = GeneratedColumn<int>(
+    'quantity',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -6198,7 +6324,15 @@ class $CalorieEntriesTable extends CalorieEntries
     requiredDuringInsert: true,
   );
   @override
-  List<GeneratedColumn> get $columns => [id, date, meal, kcal, type, createdAt];
+  List<GeneratedColumn> get $columns => [
+    id,
+    date,
+    meal,
+    kcal,
+    type,
+    quantity,
+    createdAt,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -6244,6 +6378,12 @@ class $CalorieEntriesTable extends CalorieEntries
     } else if (isInserting) {
       context.missing(_typeMeta);
     }
+    if (data.containsKey('quantity')) {
+      context.handle(
+        _quantityMeta,
+        quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -6281,6 +6421,10 @@ class $CalorieEntriesTable extends CalorieEntries
         DriftSqlType.string,
         data['${effectivePrefix}type'],
       )!,
+      quantity: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}quantity'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}created_at'],
@@ -6300,6 +6444,9 @@ class CalorieEntry extends DataClass implements Insertable<CalorieEntry> {
   final String? meal;
   final double kcal;
   final String type;
+
+  /// How many items/portions this entry covers (×N); kcal is the total.
+  final int quantity;
   final int createdAt;
   const CalorieEntry({
     required this.id,
@@ -6307,6 +6454,7 @@ class CalorieEntry extends DataClass implements Insertable<CalorieEntry> {
     this.meal,
     required this.kcal,
     required this.type,
+    required this.quantity,
     required this.createdAt,
   });
   @override
@@ -6319,6 +6467,7 @@ class CalorieEntry extends DataClass implements Insertable<CalorieEntry> {
     }
     map['kcal'] = Variable<double>(kcal);
     map['type'] = Variable<String>(type);
+    map['quantity'] = Variable<int>(quantity);
     map['created_at'] = Variable<int>(createdAt);
     return map;
   }
@@ -6330,6 +6479,7 @@ class CalorieEntry extends DataClass implements Insertable<CalorieEntry> {
       meal: meal == null && nullToAbsent ? const Value.absent() : Value(meal),
       kcal: Value(kcal),
       type: Value(type),
+      quantity: Value(quantity),
       createdAt: Value(createdAt),
     );
   }
@@ -6345,6 +6495,7 @@ class CalorieEntry extends DataClass implements Insertable<CalorieEntry> {
       meal: serializer.fromJson<String?>(json['meal']),
       kcal: serializer.fromJson<double>(json['kcal']),
       type: serializer.fromJson<String>(json['type']),
+      quantity: serializer.fromJson<int>(json['quantity']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
     );
   }
@@ -6357,6 +6508,7 @@ class CalorieEntry extends DataClass implements Insertable<CalorieEntry> {
       'meal': serializer.toJson<String?>(meal),
       'kcal': serializer.toJson<double>(kcal),
       'type': serializer.toJson<String>(type),
+      'quantity': serializer.toJson<int>(quantity),
       'createdAt': serializer.toJson<int>(createdAt),
     };
   }
@@ -6367,6 +6519,7 @@ class CalorieEntry extends DataClass implements Insertable<CalorieEntry> {
     Value<String?> meal = const Value.absent(),
     double? kcal,
     String? type,
+    int? quantity,
     int? createdAt,
   }) => CalorieEntry(
     id: id ?? this.id,
@@ -6374,6 +6527,7 @@ class CalorieEntry extends DataClass implements Insertable<CalorieEntry> {
     meal: meal.present ? meal.value : this.meal,
     kcal: kcal ?? this.kcal,
     type: type ?? this.type,
+    quantity: quantity ?? this.quantity,
     createdAt: createdAt ?? this.createdAt,
   );
   CalorieEntry copyWithCompanion(CalorieEntriesCompanion data) {
@@ -6383,6 +6537,7 @@ class CalorieEntry extends DataClass implements Insertable<CalorieEntry> {
       meal: data.meal.present ? data.meal.value : this.meal,
       kcal: data.kcal.present ? data.kcal.value : this.kcal,
       type: data.type.present ? data.type.value : this.type,
+      quantity: data.quantity.present ? data.quantity.value : this.quantity,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -6395,13 +6550,15 @@ class CalorieEntry extends DataClass implements Insertable<CalorieEntry> {
           ..write('meal: $meal, ')
           ..write('kcal: $kcal, ')
           ..write('type: $type, ')
+          ..write('quantity: $quantity, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, date, meal, kcal, type, createdAt);
+  int get hashCode =>
+      Object.hash(id, date, meal, kcal, type, quantity, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -6411,6 +6568,7 @@ class CalorieEntry extends DataClass implements Insertable<CalorieEntry> {
           other.meal == this.meal &&
           other.kcal == this.kcal &&
           other.type == this.type &&
+          other.quantity == this.quantity &&
           other.createdAt == this.createdAt);
 }
 
@@ -6420,6 +6578,7 @@ class CalorieEntriesCompanion extends UpdateCompanion<CalorieEntry> {
   final Value<String?> meal;
   final Value<double> kcal;
   final Value<String> type;
+  final Value<int> quantity;
   final Value<int> createdAt;
   const CalorieEntriesCompanion({
     this.id = const Value.absent(),
@@ -6427,6 +6586,7 @@ class CalorieEntriesCompanion extends UpdateCompanion<CalorieEntry> {
     this.meal = const Value.absent(),
     this.kcal = const Value.absent(),
     this.type = const Value.absent(),
+    this.quantity = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   CalorieEntriesCompanion.insert({
@@ -6435,6 +6595,7 @@ class CalorieEntriesCompanion extends UpdateCompanion<CalorieEntry> {
     this.meal = const Value.absent(),
     required double kcal,
     required String type,
+    this.quantity = const Value.absent(),
     required int createdAt,
   }) : date = Value(date),
        kcal = Value(kcal),
@@ -6446,6 +6607,7 @@ class CalorieEntriesCompanion extends UpdateCompanion<CalorieEntry> {
     Expression<String>? meal,
     Expression<double>? kcal,
     Expression<String>? type,
+    Expression<int>? quantity,
     Expression<int>? createdAt,
   }) {
     return RawValuesInsertable({
@@ -6454,6 +6616,7 @@ class CalorieEntriesCompanion extends UpdateCompanion<CalorieEntry> {
       if (meal != null) 'meal': meal,
       if (kcal != null) 'kcal': kcal,
       if (type != null) 'type': type,
+      if (quantity != null) 'quantity': quantity,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
@@ -6464,6 +6627,7 @@ class CalorieEntriesCompanion extends UpdateCompanion<CalorieEntry> {
     Value<String?>? meal,
     Value<double>? kcal,
     Value<String>? type,
+    Value<int>? quantity,
     Value<int>? createdAt,
   }) {
     return CalorieEntriesCompanion(
@@ -6472,6 +6636,7 @@ class CalorieEntriesCompanion extends UpdateCompanion<CalorieEntry> {
       meal: meal ?? this.meal,
       kcal: kcal ?? this.kcal,
       type: type ?? this.type,
+      quantity: quantity ?? this.quantity,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -6494,6 +6659,9 @@ class CalorieEntriesCompanion extends UpdateCompanion<CalorieEntry> {
     if (type.present) {
       map['type'] = Variable<String>(type.value);
     }
+    if (quantity.present) {
+      map['quantity'] = Variable<int>(quantity.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<int>(createdAt.value);
     }
@@ -6508,6 +6676,7 @@ class CalorieEntriesCompanion extends UpdateCompanion<CalorieEntry> {
           ..write('meal: $meal, ')
           ..write('kcal: $kcal, ')
           ..write('type: $type, ')
+          ..write('quantity: $quantity, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -11827,12 +11996,16 @@ typedef $$SavedFoodTypesTableCreateCompanionBuilder =
     SavedFoodTypesCompanion Function({
       required String name,
       Value<bool> isBuiltin,
+      Value<String?> category,
+      Value<double?> kcalPerUnit,
       Value<int> rowid,
     });
 typedef $$SavedFoodTypesTableUpdateCompanionBuilder =
     SavedFoodTypesCompanion Function({
       Value<String> name,
       Value<bool> isBuiltin,
+      Value<String?> category,
+      Value<double?> kcalPerUnit,
       Value<int> rowid,
     });
 
@@ -11852,6 +12025,16 @@ class $$SavedFoodTypesTableFilterComposer
 
   ColumnFilters<bool> get isBuiltin => $composableBuilder(
     column: $table.isBuiltin,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get kcalPerUnit => $composableBuilder(
+    column: $table.kcalPerUnit,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -11874,6 +12057,16 @@ class $$SavedFoodTypesTableOrderingComposer
     column: $table.isBuiltin,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get kcalPerUnit => $composableBuilder(
+    column: $table.kcalPerUnit,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SavedFoodTypesTableAnnotationComposer
@@ -11890,6 +12083,14 @@ class $$SavedFoodTypesTableAnnotationComposer
 
   GeneratedColumn<bool> get isBuiltin =>
       $composableBuilder(column: $table.isBuiltin, builder: (column) => column);
+
+  GeneratedColumn<String> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => column);
+
+  GeneratedColumn<double> get kcalPerUnit => $composableBuilder(
+    column: $table.kcalPerUnit,
+    builder: (column) => column,
+  );
 }
 
 class $$SavedFoodTypesTableTableManager
@@ -11927,20 +12128,28 @@ class $$SavedFoodTypesTableTableManager
               ({
                 Value<String> name = const Value.absent(),
                 Value<bool> isBuiltin = const Value.absent(),
+                Value<String?> category = const Value.absent(),
+                Value<double?> kcalPerUnit = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SavedFoodTypesCompanion(
                 name: name,
                 isBuiltin: isBuiltin,
+                category: category,
+                kcalPerUnit: kcalPerUnit,
                 rowid: rowid,
               ),
           createCompanionCallback:
               ({
                 required String name,
                 Value<bool> isBuiltin = const Value.absent(),
+                Value<String?> category = const Value.absent(),
+                Value<double?> kcalPerUnit = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SavedFoodTypesCompanion.insert(
                 name: name,
                 isBuiltin: isBuiltin,
+                category: category,
+                kcalPerUnit: kcalPerUnit,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -12751,6 +12960,7 @@ typedef $$CalorieEntriesTableCreateCompanionBuilder =
       Value<String?> meal,
       required double kcal,
       required String type,
+      Value<int> quantity,
       required int createdAt,
     });
 typedef $$CalorieEntriesTableUpdateCompanionBuilder =
@@ -12760,6 +12970,7 @@ typedef $$CalorieEntriesTableUpdateCompanionBuilder =
       Value<String?> meal,
       Value<double> kcal,
       Value<String> type,
+      Value<int> quantity,
       Value<int> createdAt,
     });
 
@@ -12794,6 +13005,11 @@ class $$CalorieEntriesTableFilterComposer
 
   ColumnFilters<String> get type => $composableBuilder(
     column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get quantity => $composableBuilder(
+    column: $table.quantity,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -12837,6 +13053,11 @@ class $$CalorieEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get quantity => $composableBuilder(
+    column: $table.quantity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -12866,6 +13087,9 @@ class $$CalorieEntriesTableAnnotationComposer
 
   GeneratedColumn<String> get type =>
       $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<int> get quantity =>
+      $composableBuilder(column: $table.quantity, builder: (column) => column);
 
   GeneratedColumn<int> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -12909,6 +13133,7 @@ class $$CalorieEntriesTableTableManager
                 Value<String?> meal = const Value.absent(),
                 Value<double> kcal = const Value.absent(),
                 Value<String> type = const Value.absent(),
+                Value<int> quantity = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
               }) => CalorieEntriesCompanion(
                 id: id,
@@ -12916,6 +13141,7 @@ class $$CalorieEntriesTableTableManager
                 meal: meal,
                 kcal: kcal,
                 type: type,
+                quantity: quantity,
                 createdAt: createdAt,
               ),
           createCompanionCallback:
@@ -12925,6 +13151,7 @@ class $$CalorieEntriesTableTableManager
                 Value<String?> meal = const Value.absent(),
                 required double kcal,
                 required String type,
+                Value<int> quantity = const Value.absent(),
                 required int createdAt,
               }) => CalorieEntriesCompanion.insert(
                 id: id,
@@ -12932,6 +13159,7 @@ class $$CalorieEntriesTableTableManager
                 meal: meal,
                 kcal: kcal,
                 type: type,
+                quantity: quantity,
                 createdAt: createdAt,
               ),
           withReferenceMapper: (p0) => p0

@@ -22,6 +22,21 @@ final foodTypesProvider = StreamProvider<List<String>>(
   (ref) => ref.watch(sportRepositoryProvider).watchFoodTypes(),
 );
 
+/// Saved foods with their category + per-unit calories (grouped picker).
+final foodsProvider = StreamProvider<List<SavedFoodType>>(
+  (ref) => ref.watch(sportRepositoryProvider).watchFoods(),
+);
+
+/// Fixed categories for the calorie picker (calorie redesign).
+const calorieCategories = [
+  'Fruit',
+  'Vegetable',
+  'HealthyMeal',
+  'FastFood',
+  'Drink',
+  'Snack',
+];
+
 final calorieEntriesTodayProvider = StreamProvider<List<CalorieEntry>>(
   (ref) => ref
       .watch(sportRepositoryProvider)
