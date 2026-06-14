@@ -5,19 +5,63 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/date_key.dart';
 import '../../data/repositories/health_repository.dart';
 import '../../theme/glow_background.dart';
+import '../analysis/analysis_providers.dart';
 import '../screentime/digital_wellbeing_card.dart';
+import '../shared/calendar_row.dart';
 import 'health_calc.dart';
 import 'health_providers.dart';
 import '../settings/settings_button.dart';
 
-/// Health tab (CR-3 §5): manual profile + body (which feed the live
-/// BMI/BMR/TDEE), then a read-only fetched-vitals block (placeholder
-/// until a HealthSource is wired in P4).
-class HealthPage extends ConsumerWidget {
+/// Health tab (CR-3 §5): a day calendar on top (shared with every page),
+/// then manual profile + body (live BMI/BMR/TDEE), then the fetched vitals
+/// and Screen Time for the selected day. Selecting a day pulls that day's
+/// sensor data so the page stays current without a restart.
+class HealthPage extends ConsumerStatefulWidget {
   const HealthPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HealthPage> createState() => _HealthPageState();
+}
+
+class _HealthPageState extends ConsumerState<HealthPage>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncSelectedDay());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.invalidate(healthPermissionProvider);
+      _syncSelectedDay();
+    }
+  }
+
+  /// Best-effort pull of the viewed day from Health Connect (silently no-ops
+  /// without a source/permission). Screen time is pulled by its own card.
+  Future<void> _syncSelectedDay() async {
+    final date = ref.read(selectedDateProvider);
+    try {
+      await ref.read(healthRepositoryProvider).sync(day: parseDateKey(date));
+    } on Object {
+      // Best-effort; no source / no permission / no platform channel.
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final date = ref.watch(selectedDateProvider);
+    // Re-pull whenever the shared day changes.
+    ref.listen<String>(selectedDateProvider, (_, _) => _syncSelectedDay());
     return Scaffold(
       appBar: AppBar(
         title: const Text('Health'),
@@ -26,11 +70,12 @@ class HealthPage extends ConsumerWidget {
       body: GlowBackground(
         child: ListView(
           padding: const EdgeInsets.only(bottom: 24),
-          children: const [
-            _ProfileCard(),
-            _BodyCard(),
-            _VitalsCard(),
-            DigitalWellbeingCard(),
+          children: [
+            const CalendarRow(),
+            const _ProfileCard(),
+            const _BodyCard(),
+            _VitalsCard(date: date),
+            DigitalWellbeingCard(date: date),
           ],
         ),
       ),
@@ -283,11 +328,14 @@ class _BodyCardState extends ConsumerState<_BodyCard> {
 // ------------------------------------------------------------------ Vitals
 
 class _VitalsCard extends ConsumerWidget {
-  const _VitalsCard();
+  const _VitalsCard({required this.date});
+
+  final String date;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final vitals = ref.watch(todayVitalsProvider).value ?? const DailyVitals();
+    final vitals =
+        ref.watch(vitalsForDayProvider(date)).value ?? const DailyVitals();
     // VO2max fallback from RHR + age when Health Connect doesn't supply it
     // (CR-3 §10).
     final profile = ref.watch(healthProfileProvider).value;
@@ -320,7 +368,7 @@ class _VitalsCard extends ConsumerWidget {
             _vital('VO2max', _fmt(vo2, digits: 1)),
             _vital('Steps', _fmt(vitals.steps)),
             _vital('Active kcal', _fmt(vitals.activeKcal)),
-            _HealthConnectArea(hasData: !vitals.isEmpty),
+            _HealthConnectArea(date: date, hasData: !vitals.isEmpty),
           ],
         ),
       ),
@@ -341,8 +389,9 @@ class _VitalsCard extends ConsumerWidget {
 /// access) and "connected but no data today" (offer a manual sync) so the
 /// user isn't left with a single dead button (CR-3 §9 / P4).
 class _HealthConnectArea extends ConsumerWidget {
-  const _HealthConnectArea({required this.hasData});
+  const _HealthConnectArea({required this.date, required this.hasData});
 
+  final String date;
   final bool hasData;
 
   @override
@@ -358,7 +407,7 @@ class _HealthConnectArea extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(
-                  'Health Connect bağlı ama bugün için veri yok. '
+                  'Health Connect bağlı ama bu gün için veri yok. '
                   'Saat/uygulamanın Health Connect ile eşitlendiğinden emin olun.',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
@@ -414,7 +463,7 @@ class _HealthConnectArea extends ConsumerWidget {
       return;
     }
 
-    final ok = await repo.requestAndSync();
+    final ok = await repo.requestAndSync(day: parseDateKey(date));
     ref.invalidate(healthPermissionProvider);
     if (!ok) {
       messenger.showSnackBar(
@@ -430,7 +479,7 @@ class _HealthConnectArea extends ConsumerWidget {
 
   Future<void> _syncNow(BuildContext context, WidgetRef ref) async {
     final messenger = ScaffoldMessenger.of(context);
-    await ref.read(healthRepositoryProvider).sync();
+    await ref.read(healthRepositoryProvider).sync(day: parseDateKey(date));
     ref.invalidate(healthPermissionProvider);
     messenger.showSnackBar(
       const SnackBar(content: Text('Senkronize edildi.')),

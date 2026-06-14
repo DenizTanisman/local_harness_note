@@ -32,10 +32,15 @@ final latestBodyProvider = StreamProvider<BodyLogData?>(
   (ref) => ref.watch(healthRepositoryProvider).watchLatestBody(),
 );
 
-/// Today's vitals (placeholder until a HealthSource is wired, P4).
+/// Today's vitals (Main summary).
 final todayVitalsProvider = StreamProvider<DailyVitals>(
   (ref) =>
       ref.watch(healthRepositoryProvider).watchVitals(dateKey(DateTime.now())),
+);
+
+/// Vitals for an explicit day — the Health page's calendar drives this.
+final vitalsForDayProvider = StreamProvider.family<DailyVitals, String>(
+  (ref, date) => ref.watch(healthRepositoryProvider).watchVitals(date),
 );
 
 /// BMI / BMR / static TDEE derived from the profile + latest body (§10).
