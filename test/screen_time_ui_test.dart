@@ -64,7 +64,7 @@ void main() {
   testWidgets('Health shows onboarding without Usage Access', (tester) async {
     await pump(tester, const HealthPage(), _FakeSource(granted: false));
     await tester.scrollUntilVisible(
-      find.text('Digital Wellbeing'),
+      find.text('Screen Time'),
       400,
       scrollable: find.byType(Scrollable).first,
     );

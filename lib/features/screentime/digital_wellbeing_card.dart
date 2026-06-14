@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/date_key.dart';
 import '../../data/repositories/screen_time_repository.dart';
 import '../../theme/app_tokens.dart';
 import 'screentime_providers.dart';
 
-/// Health → Digital Wellbeing (CR-4 §3.1): daily total (approx) + top-5
-/// apps with proportional bars. Shows an onboarding card without Usage
-/// Access; re-checks permission and pulls on resume.
+/// Health → Screen Time (CR-4 §3.1): daily total (approx) + top-5 apps with
+/// proportional bars, for the [date] chosen in the Health calendar. Shows an
+/// onboarding card without Usage Access; re-checks permission + pulls the day
+/// on resume.
 class DigitalWellbeingCard extends ConsumerStatefulWidget {
-  const DigitalWellbeingCard({super.key});
+  const DigitalWellbeingCard({super.key, required this.date});
+
+  final String date;
 
   @override
   ConsumerState<DigitalWellbeingCard> createState() =>
@@ -22,6 +26,13 @@ class _DigitalWellbeingCardState extends ConsumerState<DigitalWellbeingCard>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _syncDay();
+  }
+
+  @override
+  void didUpdateWidget(DigitalWellbeingCard old) {
+    super.didUpdateWidget(old);
+    if (old.date != widget.date) _syncDay();
   }
 
   @override
@@ -30,19 +41,28 @@ class _DigitalWellbeingCardState extends ConsumerState<DigitalWellbeingCard>
     super.dispose();
   }
 
+  void _syncDay() {
+    // Fire-and-forget; tolerate a missing platform channel (tests) or denied
+    // permission so it never surfaces as an unhandled error.
+    ref
+        .read(screenTimeRepositoryProvider)
+        .sync(day: parseDateKey(widget.date))
+        .catchError((_) => null);
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Returning from the system Usage Access page → re-check + pull (§2.4).
     if (state == AppLifecycleState.resumed) {
       ref.invalidate(screenTimePermissionProvider);
-      ref.read(screenTimeRepositoryProvider).sync();
+      _syncDay();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final granted = ref.watch(screenTimePermissionProvider).value ?? false;
-    final data = ref.watch(todayScreenTimeProvider).value;
+    final data = ref.watch(screenTimeProvider(widget.date)).value;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -52,7 +72,7 @@ class _DigitalWellbeingCardState extends ConsumerState<DigitalWellbeingCard>
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Digital Wellbeing',
+              'Screen Time',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
@@ -67,7 +87,7 @@ class _DigitalWellbeingCardState extends ConsumerState<DigitalWellbeingCard>
             else if (data == null || data.isEmpty)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 8),
-                child: Text('No screen-time data yet for today.'),
+                child: Text('No screen-time data for this day.'),
               )
             else
               _Usage(data: data),

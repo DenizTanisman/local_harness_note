@@ -2,6 +2,7 @@ import 'package:daily_tracker/core/date_key.dart';
 import 'package:daily_tracker/data/db/app_database.dart';
 import 'package:daily_tracker/data/db/database_provider.dart';
 import 'package:daily_tracker/data/repositories/health_repository.dart';
+import 'package:daily_tracker/features/analysis/analysis_providers.dart';
 import 'package:daily_tracker/features/health/health_page.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -113,6 +114,23 @@ void main() {
       expect(find.text('Resting HR'), findsOneWidget);
       expect(find.text('VO2max'), findsOneWidget);
       expect(find.text('Steps'), findsOneWidget);
+      await closeApp(tester);
+    });
+
+    testWidgets('fetched vitals follow the selected calendar day', (
+      tester,
+    ) async {
+      final day = dateKey(DateTime.now().subtract(const Duration(days: 2)));
+      await HealthRepository(db).storeSamples(day, {'steps': 18000, 'rhr': 55});
+
+      await pump(tester);
+      // Default day (today) has no samples → placeholder.
+      expect(find.text('18000'), findsNothing);
+
+      // Move the shared calendar to the day with data.
+      container.read(selectedDateProvider.notifier).select(day);
+      await tester.pumpAndSettle();
+      expect(find.text('18000'), findsOneWidget);
       await closeApp(tester);
     });
   });
