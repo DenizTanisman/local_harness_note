@@ -34,7 +34,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -93,6 +93,13 @@ class AppDatabase extends _$AppDatabase {
         // Recolor the core heatmap rules to the modern blue scheme and
         // refresh the Waste option label to 'Energy Waste'.
         await applyBlueHeatmapRules();
+      }
+      if (from < 10) {
+        // Calorie redesign: saved foods carry a category + per-unit calories,
+        // and an entry covers a quantity (×N).
+        await m.addColumn(savedFoodTypes, savedFoodTypes.category);
+        await m.addColumn(savedFoodTypes, savedFoodTypes.kcalPerUnit);
+        await m.addColumn(calorieEntries, calorieEntries.quantity);
       }
     },
     beforeOpen: (details) async {

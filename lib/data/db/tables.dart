@@ -206,11 +206,18 @@ class SavedExerciseTitles extends Table {
   Set<Column> get primaryKey => {name};
 }
 
-/// Autocomplete dictionary of food types (CR-3 §12). Seeded builtins +
-/// user additions; INSERT OR IGNORE.
+/// Saved foods (CR-3 §12 + calorie redesign): a reusable item remembered by
+/// name, with its [category] (Fruit / Vegetable / FastFood …) and per-unit
+/// calories so it can be picked again and re-entered with a quantity.
 class SavedFoodTypes extends Table {
   TextColumn get name => text()();
   BoolColumn get isBuiltin => boolean().withDefault(const Constant(false))();
+
+  /// Grouping for the calorie picker (e.g. 'Fruit'); null = uncategorised.
+  TextColumn get category => text().nullable()();
+
+  /// Calories for one item/portion; null when never recorded with a value.
+  RealColumn get kcalPerUnit => real().nullable()();
 
   @override
   Set<Column> get primaryKey => {name};
@@ -246,8 +253,10 @@ class CalorieEntries extends Table {
   TextColumn get date => text()();
   TextColumn get meal => text().nullable()(); // 'breakfast'|'lunch'|'dinner'
   RealColumn get kcal =>
-      real().customConstraint('NOT NULL CHECK (kcal >= 0)')();
+      real().customConstraint('NOT NULL CHECK (kcal >= 0)')(); // total
   TextColumn get type => text()(); // saved_food_types.name
+  /// How many items/portions this entry covers (×N); kcal is the total.
+  IntColumn get quantity => integer().withDefault(const Constant(1))();
   IntColumn get createdAt => integer()();
 }
 

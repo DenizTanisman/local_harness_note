@@ -142,14 +142,50 @@ class SportRepository {
           .watch()
           .map((rows) => [for (final r in rows) r.name]);
 
-  Future<void> addFoodType(String name) async {
+  /// Full saved-food rows (name + category + per-unit calories) for the
+  /// grouped calorie picker.
+  Stream<List<SavedFoodType>> watchFoods() =>
+      (db.select(db.savedFoodTypes)
+            ..orderBy([(t) => OrderingTerm.asc(t.name)]))
+          .watch();
+
+  Future<void> addFoodType(String name) => upsertFood(name: name);
+
+  /// Remembers a food, filling in [category]/[kcalPerUnit] when given (they
+  /// only ever overwrite a previous value when a new non-null one arrives).
+  Future<void> upsertFood({
+    required String name,
+    String? category,
+    double? kcalPerUnit,
+  }) async {
     final trimmed = name.trim();
     if (trimmed.isEmpty) return;
+    final companion = SavedFoodTypesCompanion.insert(
+      name: trimmed,
+      category: Value(category),
+      kcalPerUnit: Value(kcalPerUnit),
+    );
+    // Nothing new to remember → keep the existing row (empty SET is invalid).
+    if (category == null && kcalPerUnit == null) {
+      await db
+          .into(db.savedFoodTypes)
+          .insert(companion, mode: InsertMode.insertOrIgnore);
+      return;
+    }
     await db
         .into(db.savedFoodTypes)
         .insert(
-          SavedFoodTypesCompanion.insert(name: trimmed),
-          mode: InsertMode.insertOrIgnore,
+          companion,
+          onConflict: DoUpdate(
+            (old) => SavedFoodTypesCompanion(
+              category: category != null
+                  ? Value(category)
+                  : const Value.absent(),
+              kcalPerUnit: kcalPerUnit != null
+                  ? Value(kcalPerUnit)
+                  : const Value.absent(),
+            ),
+          ),
         );
   }
 
@@ -166,10 +202,18 @@ class SportRepository {
     String? meal,
     required double kcal,
     required String type,
+    int quantity = 1,
+    String? category,
+    double? kcalPerUnit,
     double? currentTarget,
   }) {
     return db.transaction(() async {
-      await addFoodType(type);
+      // Remember the food (and its category / per-unit calories) for reuse.
+      await upsertFood(
+        name: type,
+        category: category,
+        kcalPerUnit: kcalPerUnit,
+      );
       final id = await db
           .into(db.calorieEntries)
           .insert(
@@ -178,6 +222,7 @@ class SportRepository {
               meal: Value(meal),
               kcal: kcal,
               type: type.trim(),
+              quantity: Value(quantity),
               createdAt: DateTime.now().millisecondsSinceEpoch,
             ),
           );
