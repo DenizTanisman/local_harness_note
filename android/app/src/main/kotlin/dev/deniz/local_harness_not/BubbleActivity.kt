@@ -1,5 +1,7 @@
 package dev.deniz.local_harness_not
 
+import android.os.Handler
+import android.os.Looper
 import android.widget.Toast
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -23,8 +25,17 @@ class BubbleActivity : FlutterActivity() {
                             if (title.isNullOrBlank()) "Not kaydedildi" else "Not kaydedildi: $title",
                             Toast.LENGTH_SHORT
                         ).show()
-                        moveTaskToBack(true)
                         result.success(null)
+                        // moveTaskToBack() leaves a bubble expanded on One UI;
+                        // finishing its activity folds it. If the system drops
+                        // the bubble with the finished task, put it back
+                        // (collapsed) right away.
+                        finish()
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            if (QuickNoteBubble.status(applicationContext)["showing"] != true) {
+                                QuickNoteBubble.show(applicationContext)
+                            }
+                        }, 600)
                     }
                     else -> result.notImplemented()
                 }
