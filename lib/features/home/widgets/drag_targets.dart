@@ -51,8 +51,7 @@ class DropOntoCardTarget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return DragTarget<Metric>(
-      onWillAcceptWithDetails: (details) =>
-          details.data.id != metric.id && metric.inputType != 'money',
+      onWillAcceptWithDetails: (details) => details.data.id != metric.id,
       onAcceptWithDetails: (details) async {
         final dragged = details.data;
         final tree = ref.read(treeRepositoryProvider);

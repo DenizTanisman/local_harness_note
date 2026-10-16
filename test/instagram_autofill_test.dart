@@ -1,12 +1,14 @@
-import 'package:daily_tracker/data/db/app_database.dart';
-import 'package:daily_tracker/data/repositories/entry_repository.dart';
-import 'package:daily_tracker/data/repositories/screen_time_repository.dart';
+import 'package:local_harness_not/data/db/app_database.dart';
+import 'package:local_harness_not/data/repositories/entry_repository.dart';
+import 'package:local_harness_not/data/repositories/settings_repository.dart';
+import 'package:local_harness_not/features/home/instagram_autofill.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// CR4-P2 acceptance (§3.3): Instagram auto-fill — auto writes/overwrites
 /// auto days; a manual edit pins the day and is never overwritten; the
-/// onSynced hook respects the setting.
+/// minutes now come from the Program app's hub snapshot
+/// (`data.screenTime.days[].apps[]`) and the setting still gates it.
 void main() {
   late AppDatabase db;
   late EntryRepository entries;
@@ -92,47 +94,183 @@ void main() {
     expect(e.numValue, 40);
   });
 
-  group('onSynced hook honours the setting', () {
-    test('enabled (default) → Instagram filled from raw usage', () async {
-      var enabled = true;
-      final repo = ScreenTimeRepository(
-        db,
-        _Src({
-          'com.instagram.android': const AppUsage(
-            packageName: 'com.instagram.android',
-            label: 'Instagram',
-            foregroundMinutes: 63,
-          ),
-        }),
-        onSynced: (date, raw) async {
-          if (!enabled) return;
-          final ig = raw['com.instagram.android'];
-          if (ig != null) {
-            await entries.autofillInstagram(
-              date: date,
-              minutes: ig.foregroundMinutes.toDouble(),
-            );
-          }
-        },
-      );
-      await repo.sync(day: DateTime(2026, 6, 13));
-      expect((await instagramEntry('2026-06-13'))!.numValue, 63);
+  group('instagramMinutesFromProgram (pure mapping)', () {
+    Map<String, Object?> program(List<Object?> days) => {
+      'app': 'program',
+      'schema': 1,
+      'data': {
+        'screenTime': {'todayTotalMin': 120, 'top': const [], 'days': days},
+      },
+    };
 
-      // disabled → no write on a fresh day
-      enabled = false;
-      await repo.sync(day: DateTime(2026, 6, 14));
-      expect(await instagramEntry('2026-06-14'), isNull);
+    test('maps each day to its Instagram minutes', () {
+      final minutes = instagramMinutesFromProgram(
+        program([
+          {
+            'date': '2026-06-14',
+            'totalMin': 200,
+            'apps': [
+              {'package': 'com.whatsapp', 'label': 'WhatsApp', 'min': 80},
+              {
+                'package': 'com.instagram.android',
+                'label': 'Instagram',
+                'min': 47,
+              },
+            ],
+          },
+          {
+            'date': '2026-06-13',
+            'totalMin': 90,
+            'apps': [
+              // Program's rank-6 extra row: present even outside the top 5.
+              {'package': 'com.instagram.android', 'label': null, 'min': 12.0},
+            ],
+          },
+        ]),
+      );
+      expect(minutes, {'2026-06-14': 47.0, '2026-06-13': 12.0});
+    });
+
+    test('days without Instagram or with 0 minutes are left out', () {
+      final minutes = instagramMinutesFromProgram(
+        program([
+          {
+            'date': '2026-06-14',
+            'totalMin': 10,
+            'apps': [
+              {'package': 'com.whatsapp', 'label': 'WhatsApp', 'min': 10},
+            ],
+          },
+          {
+            'date': '2026-06-13',
+            'totalMin': 0,
+            'apps': [
+              {'package': 'com.instagram.android', 'label': 'IG', 'min': 0},
+            ],
+          },
+        ]),
+      );
+      expect(minutes, isEmpty);
+    });
+
+    test('malformed or foreign snapshots map to nothing (no throw)', () {
+      expect(instagramMinutesFromProgram(null), isEmpty);
+      expect(instagramMinutesFromProgram({'app': 'para', 'data': {}}), isEmpty);
+      expect(instagramMinutesFromProgram({'app': 'program'}), isEmpty);
+      expect(
+        instagramMinutesFromProgram({
+          'app': 'program',
+          'data': {
+            'screenTime': {'days': 'nope'},
+          },
+        }),
+        isEmpty,
+      );
+      expect(
+        instagramMinutesFromProgram(
+          program([
+            'junk',
+            {'date': 'yesterday', 'apps': []},
+            {
+              'date': '2026-06-14',
+              'apps': [
+                {'package': 'com.instagram.android', 'min': '47'},
+              ],
+            },
+          ]),
+        ),
+        isEmpty,
+      );
     });
   });
-}
 
-class _Src implements ScreenTimeSource {
-  _Src(this.raw);
-  final Map<String, AppUsage> raw;
-  @override
-  Future<bool> hasPermission() async => true;
-  @override
-  Future<void> openPermissionSettings() async {}
-  @override
-  Future<Map<String, AppUsage>?> rawUsageFor(DateTime day) async => raw;
+  group('InstagramAutofill.run', () {
+    Map<String, Object?> snapshot(int minutes) => {
+      'app': 'program',
+      'schema': 1,
+      'data': {
+        'screenTime': {
+          'days': [
+            {
+              'date': '2026-06-13',
+              'totalMin': minutes,
+              'apps': [
+                {
+                  'package': 'com.instagram.android',
+                  'label': 'Instagram',
+                  'min': minutes,
+                },
+              ],
+            },
+          ],
+        },
+      },
+    };
+
+    test('enabled (default) → Instagram filled from the snapshot', () async {
+      final requested = <String>[];
+      final autofill = InstagramAutofill(
+        entries,
+        SettingsRepository(db),
+        readPeer: (app) async {
+          requested.add(app);
+          return snapshot(63);
+        },
+      );
+      expect(await autofill.run(), 1);
+      expect(requested, ['program']);
+      final e = await instagramEntry('2026-06-13');
+      expect(e!.numValue, 63);
+      expect(e.valueSource, 'auto');
+    });
+
+    test('setting off → no read, no write', () async {
+      await SettingsRepository(db).set('autofill_instagram', 'false');
+      var reads = 0;
+      final autofill = InstagramAutofill(
+        entries,
+        SettingsRepository(db),
+        readPeer: (_) async {
+          reads++;
+          return snapshot(63);
+        },
+      );
+      expect(await autofill.run(), 0);
+      expect(reads, 0);
+      expect(await instagramEntry('2026-06-13'), isNull);
+    });
+
+    test('Program not installed (null snapshot) → silent no-op', () async {
+      final autofill = InstagramAutofill(
+        entries,
+        SettingsRepository(db),
+        readPeer: (_) async => null,
+      );
+      expect(await autofill.run(), 0);
+      expect(await db.select(db.entries).get(), isEmpty);
+    });
+
+    test('default reader without a platform side is a no-op', () async {
+      // No readPeer override → HubBridge → MissingPluginException → null.
+      TestWidgetsFlutterBinding.ensureInitialized();
+      final autofill = InstagramAutofill(entries, SettingsRepository(db));
+      expect(await autofill.run(), 0);
+    });
+
+    test('a manual day is never overwritten by the snapshot', () async {
+      final ig = await (db.select(
+        db.metrics,
+      )..where((m) => m.key.equals('instagram'))).getSingle();
+      await entries.saveEntry(metricId: ig.id, date: '2026-06-13', numValue: 5);
+      final autofill = InstagramAutofill(
+        entries,
+        SettingsRepository(db),
+        readPeer: (_) async => snapshot(90),
+      );
+      expect(await autofill.run(), 0);
+      final e = await instagramEntry('2026-06-13');
+      expect(e!.numValue, 5);
+      expect(e.valueSource, 'manual');
+    });
+  });
 }

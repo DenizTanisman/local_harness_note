@@ -1,4 +1,3 @@
-import '../../core/date_key.dart';
 import 'quote_service.dart';
 
 /// What to schedule, computed purely so it can be unit-tested.
@@ -17,22 +16,9 @@ class PlannedNotification {
   final String title;
   final String? body;
 
-  /// 'home' | 'money' — tap routing (spec §8).
+  /// 'home' — tap routing (spec §8). Expense reminders ('money') moved to
+  /// the Para app.
   final String payload;
-}
-
-/// An unfired expense reminder row (id + date + CATEGORY ONLY — amounts
-/// never reach the notification layer, spec §8/§11.4).
-class ReminderInput {
-  const ReminderInput({
-    required this.id,
-    required this.remindDate,
-    required this.category,
-  });
-
-  final int id;
-  final String remindDate;
-  final String category;
 }
 
 class NotificationPlanner {
@@ -42,8 +28,6 @@ class NotificationPlanner {
 
   static const morningBaseId = 1000;
   static const eveningBaseId = 2000;
-  static const expenseBaseId = 30000;
-  static const expenseHour = 10;
 
   /// [morning]/[evening] are 'HH:mm'. [missingToday] is the number of
   /// unfilled cards right now (appended to tonight's reminder only).
@@ -54,7 +38,6 @@ class NotificationPlanner {
     required bool quotesEnabled,
     required List<String> quotes,
     required int missingToday,
-    required List<ReminderInput> reminders,
   }) {
     final result = <PlannedNotification>[];
 
@@ -96,22 +79,6 @@ class NotificationPlanner {
           ),
         );
       }
-    }
-
-    final today = dateKey(now);
-    for (final reminder in reminders) {
-      if (reminder.remindDate.compareTo(today) < 0) continue;
-      final when = at(parseDateKey(reminder.remindDate), '$expenseHour:00');
-      if (!when.isAfter(now)) continue;
-      // CATEGORY NAME ONLY — never the amount (lock-screen leak, spec §8).
-      result.add(
-        PlannedNotification(
-          id: expenseBaseId + reminder.id,
-          when: when,
-          title: 'Reminder: ${reminder.category}',
-          payload: 'money',
-        ),
-      );
     }
 
     return result;

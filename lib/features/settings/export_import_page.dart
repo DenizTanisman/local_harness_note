@@ -22,13 +22,13 @@ class ExportImportPage extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.table_chart),
             title: const Text('Export CSV'),
-            subtitle: const Text('entries.csv, transactions.csv, metrics.csv'),
+            subtitle: const Text('entries.csv, metrics.csv'),
             onTap: () => _exportCsv(context, ref),
           ),
           ListTile(
             leading: const Icon(Icons.grid_on),
             title: const Text('Export Excel'),
-            subtitle: const Text('Single .xlsx with three sheets'),
+            subtitle: const Text('Single .xlsx with two sheets'),
             onTap: () => _exportExcel(context, ref),
           ),
           ListTile(
@@ -86,13 +86,10 @@ class ExportImportPage extends ConsumerWidget {
       p.join(dir, 'entries.csv'),
     ).writeAsString(await export.entriesCsv());
     await File(
-      p.join(dir, 'transactions.csv'),
-    ).writeAsString(await export.transactionsCsv());
-    await File(
       p.join(dir, 'metrics.csv'),
     ).writeAsString(await export.metricsCsv());
     messenger.showSnackBar(
-      SnackBar(content: Text('Exported 3 CSV files to $dir')),
+      SnackBar(content: Text('Exported 2 CSV files to $dir')),
     );
   }
 
@@ -101,7 +98,7 @@ class ExportImportPage extends ConsumerWidget {
     final dir = await _pickDir(context);
     if (dir == null) return;
     final bytes = await ref.read(exportServiceProvider).excelBytes();
-    final file = File(p.join(dir, 'daily_tracker.xlsx'));
+    final file = File(p.join(dir, 'local_harness_not.xlsx'));
     await file.writeAsBytes(bytes);
     messenger.showSnackBar(SnackBar(content: Text('Exported ${file.path}')));
   }
@@ -110,7 +107,7 @@ class ExportImportPage extends ConsumerWidget {
     final messenger = ScaffoldMessenger.of(context);
     final dir = await FilePicker.platform.getDirectoryPath();
     if (dir == null) return;
-    final file = File(p.join(dir, 'daily_tracker_sample.csv'));
+    final file = File(p.join(dir, 'local_harness_not_sample.csv'));
     await file.writeAsString(ExportService.sampleCsv());
     messenger.showSnackBar(SnackBar(content: Text('Saved ${file.path}')));
   }
@@ -127,13 +124,7 @@ class ExportImportPage extends ConsumerWidget {
 
     final importService = ref.read(importServiceProvider);
     try {
-      final firstLine = text.split('\n').first.trim();
-      final ImportReport report;
-      if (firstLine == ExportService.transactionsHeader.join(',')) {
-        report = await importService.importTransactionsCsv(text);
-      } else {
-        report = await importService.importEntriesCsv(text);
-      }
+      final report = await importService.importEntriesCsv(text);
       if (!context.mounted) return;
       await showDialog<void>(
         context: context,

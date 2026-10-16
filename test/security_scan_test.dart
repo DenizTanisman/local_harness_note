@@ -53,9 +53,45 @@ void main() {
     );
     // FLAG_SECURE is applied via a MethodChannel from MainActivity.
     final mainActivity = File(
-      'android/app/src/main/kotlin/dev/deniz/daily_tracker/MainActivity.kt',
+      'android/app/src/main/kotlin/dev/deniz/local_harness_not/MainActivity.kt',
     ).readAsStringSync();
     expect(mainActivity, contains('FLAG_SECURE'));
-    expect(mainActivity, contains('daily_tracker/secure_window'));
+    expect(mainActivity, contains('local_harness_not/secure_window'));
+  });
+
+  test('split app sheds the monolith collection permissions', () {
+    final manifest = File(
+      'android/app/src/main/AndroidManifest.xml',
+    ).readAsStringSync();
+    for (final gone in [
+      'PACKAGE_USAGE_STATS',
+      'QUERY_ALL_PACKAGES',
+      'android.permission.health.',
+      'com.google.android.apps.healthdata',
+    ]) {
+      expect(manifest, isNot(contains(gone)), reason: gone);
+    }
+  });
+
+  test('hub provider is signature-guarded, also inside call()', () {
+    final manifest = File(
+      'android/app/src/main/AndroidManifest.xml',
+    ).readAsStringSync();
+    expect(manifest, contains('android:protectionLevel="signature"'));
+    expect(manifest, contains('dev.deniz.local_harness_not.hub'));
+    expect(
+      manifest,
+      contains('<package android:name="dev.deniz.local_harness_program" />'),
+    );
+    final provider = File(
+      'android/app/src/main/kotlin/dev/deniz/local_harness_not/HubProvider.kt',
+    ).readAsStringSync();
+    expect(provider, contains('checkCallingPermission(HUB_PERMISSION)'));
+    expect(provider, contains('throw SecurityException'));
+    final mainActivity = File(
+      'android/app/src/main/kotlin/dev/deniz/local_harness_not/MainActivity.kt',
+    ).readAsStringSync();
+    expect(mainActivity, contains('"local_harness/hub"'));
+    expect(mainActivity, contains('ATOMIC_MOVE'));
   });
 }

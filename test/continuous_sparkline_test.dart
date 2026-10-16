@@ -1,14 +1,9 @@
-import 'package:daily_tracker/data/db/app_database.dart';
-import 'package:daily_tracker/data/repositories/money_repository.dart';
-import 'package:daily_tracker/features/money/money_page.dart';
-import 'package:daily_tracker/features/shared/continuous_sparkline.dart';
-import 'package:drift/native.dart';
+import 'package:local_harness_not/features/shared/continuous_sparkline.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// CR1-C acceptance: full-month line with zeros for empty days, flat line
-/// for an empty month, clamped nearest-day taps, red segments for
-/// over-budget Money days.
+/// for an empty month, clamped nearest-day taps, per-day segment colors.
 void main() {
   group('filledMonthValues', () {
     test('30-day month with 3 data days → 27 zeros + 3 peaks', () {
@@ -33,39 +28,16 @@ void main() {
     });
   });
 
-  group('segment colors (Money red/green)', () {
-    test('over-budget day owns the segment rising to it', () async {
-      final db = AppDatabase(NativeDatabase.memory());
-      addTearDown(db.close);
-      final money = MoneyRepository(db);
-      // Budget: (3000 − 0) / 30 = 100; day 10 spends 200 → red.
-      await money.addTransaction(
-        date: '2026-06-01',
-        direction: 'income',
-        amount: 3000,
-        category: 'Scholarship',
-      );
-      await money.addTransaction(
-        date: '2026-06-10',
-        direction: 'outcome',
-        amount: 200,
-        category: 'Food',
-      );
-      await money.addTransaction(
-        date: '2026-06-11',
-        direction: 'outcome',
-        amount: 50,
-        category: 'Food',
-      );
-
-      final general = await money.loadGeneral('2026-06');
-      final colors = moneyDayColors(30, general);
-      expect(colors[10], const Color(0xFFDA3633), reason: 'day 10 red');
-      expect(colors[11], const Color(0xFF2EA043), reason: 'day 11 green');
-
+  group('segment colors', () {
+    test('a highlighted day owns the segment rising to it', () {
+      // Index 0 unused; day 10 highlighted, every other day plain.
+      final colors = [
+        for (var d = 0; d <= 30; d++) d == 10 ? Colors.red : Colors.green,
+      ];
       // The segment arriving at day 10 (left index 8) is red.
-      expect(segmentColor(8, colors, Colors.white), colors[10]);
-      expect(segmentColor(10, colors, Colors.white), colors[11]);
+      expect(segmentColor(8, colors, Colors.white), Colors.red);
+      expect(segmentColor(9, colors, Colors.white), Colors.green);
+      expect(segmentColor(10, colors, Colors.white), colors[12]);
     });
 
     test('without dayColors the fallback line color is used', () {

@@ -1,10 +1,11 @@
-import 'package:drift/drift.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../core/date_key.dart';
 import '../../data/db/app_database.dart';
+import '../../data/repositories/checkin_status.dart';
 import 'notification_planner.dart';
 import 'quote_service.dart';
 
@@ -21,9 +22,9 @@ class NotificationService {
   bool _initialized = false;
 
   static const _channel = AndroidNotificationDetails(
-    'daily_tracker',
-    'Daily Tracker',
-    channelDescription: 'Quotes and reminders',
+    'local_harness_not',
+    'Not',
+    channelDescription: 'Morning quotes and the evening check-in reminder',
     importance: Importance.defaultImportance,
   );
 
@@ -40,9 +41,8 @@ class NotificationService {
       settings: const InitializationSettings(
         android: AndroidInitializationSettings('@mipmap/ic_launcher'),
       ),
-      onDidReceiveNotificationResponse: (response) {
-        onTapPayload?.call(response.payload ?? 'home');
-      },
+      onDidReceiveNotificationResponse: (response) =>
+          onTapPayload?.call(response.payload ?? 'home'),
     );
     // Android 13+ runtime permission (spec §8) — asked on first launch.
     await _plugin
@@ -62,23 +62,10 @@ class NotificationService {
     };
     final quotesEnabled = settings['quotes_enabled'] != 'false';
     final lang = settings['quote_lang'] ?? 'tr';
-    final quotes = quotesEnabled ? await QuoteService.load(lang) : <String>[];
-
-    final reminderJoin = db.select(db.expenseReminders).join([
-      innerJoin(
-        db.transactions,
-        db.transactions.id.equalsExp(db.expenseReminders.transactionId),
-      ),
-    ])..where(db.expenseReminders.fired.equals(false));
-    final reminders = [
-      for (final row in await reminderJoin.get())
-        ReminderInput(
-          id: row.readTable(db.expenseReminders).id,
-          remindDate: row.readTable(db.expenseReminders).remindDate,
-          // Only the category crosses into the notification layer.
-          category: row.readTable(db.transactions).category,
-        ),
-    ];
+    // Uses the user's edited pool when present, else the bundled defaults.
+    final quotes = quotesEnabled
+        ? await QuoteService.effective(lang, settings)
+        : <String>[];
 
     final plan = NotificationPlanner.plan(
       now: DateTime.now(),
@@ -87,7 +74,6 @@ class NotificationService {
       quotesEnabled: quotesEnabled,
       quotes: quotes,
       missingToday: await _missingToday(),
-      reminders: reminders,
     );
 
     await _plugin.cancelAll();
@@ -105,36 +91,8 @@ class NotificationService {
     }
   }
 
-  Future<int> _missingToday() async {
-    final today = DateTime.now();
-    final date =
-        '${today.year.toString().padLeft(4, '0')}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-    final top = await (db.select(
-      db.metrics,
-    )..where((m) => m.parentId.isNull())).get();
-    final dayEntries = await (db.select(
-      db.entries,
-    )..where((e) => e.date.equals(date))).get();
-    final filledIds = dayEntries.map((e) => e.metricId).toSet();
-    final txCount = await (db.select(
-      db.transactions,
-    )..where((t) => t.date.equals(date))).get();
-    final children = await (db.select(
-      db.metrics,
-    )..where((m) => m.parentId.isNotNull())).get();
-
-    var missing = 0;
-    for (final metric in top) {
-      final filled = switch (metric.inputType) {
-        'money' => txCount.isNotEmpty,
-        'composite' =>
-          children
-              .where((c) => c.parentId == metric.id)
-              .any((c) => filledIds.contains(c.id)),
-        _ => filledIds.contains(metric.id),
-      };
-      if (!filled) missing++;
-    }
-    return missing;
-  }
+  /// Unfilled top-level check-in cards today (composites count as filled
+  /// when any child is).
+  Future<int> _missingToday() async =>
+      (await loadCheckinStatus(db, dateKey(DateTime.now()))).missing.length;
 }

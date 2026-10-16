@@ -1,17 +1,16 @@
-import 'package:daily_tracker/data/db/app_database.dart';
-import 'package:daily_tracker/data/db/database_provider.dart';
-import 'package:daily_tracker/features/analysis/analysis_page.dart';
-import 'package:daily_tracker/features/health/health_page.dart';
-import 'package:daily_tracker/features/home/home_page.dart';
-import 'package:daily_tracker/features/shell/app_shell.dart';
-import 'package:daily_tracker/features/shell/tab_index.dart';
+import 'package:local_harness_not/data/db/app_database.dart';
+import 'package:local_harness_not/data/db/database_provider.dart';
+import 'package:local_harness_not/features/analysis/analysis_page.dart';
+import 'package:local_harness_not/features/home/home_page.dart';
+import 'package:local_harness_not/features/shell/app_shell.dart';
+import 'package:local_harness_not/features/shell/tab_index.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// CR3-P0 acceptance: 5-tab shell, opens on Main, swipe + tap synced,
-/// Analysis preserved at index 1.
+/// Not-app shell: 2 tabs (Analysis, Main), opens on Main, swipe + tap
+/// synced, Analysis preserved at index 0.
 void main() {
   late AppDatabase db;
   late ProviderContainer container;
@@ -44,11 +43,24 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
   }
 
-  testWidgets('opens on Main (index 2)', (tester) async {
+  testWidgets('opens on Main (index 1) with exactly two tabs', (tester) async {
     await pump(tester);
     expect(container.read(tabIndexProvider), AppTab.main);
     expect(find.byType(HomePage), findsOneWidget);
-    expect(find.text('Daily Tracker'), findsOneWidget);
+    expect(find.widgetWithText(AppBar, 'Not'), findsOneWidget);
+    expect(find.byType(NavigationDestination), findsNWidgets(2));
+    // Money / Health / Sport tabs moved to the Para and Program apps (the
+    // 'Sport' check-in metric card is unrelated and stays).
+    for (final gone in ['Money', 'Health', 'Sport']) {
+      expect(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text(gone),
+        ),
+        findsNothing,
+        reason: gone,
+      );
+    }
     await closeApp(tester);
   });
 
@@ -60,10 +72,10 @@ void main() {
     expect(container.read(tabIndexProvider), AppTab.analysis);
     expect(find.byType(AnalysisPage), findsOneWidget);
 
-    await tester.tap(find.text('Health').last);
+    await tester.tap(find.text('Main').last);
     await tester.pumpAndSettle();
-    expect(container.read(tabIndexProvider), AppTab.health);
-    expect(find.byType(HealthPage), findsOneWidget);
+    expect(container.read(tabIndexProvider), AppTab.main);
+    expect(find.byType(HomePage), findsOneWidget);
     await closeApp(tester);
   });
 
@@ -75,29 +87,34 @@ void main() {
     // card TextField that would win the gesture arena.
     final w = tester.view.physicalSize.width / tester.view.devicePixelRatio;
     final top = Offset(w / 2, 90);
-    // Main(2) → swipe left → Health(3).
+    // Main(1) is the last tab → swipe left stays put.
     await tester.flingFrom(top, const Offset(-600, 0), 1200);
     await tester.pumpAndSettle();
-    expect(container.read(tabIndexProvider), AppTab.health);
+    expect(container.read(tabIndexProvider), AppTab.main);
 
-    // Swipe right twice → Analysis(1).
-    await tester.flingFrom(top, const Offset(600, 0), 1200);
-    await tester.pumpAndSettle();
+    // Swipe right → Analysis(0); swipe left → back to Main(1).
     await tester.flingFrom(top, const Offset(600, 0), 1200);
     await tester.pumpAndSettle();
     expect(container.read(tabIndexProvider), AppTab.analysis);
+    await tester.flingFrom(top, const Offset(-600, 0), 1200);
+    await tester.pumpAndSettle();
+    expect(container.read(tabIndexProvider), AppTab.main);
     await closeApp(tester);
   });
 
   testWidgets('deep link via provider jumps the PageView', (tester) async {
     await pump(tester);
-    container.read(tabIndexProvider.notifier).goTo(AppTab.money);
+    container.read(tabIndexProvider.notifier).goTo(AppTab.analysis);
     await tester.pumpAndSettle();
-    expect(find.widgetWithText(AppBar, 'Money'), findsOneWidget);
+    expect(find.widgetWithText(AppBar, 'Analysis'), findsOneWidget);
+    // Out-of-range indices (the monolith's Money/Health/Sport) are ignored.
+    container.read(tabIndexProvider.notifier).goTo(4);
+    await tester.pumpAndSettle();
+    expect(container.read(tabIndexProvider), AppTab.analysis);
     await closeApp(tester);
   });
 
-  testWidgets('Analysis preserved at index 1 (heatmap + breakdown render)', (
+  testWidgets('Analysis preserved at index 0 (heatmap + breakdown render)', (
     tester,
   ) async {
     await pump(tester);

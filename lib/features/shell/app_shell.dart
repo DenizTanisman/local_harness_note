@@ -4,16 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/secure_window.dart';
 import '../analysis/analysis_page.dart';
 import '../detail/metric_detail_page.dart';
-import '../health/health_page.dart';
 import '../home/home_page.dart';
-import '../money/money_page.dart';
-import '../money/money_reveal.dart';
+import '../home/instagram_autofill.dart';
 import '../settings/settings_providers.dart';
-import '../sport/sport_page.dart';
 import 'tab_index.dart';
 
-/// 5-tab shell (CR-3 §2): global horizontal swipe + bottom navigation,
-/// kept in sync. Opens on Main (index 2).
+/// 2-tab shell (Analysis, Main — CR-3 §2 minus the tabs that moved to the
+/// Para / Program apps): global horizontal swipe + bottom navigation, kept
+/// in sync. Opens on Main (index 1).
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
 
@@ -33,7 +31,7 @@ class _AppShellState extends ConsumerState<AppShell>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     // FLAG_SECURE (spec §11.6 / CR-3 §14) — app-wide when enabled, since
-    // both Money and Health live in the always-built PageView. Default off.
+    // both tabs live in the always-built PageView. Default off.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final settings = await ref.read(settingsRepositoryProvider).loadAll();
       if (mounted && settings['flag_secure'] == 'true') {
@@ -45,12 +43,10 @@ class _AppShellState extends ConsumerState<AppShell>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Money is sensitive: re-mask all amounts as soon as the app leaves the
-    // foreground, so returning to it requires the password again.
-    if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.hidden ||
-        state == AppLifecycleState.detached) {
-      ref.read(moneyRevealProvider.notifier).reset();
+    // CR-4 §3.3: pick up screen time the Program app measured while we were
+    // in the background (silent no-op when Program is absent).
+    if (state == AppLifecycleState.resumed) {
+      ref.read(instagramAutofillProvider).run();
     }
   }
 
@@ -64,7 +60,7 @@ class _AppShellState extends ConsumerState<AppShell>
 
   @override
   Widget build(BuildContext context) {
-    // Deep links / notification taps move the tab via the provider; mirror
+    // Notification taps move the tab via the provider; mirror
     // that onto the PageView.
     ref.listen<int>(tabIndexProvider, (prev, next) {
       if (!_controller.hasClients) return;
@@ -81,11 +77,8 @@ class _AppShellState extends ConsumerState<AppShell>
         // tap-only controls so they never steal this gesture.
         onPageChanged: (i) => ref.read(tabIndexProvider.notifier).goTo(i),
         children: [
-          const MoneyPage(),
           AnalysisPage(
             onMetricTap: (metric) {
-              // Money breakdown rows are read-only in Analysis (CR-3 §4).
-              if (metric.inputType == 'money') return;
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => MetricDetailPage(metric: metric),
@@ -94,8 +87,6 @@ class _AppShellState extends ConsumerState<AppShell>
             },
           ),
           const HomePage(),
-          const HealthPage(),
-          const SportPage(),
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -103,11 +94,6 @@ class _AppShellState extends ConsumerState<AppShell>
         onDestinationSelected: (i) =>
             ref.read(tabIndexProvider.notifier).goTo(i),
         destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: Icon(Icons.account_balance_wallet),
-            label: 'Money',
-          ),
           NavigationDestination(
             icon: Icon(Icons.bar_chart_outlined),
             selectedIcon: Icon(Icons.bar_chart),
@@ -117,16 +103,6 @@ class _AppShellState extends ConsumerState<AppShell>
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home),
             label: 'Main',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.favorite_outline),
-            selectedIcon: Icon(Icons.favorite),
-            label: 'Health',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.fitness_center_outlined),
-            selectedIcon: Icon(Icons.fitness_center),
-            label: 'Sport',
           ),
         ],
       ),

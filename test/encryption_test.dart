@@ -1,15 +1,15 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:daily_tracker/data/db/app_database.dart';
-import 'package:daily_tracker/data/db/open_connection.dart';
+import 'package:local_harness_not/data/db/app_database.dart';
+import 'package:local_harness_not/data/db/open_connection.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
 void main() {
   test('database file contains no plaintext (phase 0 acceptance)', () async {
-    final dir = await Directory.systemTemp.createTemp('daily_tracker_enc');
+    final dir = await Directory.systemTemp.createTemp('local_harness_not_enc');
     final file = File(p.join(dir.path, 'enc_test.db'));
     const key =
         '00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff';

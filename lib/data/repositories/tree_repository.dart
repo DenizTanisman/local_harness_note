@@ -11,12 +11,9 @@ class TreeRepository {
   final AppDatabase db;
 
   /// Whether [metric] may be dropped onto [target] to become its child.
-  /// Max 2 levels: groups cannot be nested; money takes no part in the tree.
+  /// Max 2 levels: groups cannot be nested.
   Future<bool> canBecomeChildOf(Metric metric, Metric target) async {
     if (metric.id == target.id) return false;
-    if (metric.inputType == 'money' || target.inputType == 'money') {
-      return false;
-    }
     if (target.parentId != null) return false; // target already a child
     if (metric.inputType == 'composite') return false; // group into group
     final children = await (db.select(

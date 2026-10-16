@@ -1,17 +1,5 @@
-# daily_tracker
+# local_harness_not — Not
 
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Daily check-in & notes app of the Local Harness split. See [HARNESS.md](HARNESS.md)
+and [docs/HUB_CONTRACT.md](docs/HUB_CONTRACT.md). The `docs/daily-tracker-*.md` files
+are the original monolith specs, kept for reference.

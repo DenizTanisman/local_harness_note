@@ -2,11 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/db/app_database.dart';
-import '../../../data/repositories/analysis_repository.dart' show formatAmount;
 import '../../../theme/app_tokens.dart';
-import '../../money/money_providers.dart';
-import '../../money/money_reveal.dart';
-import '../../shell/tab_index.dart';
 import '../home_providers.dart';
 import 'composite_body.dart';
 import 'input_bodies.dart';
@@ -89,12 +85,6 @@ class MetricCard extends ConsumerWidget {
   }
 
   bool _isUnfilled(WidgetRef ref) {
-    if (metric.inputType == 'money') {
-      return !(ref
-              .watch(hasTransactionsProvider(ref.watch(homeDateProvider)))
-              .value ??
-          false);
-    }
     if (metric.inputType == 'composite') {
       final children = ref.watch(childrenProvider(metric.id)).value ?? [];
       return !children.any((c) => dayEntries.containsKey(c.id));
@@ -118,11 +108,6 @@ class MetricCard extends ConsumerWidget {
         );
       case 'composite':
         return CompositeBody(metric: metric, dayEntries: dayEntries);
-      case 'money':
-        // CR-3: money input lives in the dashboard's Quick money card and
-        // the Money tab; here it's a read-only deep link, so there is only
-        // ever one money form on screen.
-        return const _MoneyDeepLink();
       default:
         return Text('Unsupported input type: ${metric.inputType}');
     }
@@ -218,35 +203,6 @@ class _StarLabelDialogState extends State<_StarLabelDialog> {
           child: const Text('Star'),
         ),
       ],
-    );
-  }
-}
-
-/// Read-only money row inside the Daily Check-in (CR-3): the money form
-/// lives in the dashboard and the Money tab, so this only deep-links.
-class _MoneyDeepLink extends ConsumerWidget {
-  const _MoneyDeepLink();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final date = ref.watch(homeDateProvider);
-    final total = ref.watch(dayOutcomeProvider(date)).value ?? 0;
-    return InkWell(
-      onTap: () => ref.read(tabIndexProvider.notifier).goTo(AppTab.money),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          children: [
-            Text('Spent today', style: Theme.of(context).textTheme.bodyMedium),
-            const Spacer(),
-            MoneyText(
-              id: 'money-main-spent',
-              amount: '${formatAmount(total)} ₺',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

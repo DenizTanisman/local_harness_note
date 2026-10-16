@@ -82,7 +82,3 @@ final selectedOptionsProvider =
       (ref, date) =>
           ref.watch(entryRepositoryProvider).watchSelectedOptionsFor(date),
     );
-
-final hasTransactionsProvider = StreamProvider.family<bool, String>(
-  (ref, date) => ref.watch(entryRepositoryProvider).watchHasTransactions(date),
-);

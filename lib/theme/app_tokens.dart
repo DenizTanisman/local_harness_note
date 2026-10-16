@@ -39,27 +39,7 @@ class AppTokens {
   /// GitHub neon green sparkline.
   static const sparkline = Color(0xFF39D353);
 
-  /// Money over/under budget (matches HeatColors red/green).
-  static const moneyRed = Color(0xFFDA3633);
-  static const moneyGreen = Color(0xFF2EA043);
-
-  /// Calorie-day "under target" warning (CR-3 §11 yellow).
-  static const warn = Color(0xFFD4A72C);
-
   // Radii
   static const radiusCard = 20.0;
   static const radiusPill = 999.0;
-
-  /// Categorical palette for the Money donut (CR-3 §4). Distinct hues that
-  /// read on the deep-navy surface; cycled when categories exceed the list.
-  static const chartPalette = [
-    Color(0xFF5EA8FF),
-    Color(0xFF56D364),
-    Color(0xFFD4A72C),
-    Color(0xFFDB6D28),
-    Color(0xFFEC4899),
-    Color(0xFF9E86FF),
-    Color(0xFF2EA043),
-    Color(0xFFF9A8D4),
-  ];
 }

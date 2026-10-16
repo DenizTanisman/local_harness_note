@@ -1,11 +1,11 @@
-import 'package:daily_tracker/core/date_key.dart';
-import 'package:daily_tracker/data/db/app_database.dart';
-import 'package:daily_tracker/data/db/database_provider.dart';
-import 'package:daily_tracker/data/repositories/entry_repository.dart';
-import 'package:daily_tracker/features/analysis/analysis_page.dart';
-import 'package:daily_tracker/features/analysis/analysis_providers.dart';
-import 'package:daily_tracker/features/analysis/heatmap_widget.dart';
-import 'package:daily_tracker/features/shell/app_shell.dart';
+import 'package:local_harness_not/core/date_key.dart';
+import 'package:local_harness_not/data/db/app_database.dart';
+import 'package:local_harness_not/data/db/database_provider.dart';
+import 'package:local_harness_not/data/repositories/entry_repository.dart';
+import 'package:local_harness_not/features/analysis/analysis_page.dart';
+import 'package:local_harness_not/features/analysis/analysis_providers.dart';
+import 'package:local_harness_not/features/analysis/heatmap_widget.dart';
+import 'package:local_harness_not/features/shell/app_shell.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -44,8 +44,8 @@ void main() {
   ) async {
     await tester.pumpWidget(app(const AppShell()));
     await tester.pumpAndSettle();
-    // Opens on Main (index 2).
-    expect(find.text('Daily Tracker'), findsOneWidget);
+    // Opens on Main (index 1).
+    expect(find.widgetWithText(AppBar, 'Not'), findsOneWidget);
 
     await tester.tap(find.text('Analysis').last);
     for (var i = 0; i < 10; i++) {
@@ -136,7 +136,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(HeatmapWidget), findsOneWidget);
-    for (final label in ['Software', 'Money', 'Brushing', 'Water']) {
+    for (final label in ['Software', 'Instagram', 'Brushing', 'Water']) {
       expect(
         find.descendant(
           of: find.byType(HeatmapWidget),
@@ -146,6 +146,14 @@ void main() {
         reason: label,
       );
     }
+    // Money moved to the Para app — no heatmap row for it.
+    expect(
+      find.descendant(
+        of: find.byType(HeatmapWidget),
+        matching: find.text('Money'),
+      ),
+      findsNothing,
+    );
     await closeApp(tester);
   });
 }

@@ -13,7 +13,7 @@ import '../settings/settings_button.dart';
 class AnalysisPage extends ConsumerWidget {
   const AnalysisPage({super.key, this.onMetricTap});
 
-  /// Opens the metric detail / money page (wired in phase 4/5).
+  /// Opens the metric detail page.
   final void Function(Metric metric)? onMetricTap;
 
   @override

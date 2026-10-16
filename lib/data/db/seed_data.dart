@@ -32,18 +32,18 @@ String _rule(String source, List<List<Object?>> buckets) => jsonEncode({
   ],
 });
 
-/// The 12 protected seed records (CR-2): the 9 fixed heatmap rows plus
+/// The 11 protected seed records (CR-2): the 8 fixed heatmap rows plus
 /// Development's seed children — deleting Marketing would break the
 /// Development composite, so protection covers group integrity too.
+/// (Money left the metric tree when it moved to the Para app.)
 final List<String> coreMetricKeys = seedMetrics
     .map((m) => m.key)
     .toList(growable: false);
 
-/// Fixed heatmap row order for the 9 core metrics (spec 5.3).
+/// Fixed heatmap row order for the 8 core metrics (spec 5.3).
 const coreHeatmapOrder = [
   'software',
   'development',
-  'money',
   'extra',
   'instagram',
   'sport',
@@ -97,21 +97,6 @@ final List<SeedMetric> seedMetrics = [
     title: 'Social',
     inputType: 'text',
     parentKey: 'development',
-  ),
-  SeedMetric(
-    key: 'money',
-    title: 'Money',
-    inputType: 'money',
-    unit: 'TL',
-    starred: true,
-    heatmapLabel: 'Money',
-    // Modern blue ramp: no spend → black; more spend → darker blue.
-    heatmapRule: _rule('tx_sum_heatmap', [
-      [0, 0, 'black'],
-      [0, 300, 'lightBlue'],
-      [300, 600, 'blue'],
-      [600, null, 'darkBlue'],
-    ]),
   ),
   SeedMetric(
     key: 'extra',
@@ -195,28 +180,6 @@ final List<SeedMetric> seedMetrics = [
       [3, null, 'darkBlue'],
     ]),
   ),
-];
-
-class SeedCategory {
-  const SeedCategory(
-    this.direction,
-    this.name, {
-    this.essential = false,
-    this.countsInHeatmap = false,
-  });
-
-  final String direction;
-  final String name;
-  final bool essential;
-  final bool countsInHeatmap;
-}
-
-const List<SeedCategory> seedMoneyCategories = [
-  SeedCategory('outcome', 'Rent', essential: true),
-  SeedCategory('outcome', 'Bill', essential: true),
-  SeedCategory('outcome', 'Food', countsInHeatmap: true),
-  SeedCategory('outcome', 'Entertainment', countsInHeatmap: true),
-  SeedCategory('income', 'Scholarship'),
 ];
 
 /// Default app settings (spec 6.6 / 8).

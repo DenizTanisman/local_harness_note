@@ -9,7 +9,8 @@ import 'package:path/path.dart' as p;
 import '../db/app_database.dart';
 import 'export_service.dart';
 
-/// Weekly encrypted backup (spec 10.3): three CSVs + app_settings in a ZIP,
+/// Weekly encrypted backup (spec 10.3): entries + metrics CSVs and
+/// app_settings in a ZIP,
 /// the whole ZIP encrypted with AES-256-GCM derived from the user password
 /// via PBKDF2. Without the password the file cannot be opened.
 class BackupService {
@@ -18,7 +19,10 @@ class BackupService {
   final AppDatabase db;
 
   static const keptBackups = 8;
-  static const _magic = 'DTBK1'; // format marker + version
+  static const _magic = 'DTBK1'; // format marker + version (.dtbak)
+
+  /// File-name prefix of this app's backups; pruning only touches these.
+  static const filePrefix = 'local_harness_not_';
 
   static final _aes = AesGcm.with256bits();
 
@@ -36,7 +40,6 @@ class BackupService {
     }
 
     add('entries.csv', await export.entriesCsv());
-    add('transactions.csv', await export.transactionsCsv());
     add('metrics.csv', await export.metricsCsv());
     add(
       'app_settings.json',
@@ -71,7 +74,7 @@ class BackupService {
   ) async {
     final magic = utf8.decode(data.sublist(0, _magic.length));
     if (magic != _magic) {
-      throw const FormatException('Not a Daily Tracker backup');
+      throw const FormatException('Not a Not (local_harness_not) backup');
     }
     var offset = _magic.length;
     final salt = data.sublist(offset, offset + 16);
@@ -102,7 +105,7 @@ class BackupService {
         .toIso8601String()
         .substring(0, 19)
         .replaceAll(':', '-');
-    final file = File(p.join(directory.path, 'daily_tracker_$stamp.dtbak'));
+    final file = File(p.join(directory.path, '$filePrefix$stamp.dtbak'));
     await file.writeAsBytes(await createEncryptedBackup(password));
     await pruneOldBackups(directory);
     return file;
@@ -116,7 +119,7 @@ class BackupService {
             .whereType<File>()
             .where(
               (f) =>
-                  p.basename(f.path).startsWith('daily_tracker_') &&
+                  p.basename(f.path).startsWith(filePrefix) &&
                   f.path.endsWith('.dtbak'),
             )
             .toList()

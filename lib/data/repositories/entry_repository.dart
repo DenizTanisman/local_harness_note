@@ -140,19 +140,9 @@ class EntryRepository {
     });
   }
 
-  /// Whether the Money card should count as "unfilled" (spec 6.2): no
-  /// transactions that day.
-  Stream<bool> watchHasTransactions(String date) {
-    final count = db.transactions.id.count();
-    final query = db.selectOnly(db.transactions)
-      ..addColumns([count])
-      ..where(db.transactions.date.equals(date));
-    return query.watchSingle().map((row) => (row.read(count) ?? 0) > 0);
-  }
-
   /// Debounce target — single upsert keeps one row per metric × day. A
   /// save through this path is a MANUAL edit, so it pins value_source =
-  /// 'manual' (CR-4 §3.3) and screen-time auto-fill won't overwrite it.
+  /// 'manual' (CR-4 §3.3) and the Instagram auto-fill won't overwrite it.
   Future<void> saveEntry({
     required int metricId,
     required String date,
@@ -189,8 +179,9 @@ class EntryRepository {
     }
   }
 
-  /// Screen-time auto-fill for the Instagram metric (CR-4 §3.3): writes the
-  /// measured [minutes] into that day's num_value ONLY when there is no
+  /// Screen-time auto-fill for the Instagram metric (CR-4 §3.3; minutes come
+  /// from the Program app's hub snapshot): writes the measured [minutes]
+  /// into that day's num_value ONLY when there is no
   /// entry yet or the existing entry is itself auto. A manual edit wins and
   /// is never overwritten. The free-text "why" (text_value) is preserved.
   /// Returns true if it wrote.

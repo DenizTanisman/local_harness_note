@@ -1,6 +1,6 @@
-import 'package:daily_tracker/data/db/app_database.dart';
-import 'package:daily_tracker/data/db/seed_data.dart';
-import 'package:daily_tracker/data/heatmap/heatmap_rule.dart';
+import 'package:local_harness_not/data/db/app_database.dart';
+import 'package:local_harness_not/data/db/seed_data.dart';
+import 'package:local_harness_not/data/heatmap/heatmap_rule.dart';
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,13 +12,15 @@ void main() {
   tearDown(() => db.close());
 
   group('seed data (phase 0 acceptance)', () {
-    test('seeds exactly 12 metrics', () async {
+    test('seeds exactly 11 metrics — no money card', () async {
       final metrics = await db.select(db.metrics).get();
-      expect(metrics, hasLength(12));
+      expect(metrics, hasLength(11));
+      expect(metrics.map((m) => m.key), isNot(contains('money')));
+      expect(metrics.map((m) => m.inputType), isNot(contains('money')));
     });
 
     test(
-      'the 9 core heatmap metrics are starred, dev children are not',
+      'the 8 core heatmap metrics are starred, dev children are not',
       () async {
         final metrics = await db.select(db.metrics).get();
         final starred = metrics.where((m) => m.isStarred).map((m) => m.key);
@@ -61,16 +63,8 @@ void main() {
       }
     });
 
-    test('money categories seeded with correct flags', () async {
-      final categories = await db.select(db.moneyCategories).get();
-      expect(categories, hasLength(5));
-      final byName = {for (final c in categories) c.name: c};
-      expect(byName['Rent']!.isEssential, isTrue);
-      expect(byName['Bill']!.isEssential, isTrue);
-      expect(byName['Food']!.countsInHeatmap, isTrue);
-      expect(byName['Entertainment']!.countsInHeatmap, isTrue);
-      expect(byName['Scholarship']!.direction, 'income');
-      expect(byName['Food']!.isEssential, isFalse);
+    test('fresh install is schema v1', () {
+      expect(db.schemaVersion, 1);
     });
 
     test('default settings seeded', () async {

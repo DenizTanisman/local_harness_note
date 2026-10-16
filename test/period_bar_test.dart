@@ -1,4 +1,4 @@
-import 'package:daily_tracker/features/shared/period_bar.dart';
+import 'package:local_harness_not/features/shared/period_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

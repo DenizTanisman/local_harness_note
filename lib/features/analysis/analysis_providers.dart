@@ -26,10 +26,8 @@ final selectedDateProvider = NotifierProvider<SelectedDateNotifier, String>(
 
 /// Per-metric data floor: the first day a metric has meaningful data, so
 /// the heatmap doesn't invent zero-history before tracking began. Temporary
-/// ("şimdilik") — Money tracked since 15 Apr 2026, everything else since
-/// 13 Jun 2026.
-String heatmapDataFloor(String metricKey) =>
-    metricKey == 'money' ? '2026-04-15' : '2026-06-13';
+/// ("şimdilik") — every check-in metric is tracked since 13 Jun 2026.
+String heatmapDataFloor(String metricKey) => '2026-06-13';
 
 /// The heatmap shows exactly one calendar month — the month of the selected
 /// date (1..N), instead of a rolling window.

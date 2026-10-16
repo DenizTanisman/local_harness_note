@@ -7,8 +7,7 @@ enum HeatmapSource {
   numValue('num_value'),
   optionCount('option_count'),
   textExists('text_exists'),
-  filledSubcount('filled_subcount'),
-  txSumHeatmap('tx_sum_heatmap');
+  filledSubcount('filled_subcount');
 
   const HeatmapSource(this.json);
   final String json;

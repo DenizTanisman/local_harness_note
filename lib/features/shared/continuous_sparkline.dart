@@ -13,7 +13,7 @@ List<double> filledMonthValues(int daysInMonth, Map<int, double> values) => [
 
 /// Color of a polyline segment. Segments are indexed by their left point
 /// (0-based, so left point index i = day i+1); the segment belongs to the
-/// day it RISES to — its right endpoint, day i+2. An over-budget Money day
+/// day it RISES to — its right endpoint, day i+2. A highlighted day
 /// therefore owns the segment reaching its peak.
 Color segmentColor(int leftIndex, List<Color>? dayColors, Color fallback) {
   if (dayColors == null) return fallback;
@@ -44,7 +44,7 @@ class ContinuousSparkline extends StatelessWidget {
   final void Function(int day)? onDayTap;
   final Color lineColor;
 
-  /// Optional per-day line color (index 0 unused; 1..N), Money red/green.
+  /// Optional per-day line color (index 0 unused; 1..N).
   final List<Color>? dayColors;
   final Color? markerColor;
   final double height;
@@ -149,7 +149,7 @@ class ContinuousSparklinePainter extends CustomPainter {
     );
 
     // Per-segment strokes: glow pass (6dp, 18% alpha, no blur — cheap),
-    // then the 2dp contour. Money colors segments via dayColors.
+    // then the 2dp contour. Optional dayColors recolor single segments.
     for (var i = 0; i < days - 1; i++) {
       final color = segmentColor(i, dayColors, lineColor);
       final glow = Paint()

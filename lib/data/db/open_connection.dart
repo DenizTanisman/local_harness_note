@@ -55,7 +55,7 @@ QueryExecutor encryptedExecutor(File file, String hexKey) {
 QueryExecutor openEncryptedConnection() {
   return LazyDatabase(() async {
     final dir = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dir.path, 'daily_tracker.db'));
+    final file = File(p.join(dir.path, 'local_harness_not.db'));
     final hexKey = await obtainDatabaseKey();
     return encryptedExecutor(file, hexKey);
   });

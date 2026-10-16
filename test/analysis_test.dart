@@ -1,7 +1,7 @@
-import 'package:daily_tracker/data/db/app_database.dart';
-import 'package:daily_tracker/data/repositories/analysis_repository.dart';
-import 'package:daily_tracker/data/repositories/entry_repository.dart';
-import 'package:daily_tracker/data/repositories/tree_repository.dart';
+import 'package:local_harness_not/data/db/app_database.dart';
+import 'package:local_harness_not/data/repositories/analysis_repository.dart';
+import 'package:local_harness_not/data/repositories/entry_repository.dart';
+import 'package:local_harness_not/data/repositories/tree_repository.dart';
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -23,33 +23,11 @@ void main() {
   Future<Metric> byKey(String key) =>
       (db.select(db.metrics)..where((m) => m.key.equals(key))).getSingle();
 
-  Future<void> addTx(
-    String date,
-    String direction,
-    String category,
-    double amount,
-  ) async {
-    final now = DateTime.now().millisecondsSinceEpoch;
-    await db
-        .into(db.transactions)
-        .insert(
-          TransactionsCompanion.insert(
-            date: date,
-            direction: direction,
-            amount: amount,
-            category: category,
-            createdAt: now,
-            updatedAt: now,
-          ),
-        );
-  }
-
-  test('core 9 rows in fixed spec order', () async {
+  test('core 8 rows in fixed spec order (money moved to Para)', () async {
     final rows = await analysis.starredInDisplayOrder();
     expect(rows.map((m) => m.key), [
       'software',
       'development',
-      'money',
       'extra',
       'instagram',
       'sport',
@@ -82,7 +60,7 @@ void main() {
       await tree.star(reading, 'Reading');
 
       final rows = await analysis.starredInDisplayOrder();
-      expect(rows.map((m) => m.key).skip(9), ['pushups', 'reading']);
+      expect(rows.map((m) => m.key).skip(8), ['pushups', 'reading']);
     },
   );
 
@@ -170,37 +148,6 @@ void main() {
       expect(matrix.values[dev.id]!['2026-06-09'], 2);
       expect(matrix.rules[dev.id]!.colorFor(2), 'blue');
     });
-
-    test(
-      'tx_sum_heatmap sums only counts_in_heatmap outcome categories',
-      () async {
-        await addTx('2026-06-09', 'outcome', 'Food', 200);
-        await addTx('2026-06-09', 'outcome', 'Entertainment', 150);
-        await addTx('2026-06-09', 'outcome', 'Rent', 8000); // not counted
-        await addTx(
-          '2026-06-09',
-          'income',
-          'Scholarship',
-          15000,
-        ); // not counted
-
-        final money = await byKey('money');
-        final matrix = await analysis.loadHeatmap('2026-06-10', 7);
-        expect(matrix.values[money.id]!['2026-06-09'], 350);
-        expect(matrix.rules[money.id]!.colorFor(350), 'blue');
-      },
-    );
-
-    test(
-      'a day with only essential outcome is filled with sum 0 (black)',
-      () async {
-        await addTx('2026-06-09', 'outcome', 'Rent', 8000);
-        final money = await byKey('money');
-        final matrix = await analysis.loadHeatmap('2026-06-10', 7);
-        expect(matrix.values[money.id]!['2026-06-09'], 0);
-        expect(matrix.rules[money.id]!.colorFor(0), 'black');
-      },
-    );
   });
 
   group('daily breakdown', () {
@@ -243,72 +190,26 @@ void main() {
     });
 
     test(
-      'Money line: day total is ALL outcome; month blocks by category',
+      'int_text root shows value + unit; its note is a child leaf',
       () async {
-        await addTx('2026-06-09', 'outcome', 'Food', 340);
-        await addTx('2026-06-09', 'outcome', 'Rent', 200);
-        await addTx('2026-06-01', 'outcome', 'Rent', 8000);
-        await addTx('2026-06-02', 'income', 'Scholarship', 15000);
-
+        final software = await byKey('software');
+        await entries.saveEntry(
+          metricId: software.id,
+          date: '2026-06-09',
+          numValue: 45,
+          textValue: 'parser',
+        );
         final items = await analysis.loadBreakdown('2026-06-09');
-        final money = items.firstWhere((i) => i.id == 'money');
-        expect(money.title, 'Money: 540 TL'); // not heatmap-filtered
-        final outcome = money.children.firstWhere(
-          (n) => n.id == 'money/outcome',
-        );
-        final income = money.children.firstWhere((n) => n.id == 'money/income');
-        expect(outcome.title, 'Outcome (Month): 8.540');
-        expect(income.title, 'Income (Month): 15.000');
-        expect(outcome.children.map((n) => n.title), contains('Rent: 8.200'));
-        expect(
-          income.children.map((n) => n.title),
-          contains('Scholarship: 15.000'),
-        );
+        final item = items.single;
+        expect(item.title, 'Software: 45 min');
+        expect(item.children.single.title, 'parser');
+        expect(item.children.single.inlineExpand, isTrue);
       },
     );
 
-    test('money subtype appears as a third level (CR1-A)', () async {
-      await addTx('2026-06-09', 'outcome', 'Bill', 2000);
-      final now = DateTime.now().millisecondsSinceEpoch;
-      await db
-          .into(db.transactions)
-          .insert(
-            TransactionsCompanion.insert(
-              date: '2026-06-09',
-              direction: 'outcome',
-              amount: 500,
-              category: 'Bill',
-              subtype: const Value('home'),
-              createdAt: now,
-              updatedAt: now,
-            ),
-          );
-
-      final items = await analysis.loadBreakdown('2026-06-09');
-      final money = items.firstWhere((i) => i.id == 'money');
-      final outcome = money.children.firstWhere((n) => n.id == 'money/outcome');
-      final bill = outcome.children.firstWhere(
-        (n) => n.title.startsWith('Bill'),
-      );
-      expect(bill.title, 'Bill: 2.500'); // category-level total
-      expect(bill.children.single.title, 'Bill (home): 500');
-    });
-
     test('metrics without entries that day are omitted', () async {
-      final items = await analysis.loadBreakdown('2026-06-09');
-      // Money is always present (day total 0); everything else omitted.
-      expect(items.where((i) => i.id != 'money'), isEmpty);
-    });
-  });
-
-  group('formatAmount', () {
-    test('thousands separators, decimals only when fractional', () {
-      expect(formatAmount(0), '0');
-      expect(formatAmount(540), '540');
-      expect(formatAmount(8200), '8.200');
-      expect(formatAmount(12300), '12.300');
-      expect(formatAmount(1234567), '1.234.567');
-      expect(formatAmount(99.5), '99,50');
+      // No always-present Money row any more: an empty day is empty.
+      expect(await analysis.loadBreakdown('2026-06-09'), isEmpty);
     });
   });
 }

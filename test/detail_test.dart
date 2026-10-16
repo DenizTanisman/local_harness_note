@@ -1,7 +1,7 @@
-import 'package:daily_tracker/data/db/app_database.dart';
-import 'package:daily_tracker/data/repositories/detail_repository.dart';
-import 'package:daily_tracker/data/repositories/entry_repository.dart';
-import 'package:daily_tracker/data/heatmap/heatmap_rule.dart';
+import 'package:local_harness_not/data/db/app_database.dart';
+import 'package:local_harness_not/data/repositories/detail_repository.dart';
+import 'package:local_harness_not/data/repositories/entry_repository.dart';
+import 'package:local_harness_not/data/heatmap/heatmap_rule.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 

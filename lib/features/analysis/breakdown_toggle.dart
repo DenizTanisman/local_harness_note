@@ -3,20 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/db/app_database.dart';
 import '../../data/repositories/analysis_repository.dart';
-import '../money/money_reveal.dart';
-
-bool _isMoneyNode(BreakdownNode node) =>
-    node.id == 'money' || node.id.startsWith('money/');
-
-bool _moneyMasked(BreakdownNode node, MoneyReveal reveal) =>
-    _isMoneyNode(node) && !reveal.shows(node.id);
-
-/// Hide the amount (everything after the last ': ') on a masked money node.
-String _displayTitle(BreakdownNode node, MoneyReveal reveal) {
-  if (!_moneyMasked(node, reveal)) return node.title;
-  final i = node.title.lastIndexOf(': ');
-  return i < 0 ? node.title : '${node.title.substring(0, i)}: $moneyMask';
-}
 
 /// Session-scoped expansion state for the breakdown tree (CR1-A).
 /// Not persisted; survives rebuilds and date changes within the session.
@@ -44,22 +30,18 @@ class BreakdownRootTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final reveal = ref.watch(moneyRevealProvider);
-    final masked = _moneyMasked(node, reveal);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         InkWell(
           key: ValueKey('breakdown-${node.id}'),
-          onTap: masked
-              ? () => revealMoneyFlow(context, ref, node.id)
-              : (node.metric == null
-                    ? null
-                    : () => onMetricTap?.call(node.metric!)),
+          onTap: node.metric == null
+              ? null
+              : () => onMetricTap?.call(node.metric!),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Text(
-              _displayTitle(node, reveal),
+              node.title,
               style: Theme.of(context).textTheme.titleMedium,
             ),
           ),
@@ -89,8 +71,6 @@ class ToggleRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final expanded = ref.watch(breakdownExpansionProvider).contains(node.id);
-    final reveal = ref.watch(moneyRevealProvider);
-    final masked = _moneyMasked(node, reveal);
     final theme = Theme.of(context);
 
     void toggle() =>
@@ -122,15 +102,13 @@ class ToggleRow extends ConsumerWidget {
               Expanded(
                 child: InkWell(
                   key: ValueKey('title-${node.id}'),
-                  onTap: masked
-                      ? () => revealMoneyFlow(context, ref, node.id)
-                      : (node.metric != null
-                            ? () => onMetricTap?.call(node.metric!)
-                            : (node.hasArrow ? toggle : null)),
+                  onTap: node.metric != null
+                      ? () => onMetricTap?.call(node.metric!)
+                      : (node.hasArrow ? toggle : null),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 6),
                     child: Text(
-                      _displayTitle(node, reveal),
+                      node.title,
                       maxLines: node.inlineExpand && !expanded ? 1 : null,
                       overflow: node.inlineExpand && !expanded
                           ? TextOverflow.ellipsis

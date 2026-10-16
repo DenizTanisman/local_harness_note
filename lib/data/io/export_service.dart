@@ -4,8 +4,8 @@ import 'package:excel/excel.dart';
 
 import '../db/app_database.dart';
 
-/// CSV / Excel export (spec 10.1). Three sheets/files:
-/// entries, transactions, metrics.
+/// CSV / Excel export (spec 10.1). Two sheets/files: entries, metrics
+/// (transactions moved to the Para app).
 class ExportService {
   ExportService(this.db);
 
@@ -17,14 +17,6 @@ class ExportService {
     'num_value',
     'text_value',
     'selected_options',
-  ];
-  static const transactionsHeader = [
-    'date',
-    'direction',
-    'category',
-    'subtype',
-    'amount',
-    'note',
   ];
   static const metricsHeader = [
     'key',
@@ -68,24 +60,6 @@ class ExportService {
     ]);
   }
 
-  Future<String> transactionsCsv() async {
-    final rows = await (db.select(
-      db.transactions,
-    )..orderBy([(t) => OrderingTerm.asc(t.date)])).get();
-    return _csv.convert([
-      transactionsHeader,
-      for (final t in rows)
-        [
-          t.date,
-          t.direction,
-          t.category,
-          t.subtype ?? '',
-          t.amount,
-          t.note ?? '',
-        ],
-    ]);
-  }
-
   Future<String> metricsCsv() async {
     final rows = await (db.select(
       db.metrics,
@@ -106,7 +80,7 @@ class ExportService {
     ]);
   }
 
-  /// Same three sheets in one .xlsx (spec 10.1).
+  /// Same two sheets in one .xlsx (spec 10.1).
   Future<List<int>> excelBytes() async {
     final excel = Excel.createExcel();
     Future<void> sheetFrom(String name, String csvText) async {
@@ -120,7 +94,6 @@ class ExportService {
     }
 
     await sheetFrom('entries', await entriesCsv());
-    await sheetFrom('transactions', await transactionsCsv());
     await sheetFrom('metrics', await metricsCsv());
     excel.delete('Sheet1');
     return excel.encode()!;

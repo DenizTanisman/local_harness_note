@@ -1,0 +1,29 @@
+{
+  "name": "local_harness_not",
+  "role": "feature",
+  "label": "Not",
+  "applicationId": "dev.deniz.local_harness_not",
+  "hubAuthority": "dev.deniz.local_harness_not.hub",
+  "snapshotSchema": 1,
+  "features": [
+    "daily_checkin",
+    "metric_tree",
+    "composite_groups",
+    "drag_to_group",
+    "past_day_entry",
+    "analysis_heatmap",
+    "daily_breakdown",
+    "metric_detail_sparkline",
+    "morning_quote_notification",
+    "evening_fill_in_reminder",
+    "quote_editor",
+    "heatmap_rule_editor",
+    "flag_secure",
+    "instagram_autofill_from_program",
+    "csv_excel_export_import",
+    "encrypted_weekly_backup"
+  ],
+  "dbTables": ["metrics", "metric_options", "entries", "entry_options", "app_settings"],
+  "readsPeers": ["program"],
+  "origin": "split from Takip Uygulaması Android/daily_tracker on 2026-10-04"
+}

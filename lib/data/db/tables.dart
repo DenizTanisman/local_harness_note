@@ -11,7 +11,7 @@ class Metrics extends Table {
   TextColumn get key => text().unique()();
   TextColumn get title => text()();
 
-  /// 'int' | 'text' | 'int_text' | 'checkbox' | 'composite' | 'money'
+  /// 'int' | 'text' | 'int_text' | 'checkbox' | 'composite'
   TextColumn get inputType => text()();
 
   /// Original input type of a leaf that was auto-promoted to composite by
@@ -47,7 +47,7 @@ class MetricOptions extends Table {
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
 }
 
-/// Daily values: ONE row per metric × day (Money exempt — uses transactions).
+/// Daily values: ONE row per metric × day.
 class Entries extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get metricId =>
@@ -58,8 +58,9 @@ class Entries extends Table {
   RealColumn get numValue => real().nullable()();
   TextColumn get textValue => text().nullable()();
 
-  /// 'manual' | 'auto' (CR-4 §3.3): a manual edit pins the day so
-  /// screen-time auto-fill never overwrites it again.
+  /// 'manual' | 'auto' (CR-4 §3.3): a manual edit pins the day so the
+  /// Instagram auto-fill (from the Program app's screen time) never
+  /// overwrites it again.
   TextColumn get valueSource => text().withDefault(const Constant('manual'))();
   IntColumn get createdAt => integer()();
   IntColumn get updatedAt => integer()();
@@ -81,55 +82,6 @@ class EntryOptions extends Table {
   Set<Column> get primaryKey => {entryId, optionId};
 }
 
-/// Money subsystem: N transactions per day (ADR-4).
-class Transactions extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  TextColumn get date => text()();
-
-  /// 'income' | 'outcome'
-  TextColumn get direction => text()();
-  RealColumn get amount =>
-      real().customConstraint('NOT NULL CHECK (amount >= 0)')();
-  TextColumn get category => text()();
-
-  /// NULL → plain category; 'home' → shown as 'Bill (home)'.
-  TextColumn get subtype => text().nullable()();
-  TextColumn get note => text().nullable()();
-  IntColumn get createdAt => integer()();
-  IntColumn get updatedAt => integer()();
-}
-
-/// Category dictionary: dropdown source + essential / heatmap flags.
-class MoneyCategories extends Table {
-  IntColumn get id => integer().autoIncrement()();
-
-  /// 'income' | 'outcome'
-  TextColumn get direction => text()();
-  TextColumn get name => text()();
-
-  /// 1 → subtracted in the red/green budget formula.
-  BoolColumn get isEssential => boolean().withDefault(const Constant(false))();
-
-  /// 1 → included in the Money heatmap daily sum (food + entertainment).
-  BoolColumn get countsInHeatmap =>
-      boolean().withDefault(const Constant(false))();
-  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
-
-  @override
-  List<Set<Column>> get uniqueKeys => [
-    {direction, name},
-  ];
-}
-
-/// Expense reminder queue (local notifications).
-class ExpenseReminders extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  IntColumn get transactionId =>
-      integer().references(Transactions, #id, onDelete: KeyAction.cascade)();
-  TextColumn get remindDate => text()();
-  BoolColumn get fired => boolean().withDefault(const Constant(false))();
-}
-
 /// App settings key-value store.
 class AppSettings extends Table {
   TextColumn get key => text()();
@@ -137,175 +89,4 @@ class AppSettings extends Table {
 
   @override
   Set<Column> get primaryKey => {key};
-}
-
-// ---------------------------------------------------------------- CR-3 Health
-
-/// Health profile singleton (id always 1) — spec CR-3 §13.
-class HealthProfile extends Table {
-  IntColumn get id => integer().withDefault(const Constant(1))();
-  TextColumn get birthDate => text().nullable()(); // 'YYYY-MM-DD'
-  TextColumn get sex => text().nullable()(); // 'M' | 'F'
-  RealColumn get heightCm => real().nullable()();
-
-  /// 'sedentary' | 'light' | 'moderate' | 'active' | 'very'
-  TextColumn get activityLevel => text().nullable()();
-  IntColumn get updatedAt => integer()();
-
-  @override
-  Set<Column> get primaryKey => {id};
-}
-
-/// Repeating body measurements; one row per day (CR-3 §13).
-class BodyLog extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  TextColumn get date => text()();
-  RealColumn get weightKg => real().nullable()();
-  RealColumn get bodyFatPct => real().nullable()();
-  IntColumn get createdAt => integer()();
-  IntColumn get updatedAt => integer()();
-
-  @override
-  List<Set<Column>> get uniqueKeys => [
-    {date},
-  ];
-}
-
-/// Fetched daily sensor summary (CR-3 §13). Empty until a HealthSource is
-/// wired (P4); the UI reads it as placeholders.
-class HealthSamples extends Table {
-  TextColumn get date => text()();
-
-  /// 'rhr'|'hr_day'|'sleep_min'|'sleep_score'|'steps'|'vo2max'|'active_kcal'
-  TextColumn get kind => text()();
-  RealColumn get value => real().nullable()();
-  TextColumn get valueText => text().nullable()(); // e.g. sleep stages JSON
-  TextColumn get source => text()(); // 'health_connect'|'huawei'|'manual'
-  IntColumn get fetchedAt => integer()();
-
-  @override
-  Set<Column> get primaryKey => {date, kind};
-}
-
-/// Last successful pull per source (CR-3 §13).
-class SyncState extends Table {
-  TextColumn get source => text()();
-  IntColumn get lastSync => integer().nullable()();
-
-  @override
-  Set<Column> get primaryKey => {source};
-}
-
-// ----------------------------------------------------------------- CR-3 Sport
-
-/// Autocomplete dictionary of exercise names (CR-3 §12). INSERT OR IGNORE.
-class SavedExerciseTitles extends Table {
-  TextColumn get name => text()();
-
-  @override
-  Set<Column> get primaryKey => {name};
-}
-
-/// Saved foods (CR-3 §12 + calorie redesign): a reusable item remembered by
-/// name, with its [category] (Fruit / Vegetable / FastFood …) and per-unit
-/// calories so it can be picked again and re-entered with a quantity.
-class SavedFoodTypes extends Table {
-  TextColumn get name => text()();
-  BoolColumn get isBuiltin => boolean().withDefault(const Constant(false))();
-
-  /// Grouping for the calorie picker (e.g. 'Fruit'); null = uncategorised.
-  TextColumn get category => text().nullable()();
-
-  /// Calories for one item/portion; null when never recorded with a value.
-  RealColumn get kcalPerUnit => real().nullable()();
-
-  @override
-  Set<Column> get primaryKey => {name};
-}
-
-/// Workout programs (CR-3 §13).
-class Programs extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  TextColumn get name => text()();
-  IntColumn get createdAt => integer()();
-  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
-}
-
-/// Exercise blocks within a program (CR-3 §13). [sets]/[duration]: at least
-/// one non-null, enforced by the app layer. Same [supersetGroup] = a
-/// superset performed [supersetRounds] times together.
-class ProgramExercises extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  IntColumn get programId =>
-      integer().references(Programs, #id, onDelete: KeyAction.cascade)();
-  TextColumn get name => text()();
-  TextColumn get sets => text().nullable()();
-  TextColumn get duration => text().nullable()();
-  BoolColumn get restAfter => boolean().withDefault(const Constant(false))();
-  IntColumn get supersetGroup => integer().nullable()();
-  IntColumn get supersetRounds => integer().nullable()();
-  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
-}
-
-/// Per-meal calorie intake entries (CR-3 §13).
-class CalorieEntries extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  TextColumn get date => text()();
-  TextColumn get meal => text().nullable()(); // 'breakfast'|'lunch'|'dinner'
-  RealColumn get kcal =>
-      real().customConstraint('NOT NULL CHECK (kcal >= 0)')(); // total
-  TextColumn get type => text()(); // saved_food_types.name
-  /// How many items/portions this entry covers (×N); kcal is the total.
-  IntColumn get quantity => integer().withDefault(const Constant(1))();
-  IntColumn get createdAt => integer()();
-}
-
-/// Derived daily calorie total + FROZEN target/color (CR-3 §11). Written
-/// on entry, never recomputed on read.
-class CalorieDay extends Table {
-  TextColumn get date => text()();
-  RealColumn get intake => real().withDefault(const Constant(0))();
-  RealColumn get targetSnapshot => real().nullable()();
-  TextColumn get color => text().nullable()(); // 'green'|'yellow'|'red'|NULL
-
-  @override
-  Set<Column> get primaryKey => {date};
-}
-
-/// Daily program activity for the Programs sparkline (CR-3 §11).
-class ProgramLog extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  TextColumn get date => text()();
-  IntColumn get programId =>
-      integer().references(Programs, #id, onDelete: KeyAction.cascade)();
-  RealColumn get volume => real().withDefault(const Constant(0))();
-}
-
-// ------------------------------------------------ CR-4 Screen time
-
-/// Daily screen-time total (CR-4 §5). Top-5 apps live in [ScreenTimeApp].
-class ScreenTimeDay extends Table {
-  TextColumn get date => text()(); // 'YYYY-MM-DD'
-  IntColumn get totalMin => integer().withDefault(const Constant(0))();
-  IntColumn get capturedAt => integer()();
-
-  @override
-  Set<Column> get primaryKey => {date};
-}
-
-/// Per-app foreground minutes for a day — only the top 5 are stored
-/// (data minimization, CR-4 §5).
-class ScreenTimeApp extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  TextColumn get date =>
-      text().references(ScreenTimeDay, #date, onDelete: KeyAction.cascade)();
-  TextColumn get packageName => text()();
-  TextColumn get appLabel => text().nullable()();
-  IntColumn get foregroundMin => integer()();
-  IntColumn get rank => integer()(); // 1..5
-
-  @override
-  List<Set<Column>> get uniqueKeys => [
-    {date, packageName},
-  ];
 }

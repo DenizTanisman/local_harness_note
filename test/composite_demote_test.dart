@@ -1,9 +1,9 @@
-import 'package:daily_tracker/data/db/app_database.dart';
-import 'package:daily_tracker/data/db/database_provider.dart';
-import 'package:daily_tracker/data/repositories/entry_repository.dart';
-import 'package:daily_tracker/data/repositories/tree_repository.dart';
-import 'package:daily_tracker/features/home/home_page.dart';
-import 'package:daily_tracker/features/home/home_providers.dart';
+import 'package:local_harness_not/data/db/app_database.dart';
+import 'package:local_harness_not/data/db/database_provider.dart';
+import 'package:local_harness_not/data/repositories/entry_repository.dart';
+import 'package:local_harness_not/data/repositories/tree_repository.dart';
+import 'package:local_harness_not/features/home/home_page.dart';
+import 'package:local_harness_not/features/home/home_providers.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

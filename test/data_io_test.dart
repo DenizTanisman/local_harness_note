@@ -1,17 +1,17 @@
 import 'dart:io';
 
 import 'package:archive/archive.dart';
-import 'package:daily_tracker/data/db/app_database.dart';
-import 'package:daily_tracker/data/io/backup_service.dart';
-import 'package:daily_tracker/data/io/export_service.dart';
-import 'package:daily_tracker/data/io/import_service.dart';
-import 'package:daily_tracker/data/repositories/entry_repository.dart';
-import 'package:daily_tracker/data/repositories/money_repository.dart';
+import 'package:local_harness_not/data/db/app_database.dart';
+import 'package:local_harness_not/data/io/backup_service.dart';
+import 'package:local_harness_not/data/io/export_service.dart';
+import 'package:local_harness_not/data/io/import_service.dart';
+import 'package:local_harness_not/data/repositories/entry_repository.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Phase 7 acceptance: export → fresh install import → identical data;
-/// corrupt CSV rolls back FULLY; backup unreadable without the password.
+/// Phase 7 acceptance (entries + metrics; transactions moved to Para):
+/// export → fresh install import → identical data; corrupt CSV rolls back
+/// FULLY; backup unreadable without the password.
 void main() {
   late AppDatabase db;
 
@@ -20,7 +20,6 @@ void main() {
 
   Future<void> seedData() async {
     final entries = EntryRepository(db);
-    final money = MoneyRepository(db);
     final software = await (db.select(
       db.metrics,
     )..where((m) => m.key.equals('software'))).getSingle();
@@ -44,31 +43,20 @@ void main() {
         selected: true,
       );
     }
-    await money.addTransaction(
-      date: '2026-06-09',
-      direction: 'outcome',
-      amount: 2000,
-      category: 'Bill',
-      subtype: 'home',
-      note: 'electricity',
-    );
   }
 
   group('export → fresh import round trip', () {
-    test('entries and transactions survive identically', () async {
+    test('entries survive identically', () async {
       await seedData();
       final export = ExportService(db);
       final entriesCsv = await export.entriesCsv();
-      final txCsv = await export.transactionsCsv();
 
       // Fresh install: a brand-new seeded database.
       final fresh = AppDatabase(NativeDatabase.memory());
       addTearDown(fresh.close);
       final importService = ImportService(fresh);
       final entryReport = await importService.importEntriesCsv(entriesCsv);
-      final txReport = await importService.importTransactionsCsv(txCsv);
       expect(entryReport.skipped, isEmpty);
-      expect(txReport.skipped, isEmpty);
 
       final software = await (fresh.select(
         fresh.metrics,
@@ -82,13 +70,18 @@ void main() {
 
       final selected = await fresh.select(fresh.entryOptions).get();
       expect(selected, hasLength(2));
+    });
 
-      final tx = await fresh.select(fresh.transactions).get();
-      expect(tx, hasLength(1));
-      expect(tx.single.category, 'Bill');
-      expect(tx.single.subtype, 'home');
-      expect(tx.single.amount, 2000);
-      expect(tx.single.note, 'electricity');
+    test('metrics.csv lists the tree without a money row', () async {
+      final csv = await ExportService(db).metricsCsv();
+      final lines = csv.trim().split('\n');
+      expect(lines.first, ExportService.metricsHeader.join(','));
+      expect(lines, hasLength(1 + 11));
+      expect(csv, isNot(contains('money')));
+      expect(
+        lines.firstWhere((l) => l.startsWith('dev_social,')),
+        contains(',development,'),
+      );
     });
 
     test('re-import over existing data upserts without duplicating', () async {
@@ -154,12 +147,7 @@ void main() {
       final archive = ZipDecoder().decodeBytes(zipBytes);
       expect(
         archive.files.map((f) => f.name),
-        unorderedEquals([
-          'entries.csv',
-          'transactions.csv',
-          'metrics.csv',
-          'app_settings.json',
-        ]),
+        unorderedEquals(['entries.csv', 'metrics.csv', 'app_settings.json']),
       );
     });
 
@@ -180,7 +168,7 @@ void main() {
       ).createEncryptedBackup('hunter2');
       final asString = String.fromCharCodes(encrypted);
       expect(asString, isNot(contains('metric_key')));
-      expect(asString, isNot(contains('Bill')));
+      expect(asString, isNot(contains('tricky, quoted')));
     });
 
     test('prune keeps only the newest 8 backups', () async {
@@ -198,6 +186,12 @@ void main() {
               .toList()
             ..sort();
       expect(remaining, hasLength(8));
+      expect(
+        remaining.every(
+          (n) => n.startsWith(BackupService.filePrefix) && n.endsWith('.dtbak'),
+        ),
+        isTrue,
+      );
       // The two oldest (June 1, June 2) were pruned.
       expect(remaining.first, contains('2026-06-03'));
     });
@@ -222,7 +216,7 @@ void main() {
   });
 
   group('excel export', () {
-    test('produces a non-empty xlsx with three sheets', () async {
+    test('produces a non-empty xlsx with two sheets', () async {
       await seedData();
       final bytes = await ExportService(db).excelBytes();
       expect(bytes, isNotEmpty);
@@ -232,9 +226,10 @@ void main() {
         (f) => f.name == 'xl/workbook.xml',
       );
       final xml = String.fromCharCodes(workbook.content as List<int>);
-      for (final sheet in ['entries', 'transactions', 'metrics']) {
+      for (final sheet in ['entries', 'metrics']) {
         expect(xml, contains(sheet));
       }
+      expect(xml, isNot(contains('transactions')));
     });
   });
 

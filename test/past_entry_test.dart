@@ -1,16 +1,16 @@
-import 'package:daily_tracker/core/date_key.dart';
-import 'package:daily_tracker/data/db/app_database.dart';
-import 'package:daily_tracker/data/db/database_provider.dart';
-import 'package:daily_tracker/data/repositories/money_repository.dart';
-import 'package:daily_tracker/features/home/home_page.dart';
-import 'package:daily_tracker/features/home/home_providers.dart';
+import 'package:local_harness_not/core/date_key.dart';
+import 'package:local_harness_not/data/db/app_database.dart';
+import 'package:local_harness_not/data/db/database_provider.dart';
+import 'package:local_harness_not/features/home/home_page.dart';
+import 'package:local_harness_not/features/home/home_providers.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// CR1-D acceptance: past-day entry from the home page; future blocked;
-/// chip + Today button; no reminders for past days.
+/// chip + Today button; any past day reachable from the date bar. (The
+/// "no expense reminders on past days" half moved to the Para app.)
 void main() {
   late AppDatabase db;
   late ProviderContainer container;
@@ -61,34 +61,6 @@ void main() {
       expect(container.read(homeDateProvider), daysAgo(1));
       notifier.resetToToday();
       expect(container.read(homeDateProvider), dateKey(DateTime.now()));
-    });
-  });
-
-  group('reminders on past days (CR1-D)', () {
-    test('past-day outcome writes NO expense_reminders rows', () async {
-      final money = MoneyRepository(db);
-      await money.addTransaction(
-        date: daysAgo(3),
-        direction: 'outcome',
-        amount: 100,
-        category: 'Bill',
-        reminderOffsets: [0, 1, 2, 3],
-      );
-      expect(await db.select(db.expenseReminders).get(), isEmpty);
-    });
-
-    test('today outcome with same-day offset still queues', () async {
-      final money = MoneyRepository(db);
-      await money.addTransaction(
-        date: dateKey(DateTime.now()),
-        direction: 'outcome',
-        amount: 100,
-        category: 'Bill',
-        reminderOffsets: [0, 1], // '1 day before' lands in the past → dropped
-      );
-      final rows = await db.select(db.expenseReminders).get();
-      expect(rows, hasLength(1));
-      expect(rows.single.remindDate, dateKey(DateTime.now()));
     });
   });
 
@@ -146,20 +118,24 @@ void main() {
       },
     );
 
-    testWidgets('reminder question hidden on a past day', (tester) async {
+    testWidgets('date bar steps back a day; next is blocked on today', (
+      tester,
+    ) async {
       await pumpHome(tester);
-      container.read(homeDateProvider.notifier).select(daysAgo(2));
-      await tester.pumpAndSettle();
+      expect(find.text(daysAgo(0)), findsOneWidget);
 
-      await tester.tap(find.text('Outcome'));
+      await tester.tap(find.byKey(const ValueKey('period-prev')));
       await tester.pumpAndSettle();
-      expect(find.text('Set a reminder?'), findsNothing);
+      expect(container.read(homeDateProvider), daysAgo(1));
+      expect(find.text(daysAgo(1)), findsOneWidget);
 
-      container.read(homeDateProvider.notifier).resetToToday();
+      await tester.tap(find.byKey(const ValueKey('period-next')));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Outcome'));
+      expect(container.read(homeDateProvider), daysAgo(0));
+      // Today: the future stays blocked.
+      await tester.tap(find.byKey(const ValueKey('period-next')));
       await tester.pumpAndSettle();
-      expect(find.text('Set a reminder?'), findsOneWidget);
+      expect(container.read(homeDateProvider), daysAgo(0));
       await closeApp(tester);
     });
   });

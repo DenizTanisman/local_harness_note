@@ -1,10 +1,10 @@
-import 'package:daily_tracker/core/date_key.dart';
-import 'package:daily_tracker/data/db/app_database.dart';
-import 'package:daily_tracker/data/db/database_provider.dart';
-import 'package:daily_tracker/data/repositories/entry_repository.dart';
-import 'package:daily_tracker/features/analysis/analysis_providers.dart';
-import 'package:daily_tracker/features/detail/metric_detail_page.dart';
-import 'package:daily_tracker/features/shell/app_shell.dart';
+import 'package:local_harness_not/core/date_key.dart';
+import 'package:local_harness_not/data/db/app_database.dart';
+import 'package:local_harness_not/data/db/database_provider.dart';
+import 'package:local_harness_not/data/repositories/entry_repository.dart';
+import 'package:local_harness_not/features/analysis/analysis_providers.dart';
+import 'package:local_harness_not/features/detail/metric_detail_page.dart';
+import 'package:local_harness_not/features/shell/app_shell.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -102,23 +102,24 @@ void main() {
     final software = await (db.select(
       db.metrics,
     )..where((m) => m.key.equals('software'))).getSingle();
-    final selected = daysAgo(1);
-    final month = selected.substring(0, 7);
+    // Use LAST month: every one of its days is in the past, so selecting
+    // day 5 can never be rejected as a future date (the old version used
+    // the current month and failed during the first days of a month).
+    final now = DateTime.now();
+    final lastMonth = DateTime(now.year, now.month - 1, 15);
+    final month = dateKey(lastMonth).substring(0, 7);
     // Data on day 5 of the selected month.
     await EntryRepository(
       db,
     ).saveEntry(metricId: software.id, date: '$month-05', numValue: 30);
 
     await tester.pumpWidget(app(MetricDetailPage(metric: software)));
+    container.read(selectedDateProvider.notifier).select(dateKey(lastMonth));
     await tester.pumpAndSettle();
 
     final spark = find.byKey(const ValueKey('sparkline'));
     final rect = tester.getRect(spark);
-    final days = DateTime(
-      int.parse(month.substring(0, 4)),
-      int.parse(month.substring(5, 7)) + 1,
-      0,
-    ).day;
+    final days = DateTime(lastMonth.year, lastMonth.month + 1, 0).day;
     final step = rect.width / (days - 1);
     await tester.tapAt(Offset(rect.left + step * 4, rect.center.dy));
     await tester.pumpAndSettle();

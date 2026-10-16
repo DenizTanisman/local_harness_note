@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:daily_tracker/theme/app_tokens.dart';
-import 'package:daily_tracker/theme/heat_colors.dart';
+import 'package:local_harness_not/theme/app_tokens.dart';
+import 'package:local_harness_not/theme/heat_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

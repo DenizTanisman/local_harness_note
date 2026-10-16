@@ -52,8 +52,6 @@ class DetailRepository {
         return HeatmapSource.optionCount;
       case 'composite':
         return HeatmapSource.filledSubcount;
-      case 'money':
-        return HeatmapSource.txSumHeatmap;
       default:
         return HeatmapSource.numValue;
     }
@@ -65,8 +63,6 @@ class DetailRepository {
         readsFrom: {
           db.entries,
           db.entryOptions,
-          db.transactions,
-          db.moneyCategories,
           db.metrics,
         },
       )

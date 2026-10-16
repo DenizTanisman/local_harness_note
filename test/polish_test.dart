@@ -1,11 +1,11 @@
-import 'package:daily_tracker/core/date_key.dart';
-import 'package:daily_tracker/data/db/app_database.dart';
-import 'package:daily_tracker/data/db/database_provider.dart';
-import 'package:daily_tracker/data/repositories/analysis_repository.dart';
-import 'package:daily_tracker/data/repositories/detail_repository.dart';
-import 'package:daily_tracker/features/analysis/analysis_page.dart';
-import 'package:daily_tracker/features/analysis/heatmap_widget.dart';
-import 'package:daily_tracker/features/home/home_page.dart';
+import 'package:local_harness_not/core/date_key.dart';
+import 'package:local_harness_not/data/db/app_database.dart';
+import 'package:local_harness_not/data/db/database_provider.dart';
+import 'package:local_harness_not/data/repositories/analysis_repository.dart';
+import 'package:local_harness_not/data/repositories/detail_repository.dart';
+import 'package:local_harness_not/features/analysis/analysis_page.dart';
+import 'package:local_harness_not/features/analysis/heatmap_widget.dart';
+import 'package:local_harness_not/features/home/home_page.dart';
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -20,7 +20,7 @@ void main() {
   setUp(() => db = AppDatabase(NativeDatabase.memory()));
   tearDown(() => db.close());
 
-  /// 365 days of entries for all leaf metrics + daily transactions.
+  /// 365 days of entries for all leaf metrics.
   Future<void> seedYear() async {
     final metrics = await db.select(db.metrics).get();
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -29,9 +29,7 @@ void main() {
       for (var i = 0; i < 365; i++) {
         final date = dateKey(start.add(Duration(days: i)));
         for (final metric in metrics) {
-          if (metric.inputType == 'money' || metric.inputType == 'composite') {
-            continue;
-          }
+          if (metric.inputType == 'composite') continue;
           batch.insert(
             db.entries,
             EntriesCompanion.insert(
@@ -45,19 +43,6 @@ void main() {
             mode: InsertMode.insertOrIgnore,
           );
         }
-        batch.insert(
-          db.transactions,
-          TransactionsCompanion.insert(
-            date: date,
-            direction: i % 5 == 0 ? 'income' : 'outcome',
-            amount: 100 + (i % 700).toDouble(),
-            category: i % 5 == 0
-                ? 'Scholarship'
-                : ['Rent', 'Bill', 'Food', 'Entertainment'][i % 4],
-            createdAt: now,
-            updatedAt: now,
-          ),
-        );
       }
     });
   }

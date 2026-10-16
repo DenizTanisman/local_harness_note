@@ -7,12 +7,12 @@ import '../settings/settings_button.dart';
 import '../shared/period_bar.dart';
 import 'home_providers.dart';
 import 'widgets/add_metric_sheet.dart';
-import 'widgets/dashboard.dart';
 import 'widgets/drag_targets.dart';
 import 'widgets/metric_card.dart';
 
-/// Main tab (CR-3 §3): dashboard (quick money, today summary, balance)
-/// above the Daily Check-in (the spec §6.2 metric cards).
+/// Main tab: the Daily Check-in (spec §6.2 metric cards) under the write
+/// date bar. The monolith's dashboard cards (quick money, today summary,
+/// balance) moved to the Hub app.
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
@@ -26,7 +26,7 @@ class HomePage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Daily Tracker'),
+        title: const Text('Not'),
         actions: const [SettingsButton()],
       ),
       body: GlowBackground(
@@ -69,10 +69,6 @@ class HomePage extends ConsumerWidget {
                   }
                 },
               ),
-              // Dashboard (CR-3 §3) — order: quick money → today → balance.
-              const QuickMoneyCard(),
-              const TodaySummaryCard(),
-              const BalanceCard(),
               const Padding(
                 padding: EdgeInsets.fromLTRB(16, 16, 16, 4),
                 child: Text('Daily Check-in'),

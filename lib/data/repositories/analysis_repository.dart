@@ -14,7 +14,7 @@ class HeatmapMatrix {
     required this.rules,
   });
 
-  /// Rows, already in display order (core 9 fixed, then star order).
+  /// Rows, already in display order (core 8 fixed, then star order).
   final List<Metric> metrics;
 
   /// Columns, oldest → newest ('YYYY-MM-DD').
@@ -37,10 +37,11 @@ class BreakdownNode {
     this.children = const [],
   });
 
-  /// Stable path id ('money/outcome/Food') — keys the expansion state.
+  /// Stable path id ('development/dev_social/note') — keys the expansion
+  /// state.
   final String id;
 
-  /// Full row text, e.g. 'Outcome (Month): 200'.
+  /// Full row text, e.g. 'Software: 45 min'.
   final String title;
 
   /// Tapping the TITLE opens this metric's page (arrow toggles instead).
@@ -68,8 +69,6 @@ class AnalysisRepository {
           db.metricOptions,
           db.entries,
           db.entryOptions,
-          db.transactions,
-          db.moneyCategories,
         },
       )
       .watch()
@@ -84,7 +83,7 @@ class AnalysisRepository {
     (_) => loadHeatmap(endDate, days, floorFor: floorFor, todayKey: todayKey),
   );
 
-  /// Starred rows in display order: the core 9 first (fixed order), then
+  /// Starred rows in display order: the core 8 first (fixed order), then
   /// later-starred metrics by star time (spec 5.3).
   Future<List<Metric>> starredInDisplayOrder() async {
     final starred = await (db.select(
@@ -231,44 +230,6 @@ class AnalysisRepository {
           for (final row in rows)
             row.read(db.entries.date)!: (row.read(count) ?? 0).toDouble(),
         };
-
-      case HeatmapSource.txSumHeatmap:
-        final sum = db.transactions.amount.sum();
-        final query = db.selectOnly(db.transactions)
-          ..addColumns([db.transactions.date, sum])
-          ..join([
-            innerJoin(
-              db.moneyCategories,
-              db.moneyCategories.name.equalsExp(db.transactions.category) &
-                  db.moneyCategories.direction.equalsExp(
-                    db.transactions.direction,
-                  ),
-            ),
-          ])
-          ..where(
-            db.transactions.direction.equals('outcome') &
-                db.moneyCategories.countsInHeatmap.equals(true) &
-                db.transactions.date.isBetweenValues(startDate, endDate),
-          )
-          ..groupBy([db.transactions.date]);
-        final rows = await query.get();
-        final result = {
-          for (final row in rows)
-            row.read(db.transactions.date)!: row.read(sum) ?? 0.0,
-        };
-        // A day with any transaction is "filled" even if nothing counts
-        // toward the heatmap sum (sum 0 → darkGreen bucket).
-        final txDays =
-            await (db.selectOnly(db.transactions, distinct: true)
-                  ..addColumns([db.transactions.date])
-                  ..where(
-                    db.transactions.date.isBetweenValues(startDate, endDate),
-                  ))
-                .get();
-        for (final row in txDays) {
-          result.putIfAbsent(row.read(db.transactions.date)!, () => 0.0);
-        }
-        return result;
     }
   }
 
@@ -278,7 +239,6 @@ class AnalysisRepository {
       _changes().asyncMap((_) => loadBreakdown(date));
 
   /// Root nodes in card order. Children follow CR1-A:
-  /// Money → Income/Outcome (Month) → category → subtype;
   /// composite → filled child → its text; text metrics → note leaf.
   Future<List<BreakdownNode>> loadBreakdown(String date) async {
     final top =
@@ -294,8 +254,6 @@ class AnalysisRepository {
     final roots = <BreakdownNode>[];
     for (final metric in top) {
       switch (metric.inputType) {
-        case 'money':
-          roots.add(await _moneyBreakdown(metric, date));
         case 'composite':
           final node = await _compositeBreakdown(metric, byMetric);
           if (node != null) roots.add(node);
@@ -388,96 +346,6 @@ class AnalysisRepository {
     );
   }
 
-  Future<BreakdownNode> _moneyBreakdown(Metric metric, String date) async {
-    // Daily line: ALL outcome of the day — deliberately not the heatmap
-    // filter (spec §9.5).
-    final daySum = db.transactions.amount.sum();
-    final dayRow =
-        await (db.selectOnly(db.transactions)
-              ..addColumns([daySum])
-              ..where(
-                db.transactions.date.equals(date) &
-                    db.transactions.direction.equals('outcome'),
-              ))
-            .getSingle();
-    final dayTotal = dayRow.read(daySum) ?? 0.0;
-
-    final monthPrefix = date.substring(0, 7); // 'YYYY-MM'
-    final sum = db.transactions.amount.sum();
-    // Three levels: direction → category → subtype (CR1-A).
-    final monthly =
-        await (db.selectOnly(db.transactions)
-              ..addColumns([
-                db.transactions.direction,
-                db.transactions.category,
-                db.transactions.subtype,
-                sum,
-              ])
-              ..where(db.transactions.date.like('$monthPrefix-%'))
-              ..groupBy([
-                db.transactions.direction,
-                db.transactions.category,
-                db.transactions.subtype,
-              ])
-              ..orderBy([OrderingTerm.desc(sum)]))
-            .get();
-
-    final directionNodes = <BreakdownNode>[];
-    for (final direction in ['income', 'outcome']) {
-      final rows = monthly
-          .where((r) => r.read(db.transactions.direction) == direction)
-          .toList();
-      final byCategory = <String, double>{};
-      final subtypes = <String, List<({String label, double total})>>{};
-      for (final r in rows) {
-        final category = r.read(db.transactions.category)!;
-        final amount = r.read(sum) ?? 0;
-        byCategory[category] = (byCategory[category] ?? 0) + amount;
-        final subtype = r.read(db.transactions.subtype);
-        if (subtype != null) {
-          subtypes.putIfAbsent(category, () => []).add((
-            label: '$category ($subtype)',
-            total: amount,
-          ));
-        }
-      }
-      final total = byCategory.values.fold<double>(0, (acc, v) => acc + v);
-      final label = direction == 'outcome' ? 'Outcome' : 'Income';
-      final names = byCategory.keys.toList()
-        ..sort((a, b) => byCategory[b]!.compareTo(byCategory[a]!));
-      directionNodes.add(
-        BreakdownNode(
-          id: 'money/$direction',
-          title: '$label (Month): ${formatAmount(total)}',
-          metric: metric,
-          children: [
-            for (final name in names)
-              BreakdownNode(
-                id: 'money/$direction/$name',
-                title: '$name: ${formatAmount(byCategory[name]!)}',
-                metric: metric,
-                children: [
-                  for (final sub in subtypes[name] ?? const [])
-                    BreakdownNode(
-                      id: 'money/$direction/$name/${sub.label}',
-                      title: '${sub.label}: ${formatAmount(sub.total)}',
-                      metric: metric,
-                    ),
-                ],
-              ),
-          ],
-        ),
-      );
-    }
-    return BreakdownNode(
-      id: 'money',
-      title: '${metric.title}: ${formatAmount(dayTotal)} ${metric.unit ?? ''}'
-          .trim(),
-      metric: metric,
-      children: directionNodes,
-    );
-  }
-
   String _formatValue(Metric metric, Entry entry) {
     if (entry.numValue != null) {
       final v = entry.numValue!;
@@ -487,20 +355,4 @@ class AnalysisRepository {
     if (entry.textValue?.trim().isNotEmpty ?? false) return '✓';
     return '—';
   }
-}
-
-/// 12300.0 → '12.300' (tr-style thousands separator, no decimals when whole).
-String formatAmount(double value) {
-  final whole = value == value.roundToDouble();
-  final text = whole ? value.toInt().toString() : value.toStringAsFixed(2);
-  final parts = text.split('.');
-  final digits = parts.first;
-  final buffer = StringBuffer();
-  for (var i = 0; i < digits.length; i++) {
-    if (i > 0 && (digits.length - i) % 3 == 0 && digits[i - 1] != '-') {
-      buffer.write('.');
-    }
-    buffer.write(digits[i]);
-  }
-  return parts.length > 1 ? '$buffer,${parts[1]}' : buffer.toString();
 }

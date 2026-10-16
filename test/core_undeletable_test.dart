@@ -1,16 +1,16 @@
-import 'package:daily_tracker/data/db/app_database.dart';
-import 'package:daily_tracker/data/db/database_provider.dart';
-import 'package:daily_tracker/data/db/seed_data.dart';
-import 'package:daily_tracker/data/repositories/entry_repository.dart';
-import 'package:daily_tracker/features/home/home_page.dart';
-import 'package:daily_tracker/features/home/home_providers.dart';
+import 'package:local_harness_not/data/db/app_database.dart';
+import 'package:local_harness_not/data/db/database_provider.dart';
+import 'package:local_harness_not/data/db/seed_data.dart';
+import 'package:local_harness_not/data/repositories/entry_repository.dart';
+import 'package:local_harness_not/features/home/home_page.dart';
+import 'package:local_harness_not/features/home/home_providers.dart';
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// CR-2 acceptance: the 12 seed metrics cannot be deleted — no Del button,
+/// CR-2 acceptance: the 11 seed metrics cannot be deleted — no Del button,
 /// repository refuses, history intact; ADD-created metrics unchanged;
 /// existing installs migrated by key.
 void main() {
@@ -20,22 +20,21 @@ void main() {
   tearDown(() => db.close());
 
   group('seed (fresh install)', () {
-    test('all 12 core records seeded with is_deletable = 0', () async {
+    test('all 11 core records seeded with is_deletable = 0', () async {
       final metrics = await db.select(db.metrics).get();
-      expect(metrics, hasLength(12));
-      expect(coreMetricKeys, hasLength(12));
+      expect(metrics, hasLength(11));
+      expect(coreMetricKeys, hasLength(11));
       for (final metric in metrics) {
         expect(metric.isDeletable, isFalse, reason: metric.key);
       }
     });
 
-    test('core keys cover the 9 heatmap rows + dev children', () {
+    test('core keys cover the 8 heatmap rows + dev children', () {
       expect(
         coreMetricKeys,
         unorderedEquals([
           'software',
           'development',
-          'money',
           'extra',
           'instagram',
           'sport',
@@ -95,8 +94,8 @@ void main() {
     });
   });
 
-  group('v1 → v2 migration (existing installs)', () {
-    test('markCoreUndeletable flips the core 12 by key, not id', () async {
+  group('markCoreUndeletable helper', () {
+    test('flips the core 11 by key, not id', () async {
       // Simulate a v1 install: core rows still deletable, user metric too,
       // and the user has reordered (ids irrelevant).
       await (db.update(
@@ -151,7 +150,7 @@ void main() {
       await tester.pumpWidget(app());
       await tester.pumpAndSettle();
 
-      // 9 core cards on screen, zero Del buttons.
+      // 8 core cards on screen, zero Del buttons.
       expect(find.text('Del'), findsNothing);
 
       await EntryRepository(db).addMetric(title: 'Reading', inputType: 'int');

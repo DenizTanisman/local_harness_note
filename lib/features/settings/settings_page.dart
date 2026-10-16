@@ -3,8 +3,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:drift/drift.dart'
-    show BooleanExpressionOperators, OrderingTerm, Value;
+import 'package:drift/drift.dart' show BooleanExpressionOperators, Value;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../data/db/app_database.dart';
@@ -14,12 +13,13 @@ import '../../main.dart' show notificationServiceProvider;
 import '../../theme/glow_background.dart';
 import '../backup/backup_worker.dart';
 import 'export_import_page.dart';
+import 'quote_editor_page.dart';
 import 'settings_providers.dart';
 
 const _backupPasswordKey = 'backup_password';
 
-/// Settings (spec 6.6): notification times, quotes, backup, heatmap rule
-/// editor v1, essential category flags.
+/// Settings (spec 6.6): notification times, quotes, privacy, backup and the
+/// heatmap rule editor v1.
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 
@@ -79,6 +79,15 @@ class SettingsPage extends ConsumerWidget {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.format_quote),
+              title: const Text('Sabah ifadelerini düzenle'),
+              subtitle: const Text('Otomatik gelenleri sil/düzenle, kendin ekle'),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const QuoteEditorPage()),
+              ),
+            ),
+            ListTile(
               title: const Text('Quote language'),
               trailing: SegmentedButton<String>(
                 segments: const [
@@ -95,14 +104,16 @@ class SettingsPage extends ConsumerWidget {
             const Divider(),
             const _SectionHeader('Privacy'),
             SwitchListTile(
-              title: const Text('Block screenshots (Money & Health)'),
+              title: const Text('Block screenshots'),
               subtitle: const Text('FLAG_SECURE, off by default'),
               value: settings['flag_secure'] == 'true',
               onChanged: (on) => repo.set('flag_secure', on.toString()),
             ),
             SwitchListTile(
               title: const Text('Auto-fill Instagram from screen time'),
-              subtitle: const Text('Measured minutes; manual edits win'),
+              subtitle: const Text(
+                'Minutes from the Program app; manual edits win',
+              ),
               value: settings['autofill_instagram'] != 'false', // default on
               onChanged: (on) => repo.set('autofill_instagram', on.toString()),
             ),
@@ -134,9 +145,6 @@ class SettingsPage extends ConsumerWidget {
               trailing: const Icon(Icons.backup),
               onTap: () => _backupNow(context, ref, settings),
             ),
-            const Divider(),
-            const _SectionHeader('Money categories'),
-            const _CategoryFlagsEditor(),
             const Divider(),
             const _SectionHeader('Heatmap rules'),
             const _HeatmapRuleEditor(),
@@ -250,69 +258,6 @@ class _SectionHeader extends StatelessWidget {
       ),
     ),
   );
-}
-
-/// is_essential / counts_in_heatmap switches (spec 6.6).
-class _CategoryFlagsEditor extends ConsumerWidget {
-  const _CategoryFlagsEditor();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final db = ref.watch(databaseProvider);
-    return StreamBuilder<List<MoneyCategory>>(
-      stream:
-          (db.select(db.moneyCategories)..orderBy([
-                (c) => OrderingTerm.asc(c.direction),
-                (c) => OrderingTerm.asc(c.sortOrder),
-              ]))
-              .watch(),
-      builder: (context, snapshot) {
-        final rows = snapshot.data ?? const <MoneyCategory>[];
-        return Column(
-          children: [
-            for (final category in rows.where((c) => c.direction == 'outcome'))
-              ListTile(
-                title: Text(category.name),
-                subtitle: Row(
-                  children: [
-                    _flagChip(
-                      context,
-                      label: 'Essential',
-                      value: category.isEssential,
-                      onChanged: (v) =>
-                          (db.update(
-                            db.moneyCategories,
-                          )..where((c) => c.id.equals(category.id))).write(
-                            MoneyCategoriesCompanion(isEssential: Value(v)),
-                          ),
-                    ),
-                    const SizedBox(width: 8),
-                    _flagChip(
-                      context,
-                      label: 'In heatmap',
-                      value: category.countsInHeatmap,
-                      onChanged: (v) =>
-                          (db.update(
-                            db.moneyCategories,
-                          )..where((c) => c.id.equals(category.id))).write(
-                            MoneyCategoriesCompanion(countsInHeatmap: Value(v)),
-                          ),
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _flagChip(
-    BuildContext context, {
-    required String label,
-    required bool value,
-    required void Function(bool) onChanged,
-  }) => FilterChip(label: Text(label), selected: value, onSelected: onChanged);
 }
 
 /// Heatmap rule editor v1 (spec 6.6): per-bucket min/max/color rows.

@@ -1,6 +1,6 @@
-import 'package:daily_tracker/data/db/seed_data.dart';
-import 'package:daily_tracker/theme/heat_colors.dart';
-import 'package:daily_tracker/data/heatmap/heatmap_rule.dart';
+import 'package:local_harness_not/data/db/seed_data.dart';
+import 'package:local_harness_not/theme/heat_colors.dart';
+import 'package:local_harness_not/data/heatmap/heatmap_rule.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 HeatmapRule _ruleOf(String key) => HeatmapRule.decode(
@@ -58,19 +58,6 @@ void main() {
       expect(rule.colorFor(3), 'darkBlue');
     });
 
-    test(
-      'Money: 0 black, 0-300 lightBlue, 300-600 blue, 600+ darkBlue',
-      () {
-        final rule = _ruleOf('money');
-        expect(rule.source, HeatmapSource.txSumHeatmap);
-        expect(rule.colorFor(0), 'black');
-        expect(rule.colorFor(299), 'lightBlue');
-        expect(rule.colorFor(450), 'blue');
-        expect(rule.colorFor(700), 'darkBlue');
-        expect(rule.colorFor(750), 'darkBlue');
-      },
-    );
-
     test('Extra: text exists → blue, else black', () {
       final rule = _ruleOf('extra');
       expect(rule.source, HeatmapSource.textExists);
@@ -78,24 +65,24 @@ void main() {
       expect(rule.colorFor(1), 'blue');
     });
 
+    test('Instagram: 0 black, 0-20 lightBlue, 20-40 blue, 40+ darkBlue', () {
+      final rule = _ruleOf('instagram');
+      expect(rule.colorFor(0), 'black');
+      expect(rule.colorFor(10), 'lightBlue');
+      expect(rule.colorFor(25), 'blue');
+      expect(rule.colorFor(45), 'darkBlue');
+    });
+
     test(
-      'Instagram: 0 black, 0-20 lightBlue, 20-40 blue, 40+ darkBlue',
+      'Sport: exactly 0 black, 0-30 lightBlue, 30-60 blue, 60+ darkBlue',
       () {
-        final rule = _ruleOf('instagram');
+        final rule = _ruleOf('sport');
         expect(rule.colorFor(0), 'black');
-        expect(rule.colorFor(10), 'lightBlue');
-        expect(rule.colorFor(25), 'blue');
-        expect(rule.colorFor(45), 'darkBlue');
+        expect(rule.colorFor(1), 'lightBlue');
+        expect(rule.colorFor(45), 'blue');
+        expect(rule.colorFor(60), 'darkBlue');
       },
     );
-
-    test('Sport: exactly 0 black, 0-30 lightBlue, 30-60 blue, 60+ darkBlue', () {
-      final rule = _ruleOf('sport');
-      expect(rule.colorFor(0), 'black');
-      expect(rule.colorFor(1), 'lightBlue');
-      expect(rule.colorFor(45), 'blue');
-      expect(rule.colorFor(60), 'darkBlue');
-    });
 
     test('Brushing: 0 black, 1 lightBlue, 2 blue, 3 darkBlue', () {
       final rule = _ruleOf('brushing');

@@ -1,6 +1,6 @@
-import 'package:daily_tracker/data/db/app_database.dart';
-import 'package:daily_tracker/data/heatmap/heatmap_rule.dart';
-import 'package:daily_tracker/data/repositories/tree_repository.dart';
+import 'package:local_harness_not/data/db/app_database.dart';
+import 'package:local_harness_not/data/heatmap/heatmap_rule.dart';
+import 'package:local_harness_not/data/repositories/tree_repository.dart';
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -59,13 +59,6 @@ void main() {
       final marketing = await byKey('dev_marketing'); // already a child
       final extra = await byKey('extra');
       expect(await tree.canBecomeChildOf(extra, marketing), isFalse);
-    });
-
-    test('money takes no part in grouping', () async {
-      final money = await byKey('money');
-      final extra = await byKey('extra');
-      expect(await tree.canBecomeChildOf(money, extra), isFalse);
-      expect(await tree.canBecomeChildOf(extra, money), isFalse);
     });
   });
 

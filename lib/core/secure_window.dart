@@ -1,9 +1,9 @@
 import 'package:flutter/services.dart';
 
 /// FLAG_SECURE wrapper (spec §11.6): blocks screenshots/recents preview
-/// while a Money page is open, when the setting is enabled.
+/// app-wide when the setting is enabled.
 class SecureWindow {
-  static const _channel = MethodChannel('daily_tracker/secure_window');
+  static const _channel = MethodChannel('local_harness_not/secure_window');
 
   static Future<void> enable() => _invoke('enable');
 
