@@ -103,7 +103,11 @@ class NotificationService {
     // Avoid a write → tableUpdates → reschedule loop.
     if (current != cursor) await _repo.saveCursor(cursor);
 
-    await _plugin.cancelAll();
+    // Only our reminders — cancelAll() would also take down the quick-note
+    // bubble's notification.
+    for (final pending in await _plugin.pendingNotificationRequests()) {
+      if (pending.id >= _baseId) await _plugin.cancel(id: pending.id);
+    }
     if (settings[remindersEnabledKey] == 'false') return;
     final android = _plugin
         .resolvePlatformSpecificImplementation<

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +9,7 @@ import '../../data/db/app_database.dart';
 import '../../theme/app_tokens.dart';
 import '../gemma/gemma_page.dart';
 import 'notes_providers.dart';
+import 'tag_suggestion_bar.dart';
 
 /// Plain-text editor (spec §3.2) with auto-save. A new note opens with the
 /// keyboard up and is only stored once it has text.
@@ -44,49 +44,11 @@ class _NoteEditorPageState extends ConsumerState<NoteEditorPage> {
   Timer? _save;
   String _saved = '';
   StreamSubscription<Note?>? _watch;
-  StreamSubscription<List<({String tag, int count})>>? _tagWatch;
-
-  /// Tags in use, most used first.
-  List<({String tag, int count})> _tagCounts = const [];
-
-  /// Suggestions for the `#tag` under the cursor (empty → no bar).
-  List<String> _suggestions = const [];
-
   @override
   void initState() {
     super.initState();
     _id = widget.noteId;
-    _text.addListener(_updateSuggestions);
-    _focus.addListener(_updateSuggestions);
-    _tagWatch = ref.read(notesRepositoryProvider).watchTagCounts().listen((
-      counts,
-    ) {
-      _tagCounts = counts;
-      _updateSuggestions();
-    });
     _load();
-  }
-
-  void _updateSuggestions() {
-    final at = _focus.hasFocus
-        ? NoteText.tagAt(_text.text, _text.selection.baseOffset)
-        : null;
-    final next = at == null
-        ? const <String>[]
-        : NoteText.suggestTags([for (final t in _tagCounts) t.tag], at.prefix);
-    if (!mounted || listEquals(next, _suggestions)) return;
-    setState(() => _suggestions = next);
-  }
-
-  void _pickTag(String tag) {
-    final at = NoteText.tagAt(_text.text, _text.selection.baseOffset);
-    if (at == null) return;
-    final result = NoteText.insertTag(_text.text, at, tag);
-    _text.value = TextEditingValue(
-      text: result.text,
-      selection: TextSelection.collapsed(offset: result.cursor),
-    );
-    _scheduleSave();
   }
 
   Future<void> _load() async {
@@ -179,7 +141,6 @@ class _NoteEditorPageState extends ConsumerState<NoteEditorPage> {
   void dispose() {
     _save?.cancel();
     _watch?.cancel();
-    _tagWatch?.cancel();
     _text.dispose();
     _focus.dispose();
     super.dispose();
@@ -364,53 +325,13 @@ class _NoteEditorPageState extends ConsumerState<NoteEditorPage> {
                       ),
                     ),
                   ),
-                  if (_suggestions.isNotEmpty)
-                    _TagSuggestions(
-                      tags: _suggestions,
-                      counts: {for (final t in _tagCounts) t.tag: t.count},
-                      onPick: _pickTag,
-                    ),
+                  TagSuggestionBar(
+                    controller: _text,
+                    focusNode: _focus,
+                    onChanged: _scheduleSave,
+                  ),
                 ],
               ),
-      ),
-    );
-  }
-}
-
-/// Existing tags for the `#` being typed, most used first; sits right
-/// above the keyboard.
-class _TagSuggestions extends StatelessWidget {
-  const _TagSuggestions({
-    required this.tags,
-    required this.counts,
-    required this.onPick,
-  });
-
-  final List<String> tags;
-  final Map<String, int> counts;
-  final ValueChanged<String> onPick;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      key: const Key('tag-suggestions'),
-      height: 52,
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: AppTokens.surfaceCardBorder)),
-      ),
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        children: [
-          for (final tag in tags)
-            Padding(
-              padding: const EdgeInsets.only(right: 6),
-              child: ActionChip(
-                label: Text('#$tag  ${counts[tag] ?? ''}'),
-                onPressed: () => onPick(tag),
-              ),
-            ),
-        ],
       ),
     );
   }

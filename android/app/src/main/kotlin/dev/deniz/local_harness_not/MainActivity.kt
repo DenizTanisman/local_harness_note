@@ -35,6 +35,19 @@ class MainActivity : FlutterActivity() {
                             val pm = getSystemService(POWER_SERVICE) as PowerManager
                             result.success(pm.isIgnoringBatteryOptimizations(packageName))
                         }
+                        "showBubble" -> {
+                            QuickNoteBubble.show(this@MainActivity)
+                            result.success(QuickNoteBubble.status(this@MainActivity))
+                        }
+                        "hideBubble" -> {
+                            QuickNoteBubble.hide(this@MainActivity)
+                            result.success(null)
+                        }
+                        "bubbleStatus" -> result.success(QuickNoteBubble.status(this@MainActivity))
+                        "openBubbleSettings" -> {
+                            QuickNoteBubble.openSettings(this@MainActivity)
+                            result.success(null)
+                        }
                         "requestIgnoreBatteryOptimizations" -> {
                             try {
                                 startActivity(

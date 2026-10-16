@@ -12,6 +12,9 @@ import 'features/backup/backup_worker.dart';
 import 'features/notes/note_editor_page.dart';
 import 'features/notes/notes_providers.dart';
 import 'features/notifications/notification_service.dart';
+import 'features/quick/quick_note_page.dart';
+import 'features/settings/settings_page.dart' show bubbleEnabledKey;
+import 'features/settings/settings_providers.dart';
 import 'features/shell/app_shell.dart';
 import 'theme/app_theme.dart';
 
@@ -67,6 +70,17 @@ void main() {
         final launch = await SystemChannel.takeLaunchIntent();
         if (launch != null) _openIntent(launch);
 
+        // Bring the quick-note bubble back (after a reboot or a dismiss).
+        final settings = await container
+            .read(settingsRepositoryProvider)
+            .loadAll();
+        if (settings[bubbleEnabledKey] == 'true') {
+          final bubble = await SystemChannel.bubbleStatus();
+          if (bubble != null && !bubble.showing) {
+            await SystemChannel.showBubble();
+          }
+        }
+
         await container.read(hubSnapshotPublisherProvider).start();
         // Claude connection: register the push token and answer anything
         // that queued up while the app was closed (no-op when unpaired).
@@ -82,6 +96,26 @@ void main() {
     (error, stack) {
       debugPrint('Uncaught: ${error.runtimeType}');
     },
+  );
+}
+
+/// Entry point of the quick-note bubble (BubbleActivity): its own small
+/// app on its own engine and DB connection.
+@pragma('vm:entry-point')
+void bubbleMain() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(
+    ProviderScope(
+      child: MaterialApp(
+        title: 'Hızlı not',
+        debugShowCheckedModeBanner: false,
+        theme: buildAppTheme(),
+        locale: const Locale('tr'),
+        supportedLocales: const [Locale('tr'), Locale('en')],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        home: const QuickNotePage(),
+      ),
+    ),
   );
 }
 

@@ -162,6 +162,12 @@ Alt gezinme: **Notlar** · **Hatırlatmalar**. Sağ üstte Ayarlar.
 
 - **Paylaş menüsü:** `ACTION_SEND text/plain` → yeni not editörü, metin önceden dolu, `source = 'share'`.
 - **Ana ekran widget'ı:** tek dokunuşla yeni not editörü (klavye açık).
+- **Hızlı not baloncuğu:** Android Bubbles API (overlay izni gerekmez). Ayarlar'dan açılır; her
+  uygulamanın üstünde yüzer, dokununca küçük not penceresi: yaz, `#` önerileri, Kaydet (alan
+  temizlenir). Baloncuk küçültülünce yazılan otomatik kaydedilir. Android'de uygulama için
+  "Baloncuklar: Tümü" izni gerekir (Ayarlar'daki satır o sayfayı açar).
+- **`#` önerileri:** editörde ve baloncukta `#` yazınca mevcut etiketler en çok kullanılandan
+  başlayarak listelenir, yazdıkça süzülür (Türkçe harf duyarsız); dokununca tamamlanır.
 
 ---
 

@@ -47,6 +47,44 @@ class SystemChannel {
     });
   }
 
+  /// Shows the quick-note bubble; returns [bubbleStatus].
+  static Future<BubbleStatus?> showBubble() async {
+    try {
+      return BubbleStatus._(
+        await _channel.invokeMethod<Map<Object?, Object?>>('showBubble'),
+      );
+    } on MissingPluginException {
+      return null;
+    }
+  }
+
+  static Future<void> hideBubble() async {
+    try {
+      await _channel.invokeMethod<void>('hideBubble');
+    } on MissingPluginException {
+      // Tests / non-Android hosts.
+    }
+  }
+
+  static Future<BubbleStatus?> bubbleStatus() async {
+    try {
+      return BubbleStatus._(
+        await _channel.invokeMethod<Map<Object?, Object?>>('bubbleStatus'),
+      );
+    } on MissingPluginException {
+      return null;
+    }
+  }
+
+  /// Android's per-app bubble settings ("Tüm görüşmeler baloncuk olabilir").
+  static Future<void> openBubbleSettings() async {
+    try {
+      await _channel.invokeMethod<void>('openBubbleSettings');
+    } on MissingPluginException {
+      // Tests / non-Android hosts.
+    }
+  }
+
   static Future<bool> isIgnoringBatteryOptimizations() async {
     try {
       return await _channel.invokeMethod<bool>(
@@ -65,4 +103,26 @@ class SystemChannel {
       // Tests / non-Android hosts.
     }
   }
+}
+
+/// Whether Android will float the quick-note bubble.
+class BubbleStatus {
+  BubbleStatus._(Map<Object?, Object?>? raw)
+    : globalOn = raw?['globalOn'] == true,
+      appPreference = '${raw?['appPreference'] ?? 'none'}',
+      channelCanBubble = raw?['channelCanBubble'] == true,
+      showing = raw?['showing'] == true;
+
+  /// The phone-wide "floating notifications: bubbles" switch.
+  final bool globalOn;
+
+  /// 'all' | 'selected' | 'none' for this app.
+  final String appPreference;
+  final bool channelCanBubble;
+  final bool showing;
+
+  bool get allowed =>
+      globalOn &&
+      (appPreference == 'all' ||
+          (appPreference == 'selected' && channelCanBubble));
 }

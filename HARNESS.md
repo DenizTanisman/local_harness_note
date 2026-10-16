@@ -24,7 +24,10 @@ The daily check-in it used to be is gone (`docs/daily-tracker-*.md` kept for ref
 - **Hatırlatmalar**: an ordered list the notifications walk through (default 07:30 · 14:00 ·
   20:00, exact alarms via `USE_EXACT_ALARM`), looping at the end. Drag to reorder, swipe to
   remove.
-- **Capture**: share sheet (`text/plain`) and the home-screen "+ Not" widget open a new note.
+- **Capture**: share sheet (`text/plain`) and the home-screen "+ Not" widget open a new note;
+  the **quick-note bubble** (Android Bubbles API, `BubbleActivity` → Dart `bubbleMain`, own
+  engine + DB connection) floats over every app: type, `#` suggestions, Kaydet; collapsing it
+  saves what was typed. Typing `#` anywhere suggests existing tags, most used first.
 - **Claude (MCP)**: see below.
 - **Settings**: reminder times, Gemma model + prompt, Claude pairing, FLAG_SECURE, encrypted
   weekly backup (`local_harness_not_*.dtbak`, notes + versions + reminders + settings) and

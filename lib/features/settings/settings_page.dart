@@ -18,6 +18,7 @@ import '../notifications/notification_service.dart';
 import 'settings_providers.dart';
 
 const _backupPasswordKey = 'backup_password';
+const bubbleEnabledKey = 'bubble_enabled';
 
 /// Settings (spec §3.4): reminders, Gemma, the Claude connection, privacy
 /// and backup.
@@ -93,6 +94,9 @@ class SettingsPage extends ConsumerWidget {
                 }
               },
             ),
+            const Divider(),
+            const _SectionHeader('Hızlı not baloncuğu'),
+            const _BubbleSection(),
             const Divider(),
             const _SectionHeader('Gemma (cihazda)'),
             const _GemmaTile(),
@@ -335,6 +339,101 @@ class _GemmaTile extends ConsumerWidget {
           onTap: gemma.download,
         ),
       },
+    );
+  }
+}
+
+/// Floating quick-note bubble: on/off, and what Android still needs.
+class _BubbleSection extends ConsumerStatefulWidget {
+  const _BubbleSection();
+
+  @override
+  ConsumerState<_BubbleSection> createState() => _BubbleSectionState();
+}
+
+class _BubbleSectionState extends ConsumerState<_BubbleSection>
+    with WidgetsBindingObserver {
+  BubbleStatus? _status;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _refresh();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Back from Android's bubble settings: re-check and show it.
+    if (state == AppLifecycleState.resumed) _refresh(reshow: true);
+  }
+
+  Future<void> _refresh({bool reshow = false}) async {
+    final settings = await ref.read(settingsRepositoryProvider).loadAll();
+    var status = await SystemChannel.bubbleStatus();
+    if (reshow &&
+        settings[bubbleEnabledKey] == 'true' &&
+        status != null &&
+        status.allowed &&
+        !status.showing) {
+      status = await SystemChannel.showBubble();
+    }
+    if (mounted) setState(() => _status = status);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final settings = ref.watch(settingsProvider).value ?? const {};
+    final on = settings[bubbleEnabledKey] == 'true';
+    final status = _status;
+    return Column(
+      children: [
+        SwitchListTile(
+          key: const Key('bubble-switch'),
+          title: const Text('Baloncukla not al'),
+          subtitle: const Text(
+            'Her uygulamanın üstünde yüzen baloncuk; dokun, yaz, kaydet',
+          ),
+          value: on,
+          onChanged: (value) async {
+            await ref
+                .read(settingsRepositoryProvider)
+                .set(bubbleEnabledKey, value.toString());
+            if (!value) await SystemChannel.hideBubble();
+            final next = value
+                ? await SystemChannel.showBubble()
+                : await SystemChannel.bubbleStatus();
+            if (mounted) setState(() => _status = next);
+          },
+        ),
+        if (on && status != null && !status.allowed)
+          ListTile(
+            leading: const Icon(Icons.bubble_chart_outlined),
+            title: const Text('Baloncuk iznini ver'),
+            subtitle: Text(
+              status.globalOn
+                  ? 'Android ayarında "Tüm görüşmeler baloncuk olabilir"i seç'
+                  : 'Telefonun ayarı: Bildirimler › Gelişmiş › Yüzen '
+                        'bildirimler › Baloncuklar',
+            ),
+            onTap: SystemChannel.openBubbleSettings,
+          ),
+        if (on && status != null && status.allowed && !status.showing)
+          ListTile(
+            leading: const Icon(Icons.bubble_chart),
+            title: const Text('Baloncuğu yeniden göster'),
+            onTap: () async {
+              final next = await SystemChannel.showBubble();
+              if (mounted) setState(() => _status = next);
+            },
+          ),
+      ],
     );
   }
 }
