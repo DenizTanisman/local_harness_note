@@ -57,6 +57,58 @@ class NoteText {
     return i >= 0 ? i : lines.indexWhere((l) => l.trim().isNotEmpty);
   }
 
+  static final _tagChar = RegExp(r'[\p{L}\p{N}_-]', unicode: true);
+  static final _space = RegExp(r'\s');
+
+  /// The `#tag` being typed around [cursor]: where its `#` starts, where the
+  /// word ends, and the part typed before the cursor. Null when the cursor
+  /// is not inside a hashtag.
+  static ({int start, int end, String prefix})? tagAt(String text, int cursor) {
+    if (cursor < 0 || cursor > text.length) return null;
+    var i = cursor;
+    while (i > 0 && _tagChar.hasMatch(text[i - 1])) {
+      i--;
+    }
+    if (i == 0 || text[i - 1] != '#') return null;
+    final hash = i - 1;
+    if (hash > 0 && !_space.hasMatch(text[hash - 1])) return null;
+    var end = cursor;
+    while (end < text.length && _tagChar.hasMatch(text[end])) {
+      end++;
+    }
+    return (start: hash, end: end, prefix: text.substring(i, cursor));
+  }
+
+  /// Replaces the hashtag at [at] with `#tag` and a following space.
+  static ({String text, int cursor}) insertTag(
+    String text,
+    ({int start, int end, String prefix}) at,
+    String tag,
+  ) {
+    final spaced = at.end < text.length && _space.hasMatch(text[at.end]);
+    final inserted = spaced ? '#$tag' : '#$tag ';
+    return (
+      text: text.replaceRange(at.start, at.end, inserted),
+      cursor: at.start + inserted.length + (spaced ? 1 : 0),
+    );
+  }
+
+  /// Existing tags matching [prefix] (Turkish-insensitive), keeping the
+  /// most-used-first order of [byUse]; the exact tag already typed is left
+  /// out.
+  static List<String> suggestTags(
+    List<String> byUse,
+    String prefix, {
+    int limit = 12,
+  }) {
+    final p = fold(prefix);
+    final typed = lowerTr(prefix);
+    return byUse
+        .where((t) => t != typed && fold(t).startsWith(p))
+        .take(limit)
+        .toList();
+  }
+
   /// First meaningful line, trimmed and capped.
   static String title(String body, {int max = 80}) {
     final lines = body.split('\n');

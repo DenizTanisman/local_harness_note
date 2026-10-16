@@ -47,6 +47,39 @@ void main() {
       expect(NoteText.rest(merged), 'ayrıntı');
     });
 
+    test('finds the #tag under the cursor', () {
+      const text = 'Plan #fi bitti';
+      expect(NoteText.tagAt(text, 8), (start: 5, end: 8, prefix: 'fi'));
+      expect(NoteText.tagAt(text, 6), (start: 5, end: 8, prefix: ''));
+      expect(NoteText.tagAt(text, 3), isNull); // not in a tag
+      expect(NoteText.tagAt('a#b', 3), isNull); // # inside a word
+      expect(NoteText.tagAt('#', 1), (start: 0, end: 1, prefix: ''));
+    });
+
+    test('inserting a suggestion completes the word and adds a space', () {
+      const text = 'Plan #fi';
+      final at = NoteText.tagAt(text, text.length)!;
+      expect(NoteText.insertTag(text, at, 'fikir'), (
+        text: 'Plan #fikir ',
+        cursor: 12,
+      ));
+      // Already followed by a space: no double space, cursor after it.
+      const mid = 'x #fi y';
+      final at2 = NoteText.tagAt(mid, 5)!;
+      expect(NoteText.insertTag(mid, at2, 'fikir'), (
+        text: 'x #fikir y',
+        cursor: 9,
+      ));
+    });
+
+    test('suggestions keep most-used order, Turkish-insensitive', () {
+      const byUse = ['iş', 'fikir', 'film', 'kitap'];
+      expect(NoteText.suggestTags(byUse, ''), byUse);
+      expect(NoteText.suggestTags(byUse, 'fi'), ['fikir', 'film']);
+      expect(NoteText.suggestTags(byUse, 'is'), ['iş']);
+      expect(NoteText.suggestTags(byUse, 'fikir'), isEmpty);
+    });
+
     test('uuid v4 shape', () {
       expect(
         NoteText.uuid(),
@@ -115,6 +148,18 @@ void main() {
       sw.stop();
       expect(hits, hasLength(1));
       expect(sw.elapsedMilliseconds, lessThan(100));
+    });
+
+    test('tag counts: most used first, archive included', () async {
+      await note('a #fikir #kitap');
+      await note('b #fikir');
+      final c = await note('c #fikir #iş');
+      await repo.archive(c);
+      expect(await repo.watchTagCounts().first, [
+        (tag: 'fikir', count: 3),
+        (tag: 'iş', count: 1),
+        (tag: 'kitap', count: 1),
+      ]);
     });
 
     test('list stream updates on writes', () async {

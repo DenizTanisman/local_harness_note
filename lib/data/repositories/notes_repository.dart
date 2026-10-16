@@ -184,6 +184,22 @@ class NotesRepository {
       .watch()
       .map((rows) => [for (final r in rows) r.read<String>('tag')]);
 
+  /// Every tag in use (inbox and archive) with its note count, most used
+  /// first — the editor's `#` suggestions.
+  Stream<List<({String tag, int count})>> watchTagCounts() => db
+      .customSelect(
+        'SELECT tag, COUNT(*) AS c FROM note_tags '
+        'GROUP BY tag ORDER BY c DESC, tag',
+        readsFrom: {db.noteTags},
+      )
+      .watch()
+      .map(
+        (rows) => [
+          for (final r in rows)
+            (tag: r.read<String>('tag'), count: r.read<int>('c')),
+        ],
+      );
+
   Future<({int total, int inbox})> counts() async {
     final row = await db
         .customSelect(
