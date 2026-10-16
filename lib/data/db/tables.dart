@@ -17,6 +17,10 @@ class Notes extends Table {
 
   /// Set on notes archived by a merge: the id of the merged note.
   TextColumn get mergedInto => text().nullable()();
+
+  /// When the note went to the archive; archived notes are deleted
+  /// [NotesRepository.archiveRetention] after this.
+  IntColumn get archivedAt => integer().nullable()();
   IntColumn get createdAt => integer()();
   IntColumn get updatedAt => integer()();
 

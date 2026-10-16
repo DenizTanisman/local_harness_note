@@ -87,6 +87,7 @@ class McpTools {
           'created': _iso(note.createdAt),
           'updated': _iso(note.updatedAt),
           'in_reminders': await _inReminders(note.id),
+          'auto_delete_on': _day(NotesRepository.deletesOn(note)),
         };
       case 'create_note':
         final text = _str(args['text']);
@@ -123,6 +124,8 @@ class McpTools {
     'tags': n.tags,
     'status': _status(n.note.status),
     'updated': _iso(n.note.updatedAt),
+    if (NotesRepository.deletesOn(n.note) case final DateTime d)
+      'auto_delete_on': _day(d),
   };
 
   Future<Note> _visible(Object? id) async {
@@ -167,6 +170,8 @@ class McpTools {
       v is String ? DateTime.tryParse(v) : null;
 
   static String _status(String s) => s == 'archived' ? 'arşiv' : 'gelen';
+
+  static String? _day(DateTime? d) => d?.toIso8601String().substring(0, 10);
 
   static String _iso(int ms) => DateTime.fromMillisecondsSinceEpoch(
     ms,

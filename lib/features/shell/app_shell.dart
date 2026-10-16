@@ -48,6 +48,7 @@ class _AppShellState extends ConsumerState<AppShell>
         db.reminders,
         db.appSettings,
       ]);
+      ref.read(notesRepositoryProvider).purgeArchived();
       ref.read(pushProvider).processWork();
     }
   }

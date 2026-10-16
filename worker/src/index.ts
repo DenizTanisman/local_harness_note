@@ -30,7 +30,7 @@ const PROTOCOL_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05
 const INSTRUCTIONS = `These are the user's personal notes and ideas ("second brain"), stored only on their Android phone, mostly in Turkish.
 Every call wakes the phone, so a call can take a few seconds; if the phone is offline you get an error after ~25 s.
 To find something, call search_notes with a few keyword variants (search ignores Turkish diacritics and matches word prefixes), then get_note for the full text. list_recent shows what was written lately.
-Notes the user marked private are never visible. There is no delete tool; archive_note hides a note from the inbox.
+Notes the user marked private are never visible. There is no delete tool; archive_note hides a note from the inbox, and archived notes are deleted automatically after 45 days (see auto_delete_on).
 add_to_reminders puts a note on the user's reminder list (shown in order at 07:30, 14:00 and 20:00).`;
 
 const TOOLS = [
@@ -103,7 +103,8 @@ const TOOLS = [
   {
     name: "archive_note",
     title: "Archive a note",
-    description: "Moves a note to the archive (reversible in the app). Also takes it off the reminder list.",
+    description:
+      "Moves a note to the archive (reversible in the app for 45 days). Archived notes are deleted automatically 45 days after archiving. Also takes it off the reminder list. Only archive when the user asks.",
     inputSchema: {
       type: "object",
       properties: { id: { type: "string" } },

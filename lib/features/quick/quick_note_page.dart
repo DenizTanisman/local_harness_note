@@ -59,14 +59,26 @@ class _QuickNotePageState extends ConsumerState<QuickNotePage>
     });
   }
 
-  Future<void> _save() async {
+  static const _bubble = MethodChannel('local_harness_not/bubble');
+
+  /// Saves the text. With [collapse], confirms with a toast and folds the
+  /// bubble, back to the app the user was in.
+  Future<void> _save({bool collapse = false}) async {
     final body = _text.text.trim();
     if (body.isEmpty || _saving) return;
     _saving = true;
     try {
       await ref.read(notesRepositoryProvider).create(body, source: 'bubble');
       _text.clear();
-      if (mounted) setState(() => _lastSaved = NoteText.title(body, max: 40));
+      final title = NoteText.title(body, max: 40);
+      if (mounted) setState(() => _lastSaved = title);
+      if (collapse) {
+        try {
+          await _bubble.invokeMethod<void>('savedAndCollapse', title);
+        } on MissingPluginException {
+          // Not running inside the bubble (tests).
+        }
+      }
     } finally {
       _saving = false;
     }
@@ -92,7 +104,9 @@ class _QuickNotePageState extends ConsumerState<QuickNotePage>
                     key: const Key('quick-save'),
                     icon: const Icon(Icons.check, size: 18),
                     label: const Text('Kaydet'),
-                    onPressed: _text.text.trim().isEmpty ? null : _save,
+                    onPressed: _text.text.trim().isEmpty
+                        ? null
+                        : () => _save(collapse: true),
                   ),
                 ],
               ),

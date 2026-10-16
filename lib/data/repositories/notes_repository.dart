@@ -258,18 +258,55 @@ class NotesRepository {
         NotesCompanion(isPrivate: Value(value), updatedAt: Value(_now)),
       );
 
-  /// Archiving also takes the note off the reminder list (spec §6).
+  /// Archived notes are deleted this long after they were archived.
+  static const archiveRetention = Duration(days: 45);
+
+  /// When an archived note will be deleted (null when not archived).
+  static DateTime? deletesOn(Note note) =>
+      note.status != 'archived' || note.archivedAt == null
+      ? null
+      : DateTime.fromMillisecondsSinceEpoch(
+          note.archivedAt!,
+        ).add(archiveRetention);
+
+  /// Archiving also takes the note off the reminder list (spec §6) and
+  /// starts the 45-day auto-delete clock.
   Future<void> archive(String id) => db.transaction(() async {
     await (db.update(db.notes)..where((n) => n.id.equals(id))).write(
-      NotesCompanion(status: const Value('archived'), updatedAt: Value(_now)),
+      NotesCompanion(
+        status: const Value('archived'),
+        archivedAt: Value(_now),
+        updatedAt: Value(_now),
+      ),
     );
     await removeFromReminders(id);
   });
 
   Future<void> unarchive(String id) =>
       (db.update(db.notes)..where((n) => n.id.equals(id))).write(
-        NotesCompanion(status: const Value('inbox'), updatedAt: Value(_now)),
+        NotesCompanion(
+          status: const Value('inbox'),
+          archivedAt: const Value(null),
+          updatedAt: Value(_now),
+        ),
       );
+
+  /// Deletes archived notes older than [archiveRetention]. Run on app
+  /// start, on resume and on every push wake. Returns how many went.
+  Future<int> purgeArchived() async {
+    final cutoff = _clock().subtract(archiveRetention).millisecondsSinceEpoch;
+    final expired =
+        await (db.select(db.notes)..where(
+              (n) =>
+                  n.status.equals('archived') &
+                  n.archivedAt.isSmallerOrEqualValue(cutoff),
+            ))
+            .get();
+    for (final note in expired) {
+      await delete(note.id);
+    }
+    return expired.length;
+  }
 
   /// Deletes a note for good (in-app only, after a confirmation; never
   /// reachable from the MCP tools).
@@ -371,6 +408,7 @@ class NotesRepository {
       NotesCompanion(
         status: const Value('archived'),
         mergedInto: Value(mergedId),
+        archivedAt: Value(_now),
         updatedAt: Value(_now),
       ),
     );

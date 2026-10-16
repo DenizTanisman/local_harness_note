@@ -72,6 +72,17 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _archivedAtMeta = const VerificationMeta(
+    'archivedAt',
+  );
+  @override
+  late final GeneratedColumn<int> archivedAt = GeneratedColumn<int>(
+    'archived_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -102,6 +113,7 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     isPrivate,
     source,
     mergedInto,
+    archivedAt,
     createdAt,
     updatedAt,
   ];
@@ -154,6 +166,12 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         mergedInto.isAcceptableOrUnknown(data['merged_into']!, _mergedIntoMeta),
       );
     }
+    if (data.containsKey('archived_at')) {
+      context.handle(
+        _archivedAtMeta,
+        archivedAt.isAcceptableOrUnknown(data['archived_at']!, _archivedAtMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -203,6 +221,10 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         DriftSqlType.string,
         data['${effectivePrefix}merged_into'],
       ),
+      archivedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}archived_at'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}created_at'],
@@ -236,6 +258,10 @@ class Note extends DataClass implements Insertable<Note> {
 
   /// Set on notes archived by a merge: the id of the merged note.
   final String? mergedInto;
+
+  /// When the note went to the archive; archived notes are deleted
+  /// [NotesRepository.archiveRetention] after this.
+  final int? archivedAt;
   final int createdAt;
   final int updatedAt;
   const Note({
@@ -245,6 +271,7 @@ class Note extends DataClass implements Insertable<Note> {
     required this.isPrivate,
     required this.source,
     this.mergedInto,
+    this.archivedAt,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -258,6 +285,9 @@ class Note extends DataClass implements Insertable<Note> {
     map['source'] = Variable<String>(source);
     if (!nullToAbsent || mergedInto != null) {
       map['merged_into'] = Variable<String>(mergedInto);
+    }
+    if (!nullToAbsent || archivedAt != null) {
+      map['archived_at'] = Variable<int>(archivedAt);
     }
     map['created_at'] = Variable<int>(createdAt);
     map['updated_at'] = Variable<int>(updatedAt);
@@ -274,6 +304,9 @@ class Note extends DataClass implements Insertable<Note> {
       mergedInto: mergedInto == null && nullToAbsent
           ? const Value.absent()
           : Value(mergedInto),
+      archivedAt: archivedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(archivedAt),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -291,6 +324,7 @@ class Note extends DataClass implements Insertable<Note> {
       isPrivate: serializer.fromJson<bool>(json['isPrivate']),
       source: serializer.fromJson<String>(json['source']),
       mergedInto: serializer.fromJson<String?>(json['mergedInto']),
+      archivedAt: serializer.fromJson<int?>(json['archivedAt']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
     );
@@ -305,6 +339,7 @@ class Note extends DataClass implements Insertable<Note> {
       'isPrivate': serializer.toJson<bool>(isPrivate),
       'source': serializer.toJson<String>(source),
       'mergedInto': serializer.toJson<String?>(mergedInto),
+      'archivedAt': serializer.toJson<int?>(archivedAt),
       'createdAt': serializer.toJson<int>(createdAt),
       'updatedAt': serializer.toJson<int>(updatedAt),
     };
@@ -317,6 +352,7 @@ class Note extends DataClass implements Insertable<Note> {
     bool? isPrivate,
     String? source,
     Value<String?> mergedInto = const Value.absent(),
+    Value<int?> archivedAt = const Value.absent(),
     int? createdAt,
     int? updatedAt,
   }) => Note(
@@ -326,6 +362,7 @@ class Note extends DataClass implements Insertable<Note> {
     isPrivate: isPrivate ?? this.isPrivate,
     source: source ?? this.source,
     mergedInto: mergedInto.present ? mergedInto.value : this.mergedInto,
+    archivedAt: archivedAt.present ? archivedAt.value : this.archivedAt,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -339,6 +376,9 @@ class Note extends DataClass implements Insertable<Note> {
       mergedInto: data.mergedInto.present
           ? data.mergedInto.value
           : this.mergedInto,
+      archivedAt: data.archivedAt.present
+          ? data.archivedAt.value
+          : this.archivedAt,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -353,6 +393,7 @@ class Note extends DataClass implements Insertable<Note> {
           ..write('isPrivate: $isPrivate, ')
           ..write('source: $source, ')
           ..write('mergedInto: $mergedInto, ')
+          ..write('archivedAt: $archivedAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -367,6 +408,7 @@ class Note extends DataClass implements Insertable<Note> {
     isPrivate,
     source,
     mergedInto,
+    archivedAt,
     createdAt,
     updatedAt,
   );
@@ -380,6 +422,7 @@ class Note extends DataClass implements Insertable<Note> {
           other.isPrivate == this.isPrivate &&
           other.source == this.source &&
           other.mergedInto == this.mergedInto &&
+          other.archivedAt == this.archivedAt &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -391,6 +434,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
   final Value<bool> isPrivate;
   final Value<String> source;
   final Value<String?> mergedInto;
+  final Value<int?> archivedAt;
   final Value<int> createdAt;
   final Value<int> updatedAt;
   final Value<int> rowid;
@@ -401,6 +445,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
     this.isPrivate = const Value.absent(),
     this.source = const Value.absent(),
     this.mergedInto = const Value.absent(),
+    this.archivedAt = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -412,6 +457,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
     this.isPrivate = const Value.absent(),
     this.source = const Value.absent(),
     this.mergedInto = const Value.absent(),
+    this.archivedAt = const Value.absent(),
     required int createdAt,
     required int updatedAt,
     this.rowid = const Value.absent(),
@@ -426,6 +472,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
     Expression<bool>? isPrivate,
     Expression<String>? source,
     Expression<String>? mergedInto,
+    Expression<int>? archivedAt,
     Expression<int>? createdAt,
     Expression<int>? updatedAt,
     Expression<int>? rowid,
@@ -437,6 +484,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
       if (isPrivate != null) 'is_private': isPrivate,
       if (source != null) 'source': source,
       if (mergedInto != null) 'merged_into': mergedInto,
+      if (archivedAt != null) 'archived_at': archivedAt,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -450,6 +498,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
     Value<bool>? isPrivate,
     Value<String>? source,
     Value<String?>? mergedInto,
+    Value<int?>? archivedAt,
     Value<int>? createdAt,
     Value<int>? updatedAt,
     Value<int>? rowid,
@@ -461,6 +510,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
       isPrivate: isPrivate ?? this.isPrivate,
       source: source ?? this.source,
       mergedInto: mergedInto ?? this.mergedInto,
+      archivedAt: archivedAt ?? this.archivedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -488,6 +538,9 @@ class NotesCompanion extends UpdateCompanion<Note> {
     if (mergedInto.present) {
       map['merged_into'] = Variable<String>(mergedInto.value);
     }
+    if (archivedAt.present) {
+      map['archived_at'] = Variable<int>(archivedAt.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<int>(createdAt.value);
     }
@@ -509,6 +562,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
           ..write('isPrivate: $isPrivate, ')
           ..write('source: $source, ')
           ..write('mergedInto: $mergedInto, ')
+          ..write('archivedAt: $archivedAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -1548,6 +1602,7 @@ typedef $$NotesTableCreateCompanionBuilder =
       Value<bool> isPrivate,
       Value<String> source,
       Value<String?> mergedInto,
+      Value<int?> archivedAt,
       required int createdAt,
       required int updatedAt,
       Value<int> rowid,
@@ -1560,6 +1615,7 @@ typedef $$NotesTableUpdateCompanionBuilder =
       Value<bool> isPrivate,
       Value<String> source,
       Value<String?> mergedInto,
+      Value<int?> archivedAt,
       Value<int> createdAt,
       Value<int> updatedAt,
       Value<int> rowid,
@@ -1660,6 +1716,11 @@ class $$NotesTableFilterComposer extends Composer<_$AppDatabase, $NotesTable> {
 
   ColumnFilters<String> get mergedInto => $composableBuilder(
     column: $table.mergedInto,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get archivedAt => $composableBuilder(
+    column: $table.archivedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1788,6 +1849,11 @@ class $$NotesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get archivedAt => $composableBuilder(
+    column: $table.archivedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -1825,6 +1891,11 @@ class $$NotesTableAnnotationComposer
 
   GeneratedColumn<String> get mergedInto => $composableBuilder(
     column: $table.mergedInto,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get archivedAt => $composableBuilder(
+    column: $table.archivedAt,
     builder: (column) => column,
   );
 
@@ -1948,6 +2019,7 @@ class $$NotesTableTableManager
                 Value<bool> isPrivate = const Value.absent(),
                 Value<String> source = const Value.absent(),
                 Value<String?> mergedInto = const Value.absent(),
+                Value<int?> archivedAt = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -1958,6 +2030,7 @@ class $$NotesTableTableManager
                 isPrivate: isPrivate,
                 source: source,
                 mergedInto: mergedInto,
+                archivedAt: archivedAt,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -1970,6 +2043,7 @@ class $$NotesTableTableManager
                 Value<bool> isPrivate = const Value.absent(),
                 Value<String> source = const Value.absent(),
                 Value<String?> mergedInto = const Value.absent(),
+                Value<int?> archivedAt = const Value.absent(),
                 required int createdAt,
                 required int updatedAt,
                 Value<int> rowid = const Value.absent(),
@@ -1980,6 +2054,7 @@ class $$NotesTableTableManager
                 isPrivate: isPrivate,
                 source: source,
                 mergedInto: mergedInto,
+                archivedAt: archivedAt,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,

@@ -97,6 +97,13 @@ Alt gezinme: **Notlar** · **Hatırlatmalar**. Sağ üstte Ayarlar.
 
 ---
 
+## 3.5 Arşiv
+
+Arşive alınan not (`archived_at`) **45 gün** sonra kendiliğinden silinir (sürümleri, etiketleri,
+hatırlatma kaydıyla birlikte). Gelen kutusuna geri alınırsa sayaç durur. Silme uygulama
+açılışında, öne gelişte ve her Claude uyandırmasında çalışır. Arşiv listesinde her notta
+"N gün sonra silinecek" görünür; MCP `auto_delete_on` alanını döner.
+
 ## 4. Birleştirme
 
 1. Seçim modunda ≥2 not seçilir → `Birleştir`.
@@ -163,8 +170,9 @@ Alt gezinme: **Notlar** · **Hatırlatmalar**. Sağ üstte Ayarlar.
 - **Paylaş menüsü:** `ACTION_SEND text/plain` → yeni not editörü, metin önceden dolu, `source = 'share'`.
 - **Ana ekran widget'ı:** tek dokunuşla yeni not editörü (klavye açık).
 - **Hızlı not baloncuğu:** Android Bubbles API (overlay izni gerekmez). Ayarlar'dan açılır; her
-  uygulamanın üstünde yüzer, dokununca küçük not penceresi: yaz, `#` önerileri, Kaydet (alan
-  temizlenir). Baloncuk küçültülünce yazılan otomatik kaydedilir. Android'de uygulama için
+  uygulamanın üstünde yüzer, dokununca küçük not penceresi: yaz, `#` önerileri, **Kaydet** →
+  not kaydedilir, "Not kaydedildi" toast'u çıkar, baloncuk kapanır ve kullanıcı bulunduğu
+  uygulamaya döner. Baloncuk küçültülünce yazılan otomatik kaydedilir. Android'de uygulama için
   "Baloncuklar: Tümü" izni gerekir (Ayarlar'daki satır o sayfayı açar).
 - **`#` önerileri:** editörde ve baloncukta `#` yazınca mevcut etiketler en çok kullanılandan
   başlayarak listelenir, yazdıkça süzülür (Türkçe harf duyarsız); dokununca tamamlanır.

@@ -400,6 +400,17 @@ class _NoteTile extends StatelessWidget {
                           style: theme.textTheme.bodySmall,
                         ),
                       ),
+                    if (NotesRepository.deletesOn(item.note)
+                        case final DateTime deletes)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text(
+                          _deletesLabel(deletes),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppTokens.danger,
+                          ),
+                        ),
+                      ),
                     if (item.tags.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 6),
@@ -429,6 +440,13 @@ class _NoteTile extends StatelessWidget {
   }
 }
 
+/// "12 gün sonra silinecek" for an archived note.
+String _deletesLabel(DateTime deletes) {
+  final days = deletes.difference(DateTime.now()).inHours / 24;
+  if (days <= 1) return 'Yarın silinecek';
+  return '${days.ceil()} gün sonra silinecek';
+}
+
 class _Empty extends StatelessWidget {
   const _Empty({required this.status, required this.query});
 
@@ -440,7 +458,7 @@ class _Empty extends StatelessWidget {
     final text = query.isNotEmpty
         ? 'Eşleşen not yok'
         : status == 'archived'
-        ? 'Arşiv boş'
+        ? 'Arşiv boş.\nArşivdeki notlar 45 gün sonra kendiliğinden silinir.'
         : 'Henüz not yok.\n+ ile ilk notunu yaz.';
     return Center(
       child: Text(

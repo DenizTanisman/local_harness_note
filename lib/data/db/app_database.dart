@@ -10,8 +10,9 @@ class AppDatabase extends _$AppDatabase {
 
   /// v1: daily check-in (metric tree). v2: second brain notes
   /// (docs/second-brain-spec.md) — the check-in tables are dropped.
+  /// v3: notes.archived_at (archive auto-delete).
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   /// Settings that only the check-in used; removed by the v2 upgrade.
   static const obsoleteSettings = [
@@ -48,6 +49,12 @@ class AppDatabase extends _$AppDatabase {
         await (delete(
           appSettings,
         )..where((s) => s.key.isIn(obsoleteSettings))).go();
+      } else if (from < 3) {
+        await m.addColumn(notes, notes.archivedAt);
+        // Already archived: the clock starts at their last change.
+        await customStatement(
+          "UPDATE notes SET archived_at = updated_at WHERE status = 'archived'",
+        );
       }
     },
     beforeOpen: (details) async {

@@ -17,7 +17,7 @@ The daily check-in it used to be is gone (`docs/daily-tracker-*.md` kept for ref
 
 - **Notlar**: plain-text notes, `#tags`, search (FTS5 over Turkish-folded text: `isik` finds
   `ışık`), Gelen/Arşiv + tag chips, long-press multi-select → **merge** (undo) / remind /
-  archive, private 🔒 notes, versions.
+  archive (auto-deleted 45 days after archiving), private 🔒 notes, versions.
 - **✨ Gemma**: on-device Gemma 4 E2B (LiteRT-LM, `flutter_gemma`, CPU) runs the saved prompt
   on a note; the answer streams into an editable field; *Onayla* replaces the note and keeps
   the old text as a version. Leaving while it runs or before accepting asks "Emin misin?".
@@ -27,7 +27,7 @@ The daily check-in it used to be is gone (`docs/daily-tracker-*.md` kept for ref
 - **Capture**: share sheet (`text/plain`) and the home-screen "+ Not" widget open a new note;
   the **quick-note bubble** (Android Bubbles API, `BubbleActivity` → Dart `bubbleMain`, own
   engine + DB connection) floats over every app: type, `#` suggestions, Kaydet; collapsing it
-  saves what was typed. Typing `#` anywhere suggests existing tags, most used first.
+  saves what was typed; Kaydet saves, toasts and folds the bubble back to the app in use. Typing `#` anywhere suggests existing tags, most used first.
 - **Claude (MCP)**: see below.
 - **Settings**: reminder times, Gemma model + prompt, Claude pairing, FLAG_SECURE, encrypted
   weekly backup (`local_harness_not_*.dtbak`, notes + versions + reminders + settings) and
@@ -35,7 +35,7 @@ The daily check-in it used to be is gone (`docs/daily-tracker-*.md` kept for ref
 
 ## Database
 
-Encrypted SQLite (sqlite3mc), file `local_harness_not.db`, schema v2: `notes`, `note_tags`,
+Encrypted SQLite (sqlite3mc), file `local_harness_not.db`, schema v3 (`notes.archived_at`): `notes`, `note_tags`,
 `note_versions`, `reminders`, `app_settings`, plus the FTS5 table `notes_fts`. The v1 → v2
 upgrade drops the check-in tables.
 

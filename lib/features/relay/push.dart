@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 
 import '../../data/db/app_database.dart';
 import '../../data/db/open_connection.dart';
+import '../../data/repositories/notes_repository.dart';
 import 'relay_client.dart';
 
 FirebaseOptions _options(RelayConfig config) => FirebaseOptions(
@@ -32,6 +33,7 @@ Future<void> pushBackgroundHandler(RemoteMessage message) async {
   final db = AppDatabase(openEncryptedConnection());
   try {
     await RelayClient(config).processWork(db);
+    await NotesRepository(db).purgeArchived();
   } catch (e) {
     debugPrint('relay background failed: ${e.runtimeType}');
   } finally {

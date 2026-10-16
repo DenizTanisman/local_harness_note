@@ -81,6 +81,8 @@ void main() {
           }
         }
 
+        // Archived notes older than 45 days go first.
+        await container.read(notesRepositoryProvider).purgeArchived();
         await container.read(hubSnapshotPublisherProvider).start();
         // Claude connection: register the push token and answer anything
         // that queued up while the app was closed (no-op when unpaired).

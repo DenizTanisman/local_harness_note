@@ -252,6 +252,70 @@ void main() {
     });
   });
 
+  group('archive auto-delete', () {
+    test('archived notes go after 45 days, not before; unarchive stops '
+        'the clock', () async {
+      final a = await note('eski arşiv');
+      final b = await note('geri alınan');
+      final c = await note('gelen kutusunda');
+      await repo.archive(a);
+      await repo.archive(b);
+      await repo.addToReminders(c);
+      final archived = (await repo.getNote(a))!;
+      expect(
+        NotesRepository.deletesOn(archived),
+        DateTime.fromMillisecondsSinceEpoch(
+          archived.archivedAt!,
+        ).add(const Duration(days: 45)),
+      );
+      await repo.unarchive(b);
+      expect((await repo.getNote(b))!.archivedAt, isNull);
+
+      now = now.add(const Duration(days: 44));
+      expect(await repo.purgeArchived(), 0);
+      now = now.add(const Duration(days: 2));
+      expect(await repo.purgeArchived(), 1);
+      expect(await repo.getNote(a), isNull);
+      expect(await repo.search(query: 'eski', includeArchived: true), isEmpty);
+      expect(await repo.getNote(b), isNotNull);
+      expect(await repo.getNote(c), isNotNull);
+    });
+
+    test('merged originals start the clock too', () async {
+      final a = await note('parça bir');
+      final b = await note('parça iki');
+      await repo.merge([a, b]);
+      expect((await repo.getNote(a))!.archivedAt, isNotNull);
+    });
+  });
+
+  test('v2 → v3 upgrade adds archived_at and starts the clock for notes '
+      'already archived', () async {
+    final raw = NativeDatabase.memory(
+      setup: (d) {
+        d.execute(
+          'CREATE TABLE notes (id TEXT NOT NULL PRIMARY KEY, body TEXT NOT NULL, '
+          "status TEXT NOT NULL DEFAULT 'inbox', is_private INTEGER NOT NULL "
+          "DEFAULT 0, source TEXT NOT NULL DEFAULT 'phone', merged_into TEXT, "
+          'created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)',
+        );
+        d.execute(
+          "INSERT INTO notes VALUES ('a', 'x', 'archived', 0, 'phone', NULL, 1, 500)",
+        );
+        d.execute(
+          "INSERT INTO notes VALUES ('b', 'y', 'inbox', 0, 'phone', NULL, 1, 600)",
+        );
+        d.execute('PRAGMA user_version = 2');
+      },
+    );
+    final upgraded = AppDatabase(raw);
+    final rows = await upgraded.select(upgraded.notes).get();
+    final byId = {for (final r in rows) r.id: r};
+    expect(byId['a']!.archivedAt, 500);
+    expect(byId['b']!.archivedAt, isNull);
+    await upgraded.close();
+  });
+
   test('v1 → v2 upgrade drops the check-in tables', () async {
     final raw = NativeDatabase.memory(
       setup: (d) {
