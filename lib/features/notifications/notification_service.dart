@@ -1,17 +1,19 @@
+import 'dart:async';
+
+import 'package:drift/drift.dart' show TableUpdateQuery;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
-import '../../core/date_key.dart';
+import '../../core/note_text.dart';
 import '../../data/db/app_database.dart';
-import '../../data/repositories/checkin_status.dart';
-import 'notification_planner.dart';
-import 'quote_service.dart';
+import '../../data/repositories/notes_repository.dart';
+import '../reminders/reminder_planner.dart';
 
-/// Thin plugin layer: everything decision-shaped lives in
-/// NotificationPlanner; this class only initializes the plugin and applies
-/// the plan with zonedSchedule.
+/// Thin plugin layer over [ReminderPlanner]: initializes the plugin and
+/// applies the plan with zonedSchedule. Tapping a reminder opens its note
+/// (payload `note:<id>`).
 class NotificationService {
   NotificationService(this.db, {this.onTapPayload});
 
@@ -20,13 +22,21 @@ class NotificationService {
 
   final _plugin = FlutterLocalNotificationsPlugin();
   bool _initialized = false;
+  StreamSubscription<void>? _watch;
+  Timer? _debounce;
+
+  static const remindersEnabledKey = 'reminders_enabled';
+  static const _baseId = 3000;
 
   static const _channel = AndroidNotificationDetails(
-    'local_harness_not',
-    'Not',
-    channelDescription: 'Morning quotes and the evening check-in reminder',
+    'not_reminders',
+    'Hatırlatmalar',
+    channelDescription: 'Hatırlatma listesinden sıradaki not',
     importance: Importance.defaultImportance,
+    styleInformation: BigTextStyleInformation(''),
   );
+
+  NotesRepository get _repo => NotesRepository(db);
 
   Future<void> init() async {
     if (_initialized) return;
@@ -42,9 +52,8 @@ class NotificationService {
         android: AndroidInitializationSettings('@mipmap/ic_launcher'),
       ),
       onDidReceiveNotificationResponse: (response) =>
-          onTapPayload?.call(response.payload ?? 'home'),
+          onTapPayload?.call(response.payload ?? ''),
     );
-    // Android 13+ runtime permission (spec §8) — asked on first launch.
     await _plugin
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
@@ -53,46 +62,78 @@ class NotificationService {
     _initialized = true;
   }
 
-  /// Recomputes and re-applies the whole schedule. Called on app open;
-  /// after a reboot the plugin's boot receiver restores what was scheduled.
+  /// Payload of the notification that cold-started the app, if any.
+  Future<String?> launchPayload() async {
+    final details = await _plugin.getNotificationAppLaunchDetails();
+    if (details?.didNotificationLaunchApp != true) return null;
+    return details!.notificationResponse?.payload;
+  }
+
+  /// Reschedules whenever notes or the reminder list change (debounced),
+  /// so scheduled texts and order never go stale.
+  void watchChanges() {
+    _watch ??= db
+        .tableUpdates(
+          TableUpdateQuery.onAllTables([
+            db.notes,
+            db.reminders,
+            db.appSettings,
+          ]),
+        )
+        .listen((_) {
+          _debounce?.cancel();
+          _debounce = Timer(const Duration(seconds: 2), rescheduleAll);
+        });
+  }
+
+  /// Recomputes and re-applies the whole schedule.
   Future<void> rescheduleAll() async {
     if (!_initialized) return;
     final settings = {
       for (final s in await db.select(db.appSettings).get()) s.key: s.value,
     };
-    final quotesEnabled = settings['quotes_enabled'] != 'false';
-    final lang = settings['quote_lang'] ?? 'tr';
-    // Uses the user's edited pool when present, else the bundled defaults.
-    final quotes = quotesEnabled
-        ? await QuoteService.effective(lang, settings)
-        : <String>[];
-
-    final plan = NotificationPlanner.plan(
+    final notes = await _repo.reminderNotes();
+    final (plan, cursor) = ReminderPlanner.plan(
       now: DateTime.now(),
-      morning: settings['morning_time'] ?? '08:00',
-      evening: settings['evening_time'] ?? '22:00',
-      quotesEnabled: quotesEnabled,
-      quotes: quotes,
-      missingToday: await _missingToday(),
+      times: await _repo.reminderTimes(),
+      ids: [for (final n in notes) n.id],
+      cursor: await _repo.loadCursor(),
     );
+    final current = await _repo.loadCursor();
+    // Avoid a write → tableUpdates → reschedule loop.
+    if (current != cursor) await _repo.saveCursor(cursor);
 
     await _plugin.cancelAll();
-    for (final item in plan) {
+    if (settings[remindersEnabledKey] == 'false') return;
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    // Exact when allowed (USE_EXACT_ALARM), so 07:30 means 07:30.
+    final mode = await android?.canScheduleExactNotifications() == true
+        ? AndroidScheduleMode.exactAllowWhileIdle
+        : AndroidScheduleMode.inexactAllowWhileIdle;
+    final byId = {for (final n in notes) n.id: n};
+    for (var i = 0; i < plan.length; i++) {
+      final note = byId[plan[i].noteId]!;
+      final title = NoteText.title(note.body, max: 60);
+      final rest = NoteText.rest(note.body);
       await _plugin.zonedSchedule(
-        id: item.id,
-        title: item.title,
-        body: item.body,
-        scheduledDate: tz.TZDateTime.from(item.when, tz.local),
+        id: _baseId + i,
+        title: '🔔 $title',
+        body: rest.isEmpty
+            ? null
+            : (rest.length > 400 ? '${rest.substring(0, 400)}…' : rest),
+        scheduledDate: tz.TZDateTime.from(plan[i].when, tz.local),
         notificationDetails: const NotificationDetails(android: _channel),
-        // Inexact by default — no SCHEDULE_EXACT_ALARM permission (spec §8).
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        payload: item.payload,
+        androidScheduleMode: mode,
+        payload: 'note:${note.id}',
       );
     }
   }
 
-  /// Unfilled top-level check-in cards today (composites count as filled
-  /// when any child is).
-  Future<int> _missingToday() async =>
-      (await loadCheckinStatus(db, dateKey(DateTime.now()))).missing.length;
+  void dispose() {
+    _watch?.cancel();
+    _debounce?.cancel();
+  }
 }

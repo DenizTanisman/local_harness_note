@@ -3,174 +3,74 @@
 part of 'app_database.dart';
 
 // ignore_for_file: type=lint
-class $MetricsTable extends Metrics with TableInfo<$MetricsTable, Metric> {
+class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  $MetricsTable(this.attachedDatabase, [this._alias]);
+  $NotesTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
     'id',
     aliasedName,
     false,
-    hasAutoIncrement: true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
-  );
-  static const VerificationMeta _parentIdMeta = const VerificationMeta(
-    'parentId',
-  );
-  @override
-  late final GeneratedColumn<int> parentId = GeneratedColumn<int>(
-    'parent_id',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES metrics (id) ON DELETE CASCADE',
-    ),
-  );
-  static const VerificationMeta _keyMeta = const VerificationMeta('key');
-  @override
-  late final GeneratedColumn<String> key = GeneratedColumn<String>(
-    'key',
-    aliasedName,
-    false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
   );
-  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
   @override
-  late final GeneratedColumn<String> title = GeneratedColumn<String>(
-    'title',
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+    'body',
     aliasedName,
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _inputTypeMeta = const VerificationMeta(
-    'inputType',
-  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
-  late final GeneratedColumn<String> inputType = GeneratedColumn<String>(
-    'input_type',
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
     aliasedName,
     false,
     type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _prevInputTypeMeta = const VerificationMeta(
-    'prevInputType',
-  );
-  @override
-  late final GeneratedColumn<String> prevInputType = GeneratedColumn<String>(
-    'prev_input_type',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
     requiredDuringInsert: false,
+    defaultValue: const Constant('inbox'),
   );
-  static const VerificationMeta _isStarredMeta = const VerificationMeta(
-    'isStarred',
+  static const VerificationMeta _isPrivateMeta = const VerificationMeta(
+    'isPrivate',
   );
   @override
-  late final GeneratedColumn<bool> isStarred = GeneratedColumn<bool>(
-    'is_starred',
+  late final GeneratedColumn<bool> isPrivate = GeneratedColumn<bool>(
+    'is_private',
     aliasedName,
     false,
     type: DriftSqlType.bool,
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_starred" IN (0, 1))',
+      'CHECK ("is_private" IN (0, 1))',
     ),
     defaultValue: const Constant(false),
   );
-  static const VerificationMeta _starredAtMeta = const VerificationMeta(
-    'starredAt',
-  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
   @override
-  late final GeneratedColumn<int> starredAt = GeneratedColumn<int>(
-    'starred_at',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _heatmapLabelMeta = const VerificationMeta(
-    'heatmapLabel',
-  );
-  @override
-  late final GeneratedColumn<String> heatmapLabel = GeneratedColumn<String>(
-    'heatmap_label',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _heatmapRuleMeta = const VerificationMeta(
-    'heatmapRule',
-  );
-  @override
-  late final GeneratedColumn<String> heatmapRule = GeneratedColumn<String>(
-    'heatmap_rule',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
-    'sortOrder',
-  );
-  @override
-  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
-    'sort_order',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultValue: const Constant(0),
-  );
-  static const VerificationMeta _unitMeta = const VerificationMeta('unit');
-  @override
-  late final GeneratedColumn<String> unit = GeneratedColumn<String>(
-    'unit',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _isDeletableMeta = const VerificationMeta(
-    'isDeletable',
-  );
-  @override
-  late final GeneratedColumn<bool> isDeletable = GeneratedColumn<bool>(
-    'is_deletable',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_deletable" IN (0, 1))',
-    ),
-    defaultValue: const Constant(true),
-  );
-  static const VerificationMeta _groupDisplayMeta = const VerificationMeta(
-    'groupDisplay',
-  );
-  @override
-  late final GeneratedColumn<String> groupDisplay = GeneratedColumn<String>(
-    'group_display',
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
     aliasedName,
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
-    defaultValue: const Constant('sub_names'),
+    defaultValue: const Constant('phone'),
+  );
+  static const VerificationMeta _mergedIntoMeta = const VerificationMeta(
+    'mergedInto',
+  );
+  @override
+  late final GeneratedColumn<String> mergedInto = GeneratedColumn<String>(
+    'merged_into',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
@@ -197,19 +97,11 @@ class $MetricsTable extends Metrics with TableInfo<$MetricsTable, Metric> {
   @override
   List<GeneratedColumn> get $columns => [
     id,
-    parentId,
-    key,
-    title,
-    inputType,
-    prevInputType,
-    isStarred,
-    starredAt,
-    heatmapLabel,
-    heatmapRule,
-    sortOrder,
-    unit,
-    isDeletable,
-    groupDisplay,
+    body,
+    status,
+    isPrivate,
+    source,
+    mergedInto,
     createdAt,
     updatedAt,
   ];
@@ -217,114 +109,49 @@ class $MetricsTable extends Metrics with TableInfo<$MetricsTable, Metric> {
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'metrics';
+  static const String $name = 'notes';
   @override
   VerificationContext validateIntegrity(
-    Insertable<Metric> instance, {
+    Insertable<Note> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
     }
-    if (data.containsKey('parent_id')) {
+    if (data.containsKey('body')) {
       context.handle(
-        _parentIdMeta,
-        parentId.isAcceptableOrUnknown(data['parent_id']!, _parentIdMeta),
-      );
-    }
-    if (data.containsKey('key')) {
-      context.handle(
-        _keyMeta,
-        key.isAcceptableOrUnknown(data['key']!, _keyMeta),
+        _bodyMeta,
+        body.isAcceptableOrUnknown(data['body']!, _bodyMeta),
       );
     } else if (isInserting) {
-      context.missing(_keyMeta);
+      context.missing(_bodyMeta);
     }
-    if (data.containsKey('title')) {
+    if (data.containsKey('status')) {
       context.handle(
-        _titleMeta,
-        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_titleMeta);
-    }
-    if (data.containsKey('input_type')) {
-      context.handle(
-        _inputTypeMeta,
-        inputType.isAcceptableOrUnknown(data['input_type']!, _inputTypeMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_inputTypeMeta);
-    }
-    if (data.containsKey('prev_input_type')) {
-      context.handle(
-        _prevInputTypeMeta,
-        prevInputType.isAcceptableOrUnknown(
-          data['prev_input_type']!,
-          _prevInputTypeMeta,
-        ),
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
       );
     }
-    if (data.containsKey('is_starred')) {
+    if (data.containsKey('is_private')) {
       context.handle(
-        _isStarredMeta,
-        isStarred.isAcceptableOrUnknown(data['is_starred']!, _isStarredMeta),
+        _isPrivateMeta,
+        isPrivate.isAcceptableOrUnknown(data['is_private']!, _isPrivateMeta),
       );
     }
-    if (data.containsKey('starred_at')) {
+    if (data.containsKey('source')) {
       context.handle(
-        _starredAtMeta,
-        starredAt.isAcceptableOrUnknown(data['starred_at']!, _starredAtMeta),
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
       );
     }
-    if (data.containsKey('heatmap_label')) {
+    if (data.containsKey('merged_into')) {
       context.handle(
-        _heatmapLabelMeta,
-        heatmapLabel.isAcceptableOrUnknown(
-          data['heatmap_label']!,
-          _heatmapLabelMeta,
-        ),
-      );
-    }
-    if (data.containsKey('heatmap_rule')) {
-      context.handle(
-        _heatmapRuleMeta,
-        heatmapRule.isAcceptableOrUnknown(
-          data['heatmap_rule']!,
-          _heatmapRuleMeta,
-        ),
-      );
-    }
-    if (data.containsKey('sort_order')) {
-      context.handle(
-        _sortOrderMeta,
-        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
-      );
-    }
-    if (data.containsKey('unit')) {
-      context.handle(
-        _unitMeta,
-        unit.isAcceptableOrUnknown(data['unit']!, _unitMeta),
-      );
-    }
-    if (data.containsKey('is_deletable')) {
-      context.handle(
-        _isDeletableMeta,
-        isDeletable.isAcceptableOrUnknown(
-          data['is_deletable']!,
-          _isDeletableMeta,
-        ),
-      );
-    }
-    if (data.containsKey('group_display')) {
-      context.handle(
-        _groupDisplayMeta,
-        groupDisplay.isAcceptableOrUnknown(
-          data['group_display']!,
-          _groupDisplayMeta,
-        ),
+        _mergedIntoMeta,
+        mergedInto.isAcceptableOrUnknown(data['merged_into']!, _mergedIntoMeta),
       );
     }
     if (data.containsKey('created_at')) {
@@ -349,65 +176,33 @@ class $MetricsTable extends Metrics with TableInfo<$MetricsTable, Metric> {
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  Metric map(Map<String, dynamic> data, {String? tablePrefix}) {
+  Note map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return Metric(
+    return Note(
       id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
+        DriftSqlType.string,
         data['${effectivePrefix}id'],
       )!,
-      parentId: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}parent_id'],
-      ),
-      key: attachedDatabase.typeMapping.read(
+      body: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}key'],
+        data['${effectivePrefix}body'],
       )!,
-      title: attachedDatabase.typeMapping.read(
+      status: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}title'],
+        data['${effectivePrefix}status'],
       )!,
-      inputType: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}input_type'],
-      )!,
-      prevInputType: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}prev_input_type'],
-      ),
-      isStarred: attachedDatabase.typeMapping.read(
+      isPrivate: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
-        data['${effectivePrefix}is_starred'],
+        data['${effectivePrefix}is_private'],
       )!,
-      starredAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}starred_at'],
-      ),
-      heatmapLabel: attachedDatabase.typeMapping.read(
+      source: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}heatmap_label'],
-      ),
-      heatmapRule: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}heatmap_rule'],
-      ),
-      sortOrder: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}sort_order'],
+        data['${effectivePrefix}source'],
       )!,
-      unit: attachedDatabase.typeMapping.read(
+      mergedInto: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}unit'],
+        data['${effectivePrefix}merged_into'],
       ),
-      isDeletable: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_deletable'],
-      )!,
-      groupDisplay: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}group_display'],
-      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}created_at'],
@@ -420,144 +215,82 @@ class $MetricsTable extends Metrics with TableInfo<$MetricsTable, Metric> {
   }
 
   @override
-  $MetricsTable createAlias(String alias) {
-    return $MetricsTable(attachedDatabase, alias);
+  $NotesTable createAlias(String alias) {
+    return $NotesTable(attachedDatabase, alias);
   }
 }
 
-class Metric extends DataClass implements Insertable<Metric> {
-  final int id;
-  final int? parentId;
-  final String key;
-  final String title;
+class Note extends DataClass implements Insertable<Note> {
+  /// uuid v4 — also used for notes Claude creates through the relay.
+  final String id;
+  final String body;
 
-  /// 'int' | 'text' | 'int_text' | 'checkbox' | 'composite'
-  final String inputType;
+  /// 'inbox' | 'archived'
+  final String status;
 
-  /// Original input type of a leaf that was auto-promoted to composite by
-  /// a drop; restored when its last child detaches. NULL for natural
-  /// composites (Development) and never-promoted cards.
-  final String? prevInputType;
-  final bool isStarred;
+  /// Private notes never leave the device: the MCP tools skip them.
+  final bool isPrivate;
 
-  /// Epoch ms of the star action — later-starred metrics append below the
-  /// fixed core rows in star order (spec 5.3).
-  final int? starredAt;
-  final String? heatmapLabel;
+  /// 'phone' | 'claude' | 'share' | 'merge'
+  final String source;
 
-  /// JSON bucket rule, see HeatmapRule.
-  final String? heatmapRule;
-  final int sortOrder;
-  final String? unit;
-  final bool isDeletable;
-
-  /// 'sub_names' | 'own_value' — composite breakdown display (spec 6.3).
-  final String groupDisplay;
+  /// Set on notes archived by a merge: the id of the merged note.
+  final String? mergedInto;
   final int createdAt;
   final int updatedAt;
-  const Metric({
+  const Note({
     required this.id,
-    this.parentId,
-    required this.key,
-    required this.title,
-    required this.inputType,
-    this.prevInputType,
-    required this.isStarred,
-    this.starredAt,
-    this.heatmapLabel,
-    this.heatmapRule,
-    required this.sortOrder,
-    this.unit,
-    required this.isDeletable,
-    required this.groupDisplay,
+    required this.body,
+    required this.status,
+    required this.isPrivate,
+    required this.source,
+    this.mergedInto,
     required this.createdAt,
     required this.updatedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
-    if (!nullToAbsent || parentId != null) {
-      map['parent_id'] = Variable<int>(parentId);
+    map['id'] = Variable<String>(id);
+    map['body'] = Variable<String>(body);
+    map['status'] = Variable<String>(status);
+    map['is_private'] = Variable<bool>(isPrivate);
+    map['source'] = Variable<String>(source);
+    if (!nullToAbsent || mergedInto != null) {
+      map['merged_into'] = Variable<String>(mergedInto);
     }
-    map['key'] = Variable<String>(key);
-    map['title'] = Variable<String>(title);
-    map['input_type'] = Variable<String>(inputType);
-    if (!nullToAbsent || prevInputType != null) {
-      map['prev_input_type'] = Variable<String>(prevInputType);
-    }
-    map['is_starred'] = Variable<bool>(isStarred);
-    if (!nullToAbsent || starredAt != null) {
-      map['starred_at'] = Variable<int>(starredAt);
-    }
-    if (!nullToAbsent || heatmapLabel != null) {
-      map['heatmap_label'] = Variable<String>(heatmapLabel);
-    }
-    if (!nullToAbsent || heatmapRule != null) {
-      map['heatmap_rule'] = Variable<String>(heatmapRule);
-    }
-    map['sort_order'] = Variable<int>(sortOrder);
-    if (!nullToAbsent || unit != null) {
-      map['unit'] = Variable<String>(unit);
-    }
-    map['is_deletable'] = Variable<bool>(isDeletable);
-    map['group_display'] = Variable<String>(groupDisplay);
     map['created_at'] = Variable<int>(createdAt);
     map['updated_at'] = Variable<int>(updatedAt);
     return map;
   }
 
-  MetricsCompanion toCompanion(bool nullToAbsent) {
-    return MetricsCompanion(
+  NotesCompanion toCompanion(bool nullToAbsent) {
+    return NotesCompanion(
       id: Value(id),
-      parentId: parentId == null && nullToAbsent
+      body: Value(body),
+      status: Value(status),
+      isPrivate: Value(isPrivate),
+      source: Value(source),
+      mergedInto: mergedInto == null && nullToAbsent
           ? const Value.absent()
-          : Value(parentId),
-      key: Value(key),
-      title: Value(title),
-      inputType: Value(inputType),
-      prevInputType: prevInputType == null && nullToAbsent
-          ? const Value.absent()
-          : Value(prevInputType),
-      isStarred: Value(isStarred),
-      starredAt: starredAt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(starredAt),
-      heatmapLabel: heatmapLabel == null && nullToAbsent
-          ? const Value.absent()
-          : Value(heatmapLabel),
-      heatmapRule: heatmapRule == null && nullToAbsent
-          ? const Value.absent()
-          : Value(heatmapRule),
-      sortOrder: Value(sortOrder),
-      unit: unit == null && nullToAbsent ? const Value.absent() : Value(unit),
-      isDeletable: Value(isDeletable),
-      groupDisplay: Value(groupDisplay),
+          : Value(mergedInto),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
   }
 
-  factory Metric.fromJson(
+  factory Note.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return Metric(
-      id: serializer.fromJson<int>(json['id']),
-      parentId: serializer.fromJson<int?>(json['parentId']),
-      key: serializer.fromJson<String>(json['key']),
-      title: serializer.fromJson<String>(json['title']),
-      inputType: serializer.fromJson<String>(json['inputType']),
-      prevInputType: serializer.fromJson<String?>(json['prevInputType']),
-      isStarred: serializer.fromJson<bool>(json['isStarred']),
-      starredAt: serializer.fromJson<int?>(json['starredAt']),
-      heatmapLabel: serializer.fromJson<String?>(json['heatmapLabel']),
-      heatmapRule: serializer.fromJson<String?>(json['heatmapRule']),
-      sortOrder: serializer.fromJson<int>(json['sortOrder']),
-      unit: serializer.fromJson<String?>(json['unit']),
-      isDeletable: serializer.fromJson<bool>(json['isDeletable']),
-      groupDisplay: serializer.fromJson<String>(json['groupDisplay']),
+    return Note(
+      id: serializer.fromJson<String>(json['id']),
+      body: serializer.fromJson<String>(json['body']),
+      status: serializer.fromJson<String>(json['status']),
+      isPrivate: serializer.fromJson<bool>(json['isPrivate']),
+      source: serializer.fromJson<String>(json['source']),
+      mergedInto: serializer.fromJson<String?>(json['mergedInto']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
     );
@@ -566,88 +299,46 @@ class Metric extends DataClass implements Insertable<Metric> {
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
-      'parentId': serializer.toJson<int?>(parentId),
-      'key': serializer.toJson<String>(key),
-      'title': serializer.toJson<String>(title),
-      'inputType': serializer.toJson<String>(inputType),
-      'prevInputType': serializer.toJson<String?>(prevInputType),
-      'isStarred': serializer.toJson<bool>(isStarred),
-      'starredAt': serializer.toJson<int?>(starredAt),
-      'heatmapLabel': serializer.toJson<String?>(heatmapLabel),
-      'heatmapRule': serializer.toJson<String?>(heatmapRule),
-      'sortOrder': serializer.toJson<int>(sortOrder),
-      'unit': serializer.toJson<String?>(unit),
-      'isDeletable': serializer.toJson<bool>(isDeletable),
-      'groupDisplay': serializer.toJson<String>(groupDisplay),
+      'id': serializer.toJson<String>(id),
+      'body': serializer.toJson<String>(body),
+      'status': serializer.toJson<String>(status),
+      'isPrivate': serializer.toJson<bool>(isPrivate),
+      'source': serializer.toJson<String>(source),
+      'mergedInto': serializer.toJson<String?>(mergedInto),
       'createdAt': serializer.toJson<int>(createdAt),
       'updatedAt': serializer.toJson<int>(updatedAt),
     };
   }
 
-  Metric copyWith({
-    int? id,
-    Value<int?> parentId = const Value.absent(),
-    String? key,
-    String? title,
-    String? inputType,
-    Value<String?> prevInputType = const Value.absent(),
-    bool? isStarred,
-    Value<int?> starredAt = const Value.absent(),
-    Value<String?> heatmapLabel = const Value.absent(),
-    Value<String?> heatmapRule = const Value.absent(),
-    int? sortOrder,
-    Value<String?> unit = const Value.absent(),
-    bool? isDeletable,
-    String? groupDisplay,
+  Note copyWith({
+    String? id,
+    String? body,
+    String? status,
+    bool? isPrivate,
+    String? source,
+    Value<String?> mergedInto = const Value.absent(),
     int? createdAt,
     int? updatedAt,
-  }) => Metric(
+  }) => Note(
     id: id ?? this.id,
-    parentId: parentId.present ? parentId.value : this.parentId,
-    key: key ?? this.key,
-    title: title ?? this.title,
-    inputType: inputType ?? this.inputType,
-    prevInputType: prevInputType.present
-        ? prevInputType.value
-        : this.prevInputType,
-    isStarred: isStarred ?? this.isStarred,
-    starredAt: starredAt.present ? starredAt.value : this.starredAt,
-    heatmapLabel: heatmapLabel.present ? heatmapLabel.value : this.heatmapLabel,
-    heatmapRule: heatmapRule.present ? heatmapRule.value : this.heatmapRule,
-    sortOrder: sortOrder ?? this.sortOrder,
-    unit: unit.present ? unit.value : this.unit,
-    isDeletable: isDeletable ?? this.isDeletable,
-    groupDisplay: groupDisplay ?? this.groupDisplay,
+    body: body ?? this.body,
+    status: status ?? this.status,
+    isPrivate: isPrivate ?? this.isPrivate,
+    source: source ?? this.source,
+    mergedInto: mergedInto.present ? mergedInto.value : this.mergedInto,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
-  Metric copyWithCompanion(MetricsCompanion data) {
-    return Metric(
+  Note copyWithCompanion(NotesCompanion data) {
+    return Note(
       id: data.id.present ? data.id.value : this.id,
-      parentId: data.parentId.present ? data.parentId.value : this.parentId,
-      key: data.key.present ? data.key.value : this.key,
-      title: data.title.present ? data.title.value : this.title,
-      inputType: data.inputType.present ? data.inputType.value : this.inputType,
-      prevInputType: data.prevInputType.present
-          ? data.prevInputType.value
-          : this.prevInputType,
-      isStarred: data.isStarred.present ? data.isStarred.value : this.isStarred,
-      starredAt: data.starredAt.present ? data.starredAt.value : this.starredAt,
-      heatmapLabel: data.heatmapLabel.present
-          ? data.heatmapLabel.value
-          : this.heatmapLabel,
-      heatmapRule: data.heatmapRule.present
-          ? data.heatmapRule.value
-          : this.heatmapRule,
-      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
-      unit: data.unit.present ? data.unit.value : this.unit,
-      isDeletable: data.isDeletable.present
-          ? data.isDeletable.value
-          : this.isDeletable,
-      groupDisplay: data.groupDisplay.present
-          ? data.groupDisplay.value
-          : this.groupDisplay,
+      body: data.body.present ? data.body.value : this.body,
+      status: data.status.present ? data.status.value : this.status,
+      isPrivate: data.isPrivate.present ? data.isPrivate.value : this.isPrivate,
+      source: data.source.present ? data.source.value : this.source,
+      mergedInto: data.mergedInto.present
+          ? data.mergedInto.value
+          : this.mergedInto,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -655,21 +346,13 @@ class Metric extends DataClass implements Insertable<Metric> {
 
   @override
   String toString() {
-    return (StringBuffer('Metric(')
+    return (StringBuffer('Note(')
           ..write('id: $id, ')
-          ..write('parentId: $parentId, ')
-          ..write('key: $key, ')
-          ..write('title: $title, ')
-          ..write('inputType: $inputType, ')
-          ..write('prevInputType: $prevInputType, ')
-          ..write('isStarred: $isStarred, ')
-          ..write('starredAt: $starredAt, ')
-          ..write('heatmapLabel: $heatmapLabel, ')
-          ..write('heatmapRule: $heatmapRule, ')
-          ..write('sortOrder: $sortOrder, ')
-          ..write('unit: $unit, ')
-          ..write('isDeletable: $isDeletable, ')
-          ..write('groupDisplay: $groupDisplay, ')
+          ..write('body: $body, ')
+          ..write('status: $status, ')
+          ..write('isPrivate: $isPrivate, ')
+          ..write('source: $source, ')
+          ..write('mergedInto: $mergedInto, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -679,1264 +362,107 @@ class Metric extends DataClass implements Insertable<Metric> {
   @override
   int get hashCode => Object.hash(
     id,
-    parentId,
-    key,
-    title,
-    inputType,
-    prevInputType,
-    isStarred,
-    starredAt,
-    heatmapLabel,
-    heatmapRule,
-    sortOrder,
-    unit,
-    isDeletable,
-    groupDisplay,
+    body,
+    status,
+    isPrivate,
+    source,
+    mergedInto,
     createdAt,
     updatedAt,
   );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is Metric &&
+      (other is Note &&
           other.id == this.id &&
-          other.parentId == this.parentId &&
-          other.key == this.key &&
-          other.title == this.title &&
-          other.inputType == this.inputType &&
-          other.prevInputType == this.prevInputType &&
-          other.isStarred == this.isStarred &&
-          other.starredAt == this.starredAt &&
-          other.heatmapLabel == this.heatmapLabel &&
-          other.heatmapRule == this.heatmapRule &&
-          other.sortOrder == this.sortOrder &&
-          other.unit == this.unit &&
-          other.isDeletable == this.isDeletable &&
-          other.groupDisplay == this.groupDisplay &&
+          other.body == this.body &&
+          other.status == this.status &&
+          other.isPrivate == this.isPrivate &&
+          other.source == this.source &&
+          other.mergedInto == this.mergedInto &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
 
-class MetricsCompanion extends UpdateCompanion<Metric> {
-  final Value<int> id;
-  final Value<int?> parentId;
-  final Value<String> key;
-  final Value<String> title;
-  final Value<String> inputType;
-  final Value<String?> prevInputType;
-  final Value<bool> isStarred;
-  final Value<int?> starredAt;
-  final Value<String?> heatmapLabel;
-  final Value<String?> heatmapRule;
-  final Value<int> sortOrder;
-  final Value<String?> unit;
-  final Value<bool> isDeletable;
-  final Value<String> groupDisplay;
+class NotesCompanion extends UpdateCompanion<Note> {
+  final Value<String> id;
+  final Value<String> body;
+  final Value<String> status;
+  final Value<bool> isPrivate;
+  final Value<String> source;
+  final Value<String?> mergedInto;
   final Value<int> createdAt;
   final Value<int> updatedAt;
-  const MetricsCompanion({
-    this.id = const Value.absent(),
-    this.parentId = const Value.absent(),
-    this.key = const Value.absent(),
-    this.title = const Value.absent(),
-    this.inputType = const Value.absent(),
-    this.prevInputType = const Value.absent(),
-    this.isStarred = const Value.absent(),
-    this.starredAt = const Value.absent(),
-    this.heatmapLabel = const Value.absent(),
-    this.heatmapRule = const Value.absent(),
-    this.sortOrder = const Value.absent(),
-    this.unit = const Value.absent(),
-    this.isDeletable = const Value.absent(),
-    this.groupDisplay = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-  });
-  MetricsCompanion.insert({
-    this.id = const Value.absent(),
-    this.parentId = const Value.absent(),
-    required String key,
-    required String title,
-    required String inputType,
-    this.prevInputType = const Value.absent(),
-    this.isStarred = const Value.absent(),
-    this.starredAt = const Value.absent(),
-    this.heatmapLabel = const Value.absent(),
-    this.heatmapRule = const Value.absent(),
-    this.sortOrder = const Value.absent(),
-    this.unit = const Value.absent(),
-    this.isDeletable = const Value.absent(),
-    this.groupDisplay = const Value.absent(),
-    required int createdAt,
-    required int updatedAt,
-  }) : key = Value(key),
-       title = Value(title),
-       inputType = Value(inputType),
-       createdAt = Value(createdAt),
-       updatedAt = Value(updatedAt);
-  static Insertable<Metric> custom({
-    Expression<int>? id,
-    Expression<int>? parentId,
-    Expression<String>? key,
-    Expression<String>? title,
-    Expression<String>? inputType,
-    Expression<String>? prevInputType,
-    Expression<bool>? isStarred,
-    Expression<int>? starredAt,
-    Expression<String>? heatmapLabel,
-    Expression<String>? heatmapRule,
-    Expression<int>? sortOrder,
-    Expression<String>? unit,
-    Expression<bool>? isDeletable,
-    Expression<String>? groupDisplay,
-    Expression<int>? createdAt,
-    Expression<int>? updatedAt,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (parentId != null) 'parent_id': parentId,
-      if (key != null) 'key': key,
-      if (title != null) 'title': title,
-      if (inputType != null) 'input_type': inputType,
-      if (prevInputType != null) 'prev_input_type': prevInputType,
-      if (isStarred != null) 'is_starred': isStarred,
-      if (starredAt != null) 'starred_at': starredAt,
-      if (heatmapLabel != null) 'heatmap_label': heatmapLabel,
-      if (heatmapRule != null) 'heatmap_rule': heatmapRule,
-      if (sortOrder != null) 'sort_order': sortOrder,
-      if (unit != null) 'unit': unit,
-      if (isDeletable != null) 'is_deletable': isDeletable,
-      if (groupDisplay != null) 'group_display': groupDisplay,
-      if (createdAt != null) 'created_at': createdAt,
-      if (updatedAt != null) 'updated_at': updatedAt,
-    });
-  }
-
-  MetricsCompanion copyWith({
-    Value<int>? id,
-    Value<int?>? parentId,
-    Value<String>? key,
-    Value<String>? title,
-    Value<String>? inputType,
-    Value<String?>? prevInputType,
-    Value<bool>? isStarred,
-    Value<int?>? starredAt,
-    Value<String?>? heatmapLabel,
-    Value<String?>? heatmapRule,
-    Value<int>? sortOrder,
-    Value<String?>? unit,
-    Value<bool>? isDeletable,
-    Value<String>? groupDisplay,
-    Value<int>? createdAt,
-    Value<int>? updatedAt,
-  }) {
-    return MetricsCompanion(
-      id: id ?? this.id,
-      parentId: parentId ?? this.parentId,
-      key: key ?? this.key,
-      title: title ?? this.title,
-      inputType: inputType ?? this.inputType,
-      prevInputType: prevInputType ?? this.prevInputType,
-      isStarred: isStarred ?? this.isStarred,
-      starredAt: starredAt ?? this.starredAt,
-      heatmapLabel: heatmapLabel ?? this.heatmapLabel,
-      heatmapRule: heatmapRule ?? this.heatmapRule,
-      sortOrder: sortOrder ?? this.sortOrder,
-      unit: unit ?? this.unit,
-      isDeletable: isDeletable ?? this.isDeletable,
-      groupDisplay: groupDisplay ?? this.groupDisplay,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<int>(id.value);
-    }
-    if (parentId.present) {
-      map['parent_id'] = Variable<int>(parentId.value);
-    }
-    if (key.present) {
-      map['key'] = Variable<String>(key.value);
-    }
-    if (title.present) {
-      map['title'] = Variable<String>(title.value);
-    }
-    if (inputType.present) {
-      map['input_type'] = Variable<String>(inputType.value);
-    }
-    if (prevInputType.present) {
-      map['prev_input_type'] = Variable<String>(prevInputType.value);
-    }
-    if (isStarred.present) {
-      map['is_starred'] = Variable<bool>(isStarred.value);
-    }
-    if (starredAt.present) {
-      map['starred_at'] = Variable<int>(starredAt.value);
-    }
-    if (heatmapLabel.present) {
-      map['heatmap_label'] = Variable<String>(heatmapLabel.value);
-    }
-    if (heatmapRule.present) {
-      map['heatmap_rule'] = Variable<String>(heatmapRule.value);
-    }
-    if (sortOrder.present) {
-      map['sort_order'] = Variable<int>(sortOrder.value);
-    }
-    if (unit.present) {
-      map['unit'] = Variable<String>(unit.value);
-    }
-    if (isDeletable.present) {
-      map['is_deletable'] = Variable<bool>(isDeletable.value);
-    }
-    if (groupDisplay.present) {
-      map['group_display'] = Variable<String>(groupDisplay.value);
-    }
-    if (createdAt.present) {
-      map['created_at'] = Variable<int>(createdAt.value);
-    }
-    if (updatedAt.present) {
-      map['updated_at'] = Variable<int>(updatedAt.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('MetricsCompanion(')
-          ..write('id: $id, ')
-          ..write('parentId: $parentId, ')
-          ..write('key: $key, ')
-          ..write('title: $title, ')
-          ..write('inputType: $inputType, ')
-          ..write('prevInputType: $prevInputType, ')
-          ..write('isStarred: $isStarred, ')
-          ..write('starredAt: $starredAt, ')
-          ..write('heatmapLabel: $heatmapLabel, ')
-          ..write('heatmapRule: $heatmapRule, ')
-          ..write('sortOrder: $sortOrder, ')
-          ..write('unit: $unit, ')
-          ..write('isDeletable: $isDeletable, ')
-          ..write('groupDisplay: $groupDisplay, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
-          ..write(')'))
-        .toString();
-  }
-}
-
-class $MetricOptionsTable extends MetricOptions
-    with TableInfo<$MetricOptionsTable, MetricOption> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $MetricOptionsTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
-    'id',
-    aliasedName,
-    false,
-    hasAutoIncrement: true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
-  );
-  static const VerificationMeta _metricIdMeta = const VerificationMeta(
-    'metricId',
-  );
-  @override
-  late final GeneratedColumn<int> metricId = GeneratedColumn<int>(
-    'metric_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES metrics (id) ON DELETE CASCADE',
-    ),
-  );
-  static const VerificationMeta _labelMeta = const VerificationMeta('label');
-  @override
-  late final GeneratedColumn<String> label = GeneratedColumn<String>(
-    'label',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
-    'sortOrder',
-  );
-  @override
-  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
-    'sort_order',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultValue: const Constant(0),
-  );
-  @override
-  List<GeneratedColumn> get $columns => [id, metricId, label, sortOrder];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'metric_options';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<MetricOption> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('metric_id')) {
-      context.handle(
-        _metricIdMeta,
-        metricId.isAcceptableOrUnknown(data['metric_id']!, _metricIdMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_metricIdMeta);
-    }
-    if (data.containsKey('label')) {
-      context.handle(
-        _labelMeta,
-        label.isAcceptableOrUnknown(data['label']!, _labelMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_labelMeta);
-    }
-    if (data.containsKey('sort_order')) {
-      context.handle(
-        _sortOrderMeta,
-        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
-      );
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  MetricOption map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return MetricOption(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
-      metricId: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}metric_id'],
-      )!,
-      label: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}label'],
-      )!,
-      sortOrder: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}sort_order'],
-      )!,
-    );
-  }
-
-  @override
-  $MetricOptionsTable createAlias(String alias) {
-    return $MetricOptionsTable(attachedDatabase, alias);
-  }
-}
-
-class MetricOption extends DataClass implements Insertable<MetricOption> {
-  final int id;
-  final int metricId;
-  final String label;
-  final int sortOrder;
-  const MetricOption({
-    required this.id,
-    required this.metricId,
-    required this.label,
-    required this.sortOrder,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
-    map['metric_id'] = Variable<int>(metricId);
-    map['label'] = Variable<String>(label);
-    map['sort_order'] = Variable<int>(sortOrder);
-    return map;
-  }
-
-  MetricOptionsCompanion toCompanion(bool nullToAbsent) {
-    return MetricOptionsCompanion(
-      id: Value(id),
-      metricId: Value(metricId),
-      label: Value(label),
-      sortOrder: Value(sortOrder),
-    );
-  }
-
-  factory MetricOption.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return MetricOption(
-      id: serializer.fromJson<int>(json['id']),
-      metricId: serializer.fromJson<int>(json['metricId']),
-      label: serializer.fromJson<String>(json['label']),
-      sortOrder: serializer.fromJson<int>(json['sortOrder']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
-      'metricId': serializer.toJson<int>(metricId),
-      'label': serializer.toJson<String>(label),
-      'sortOrder': serializer.toJson<int>(sortOrder),
-    };
-  }
-
-  MetricOption copyWith({
-    int? id,
-    int? metricId,
-    String? label,
-    int? sortOrder,
-  }) => MetricOption(
-    id: id ?? this.id,
-    metricId: metricId ?? this.metricId,
-    label: label ?? this.label,
-    sortOrder: sortOrder ?? this.sortOrder,
-  );
-  MetricOption copyWithCompanion(MetricOptionsCompanion data) {
-    return MetricOption(
-      id: data.id.present ? data.id.value : this.id,
-      metricId: data.metricId.present ? data.metricId.value : this.metricId,
-      label: data.label.present ? data.label.value : this.label,
-      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('MetricOption(')
-          ..write('id: $id, ')
-          ..write('metricId: $metricId, ')
-          ..write('label: $label, ')
-          ..write('sortOrder: $sortOrder')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(id, metricId, label, sortOrder);
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is MetricOption &&
-          other.id == this.id &&
-          other.metricId == this.metricId &&
-          other.label == this.label &&
-          other.sortOrder == this.sortOrder);
-}
-
-class MetricOptionsCompanion extends UpdateCompanion<MetricOption> {
-  final Value<int> id;
-  final Value<int> metricId;
-  final Value<String> label;
-  final Value<int> sortOrder;
-  const MetricOptionsCompanion({
-    this.id = const Value.absent(),
-    this.metricId = const Value.absent(),
-    this.label = const Value.absent(),
-    this.sortOrder = const Value.absent(),
-  });
-  MetricOptionsCompanion.insert({
-    this.id = const Value.absent(),
-    required int metricId,
-    required String label,
-    this.sortOrder = const Value.absent(),
-  }) : metricId = Value(metricId),
-       label = Value(label);
-  static Insertable<MetricOption> custom({
-    Expression<int>? id,
-    Expression<int>? metricId,
-    Expression<String>? label,
-    Expression<int>? sortOrder,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (metricId != null) 'metric_id': metricId,
-      if (label != null) 'label': label,
-      if (sortOrder != null) 'sort_order': sortOrder,
-    });
-  }
-
-  MetricOptionsCompanion copyWith({
-    Value<int>? id,
-    Value<int>? metricId,
-    Value<String>? label,
-    Value<int>? sortOrder,
-  }) {
-    return MetricOptionsCompanion(
-      id: id ?? this.id,
-      metricId: metricId ?? this.metricId,
-      label: label ?? this.label,
-      sortOrder: sortOrder ?? this.sortOrder,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<int>(id.value);
-    }
-    if (metricId.present) {
-      map['metric_id'] = Variable<int>(metricId.value);
-    }
-    if (label.present) {
-      map['label'] = Variable<String>(label.value);
-    }
-    if (sortOrder.present) {
-      map['sort_order'] = Variable<int>(sortOrder.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('MetricOptionsCompanion(')
-          ..write('id: $id, ')
-          ..write('metricId: $metricId, ')
-          ..write('label: $label, ')
-          ..write('sortOrder: $sortOrder')
-          ..write(')'))
-        .toString();
-  }
-}
-
-class $EntriesTable extends Entries with TableInfo<$EntriesTable, Entry> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $EntriesTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
-    'id',
-    aliasedName,
-    false,
-    hasAutoIncrement: true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
-  );
-  static const VerificationMeta _metricIdMeta = const VerificationMeta(
-    'metricId',
-  );
-  @override
-  late final GeneratedColumn<int> metricId = GeneratedColumn<int>(
-    'metric_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES metrics (id) ON DELETE CASCADE',
-    ),
-  );
-  static const VerificationMeta _dateMeta = const VerificationMeta('date');
-  @override
-  late final GeneratedColumn<String> date = GeneratedColumn<String>(
-    'date',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _numValueMeta = const VerificationMeta(
-    'numValue',
-  );
-  @override
-  late final GeneratedColumn<double> numValue = GeneratedColumn<double>(
-    'num_value',
-    aliasedName,
-    true,
-    type: DriftSqlType.double,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _textValueMeta = const VerificationMeta(
-    'textValue',
-  );
-  @override
-  late final GeneratedColumn<String> textValue = GeneratedColumn<String>(
-    'text_value',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _valueSourceMeta = const VerificationMeta(
-    'valueSource',
-  );
-  @override
-  late final GeneratedColumn<String> valueSource = GeneratedColumn<String>(
-    'value_source',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    defaultValue: const Constant('manual'),
-  );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta(
-    'createdAt',
-  );
-  @override
-  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
-    'created_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
-    'updatedAt',
-  );
-  @override
-  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
-    'updated_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    metricId,
-    date,
-    numValue,
-    textValue,
-    valueSource,
-    createdAt,
-    updatedAt,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'entries';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<Entry> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('metric_id')) {
-      context.handle(
-        _metricIdMeta,
-        metricId.isAcceptableOrUnknown(data['metric_id']!, _metricIdMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_metricIdMeta);
-    }
-    if (data.containsKey('date')) {
-      context.handle(
-        _dateMeta,
-        date.isAcceptableOrUnknown(data['date']!, _dateMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_dateMeta);
-    }
-    if (data.containsKey('num_value')) {
-      context.handle(
-        _numValueMeta,
-        numValue.isAcceptableOrUnknown(data['num_value']!, _numValueMeta),
-      );
-    }
-    if (data.containsKey('text_value')) {
-      context.handle(
-        _textValueMeta,
-        textValue.isAcceptableOrUnknown(data['text_value']!, _textValueMeta),
-      );
-    }
-    if (data.containsKey('value_source')) {
-      context.handle(
-        _valueSourceMeta,
-        valueSource.isAcceptableOrUnknown(
-          data['value_source']!,
-          _valueSourceMeta,
-        ),
-      );
-    }
-    if (data.containsKey('created_at')) {
-      context.handle(
-        _createdAtMeta,
-        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_createdAtMeta);
-    }
-    if (data.containsKey('updated_at')) {
-      context.handle(
-        _updatedAtMeta,
-        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_updatedAtMeta);
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  List<Set<GeneratedColumn>> get uniqueKeys => [
-    {metricId, date},
-  ];
-  @override
-  Entry map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return Entry(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
-      metricId: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}metric_id'],
-      )!,
-      date: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}date'],
-      )!,
-      numValue: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}num_value'],
-      ),
-      textValue: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}text_value'],
-      ),
-      valueSource: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}value_source'],
-      )!,
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}created_at'],
-      )!,
-      updatedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}updated_at'],
-      )!,
-    );
-  }
-
-  @override
-  $EntriesTable createAlias(String alias) {
-    return $EntriesTable(attachedDatabase, alias);
-  }
-}
-
-class Entry extends DataClass implements Insertable<Entry> {
-  final int id;
-  final int metricId;
-
-  /// 'YYYY-MM-DD' local time.
-  final String date;
-  final double? numValue;
-  final String? textValue;
-
-  /// 'manual' | 'auto' (CR-4 §3.3): a manual edit pins the day so the
-  /// Instagram auto-fill (from the Program app's screen time) never
-  /// overwrites it again.
-  final String valueSource;
-  final int createdAt;
-  final int updatedAt;
-  const Entry({
-    required this.id,
-    required this.metricId,
-    required this.date,
-    this.numValue,
-    this.textValue,
-    required this.valueSource,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
-    map['metric_id'] = Variable<int>(metricId);
-    map['date'] = Variable<String>(date);
-    if (!nullToAbsent || numValue != null) {
-      map['num_value'] = Variable<double>(numValue);
-    }
-    if (!nullToAbsent || textValue != null) {
-      map['text_value'] = Variable<String>(textValue);
-    }
-    map['value_source'] = Variable<String>(valueSource);
-    map['created_at'] = Variable<int>(createdAt);
-    map['updated_at'] = Variable<int>(updatedAt);
-    return map;
-  }
-
-  EntriesCompanion toCompanion(bool nullToAbsent) {
-    return EntriesCompanion(
-      id: Value(id),
-      metricId: Value(metricId),
-      date: Value(date),
-      numValue: numValue == null && nullToAbsent
-          ? const Value.absent()
-          : Value(numValue),
-      textValue: textValue == null && nullToAbsent
-          ? const Value.absent()
-          : Value(textValue),
-      valueSource: Value(valueSource),
-      createdAt: Value(createdAt),
-      updatedAt: Value(updatedAt),
-    );
-  }
-
-  factory Entry.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return Entry(
-      id: serializer.fromJson<int>(json['id']),
-      metricId: serializer.fromJson<int>(json['metricId']),
-      date: serializer.fromJson<String>(json['date']),
-      numValue: serializer.fromJson<double?>(json['numValue']),
-      textValue: serializer.fromJson<String?>(json['textValue']),
-      valueSource: serializer.fromJson<String>(json['valueSource']),
-      createdAt: serializer.fromJson<int>(json['createdAt']),
-      updatedAt: serializer.fromJson<int>(json['updatedAt']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
-      'metricId': serializer.toJson<int>(metricId),
-      'date': serializer.toJson<String>(date),
-      'numValue': serializer.toJson<double?>(numValue),
-      'textValue': serializer.toJson<String?>(textValue),
-      'valueSource': serializer.toJson<String>(valueSource),
-      'createdAt': serializer.toJson<int>(createdAt),
-      'updatedAt': serializer.toJson<int>(updatedAt),
-    };
-  }
-
-  Entry copyWith({
-    int? id,
-    int? metricId,
-    String? date,
-    Value<double?> numValue = const Value.absent(),
-    Value<String?> textValue = const Value.absent(),
-    String? valueSource,
-    int? createdAt,
-    int? updatedAt,
-  }) => Entry(
-    id: id ?? this.id,
-    metricId: metricId ?? this.metricId,
-    date: date ?? this.date,
-    numValue: numValue.present ? numValue.value : this.numValue,
-    textValue: textValue.present ? textValue.value : this.textValue,
-    valueSource: valueSource ?? this.valueSource,
-    createdAt: createdAt ?? this.createdAt,
-    updatedAt: updatedAt ?? this.updatedAt,
-  );
-  Entry copyWithCompanion(EntriesCompanion data) {
-    return Entry(
-      id: data.id.present ? data.id.value : this.id,
-      metricId: data.metricId.present ? data.metricId.value : this.metricId,
-      date: data.date.present ? data.date.value : this.date,
-      numValue: data.numValue.present ? data.numValue.value : this.numValue,
-      textValue: data.textValue.present ? data.textValue.value : this.textValue,
-      valueSource: data.valueSource.present
-          ? data.valueSource.value
-          : this.valueSource,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('Entry(')
-          ..write('id: $id, ')
-          ..write('metricId: $metricId, ')
-          ..write('date: $date, ')
-          ..write('numValue: $numValue, ')
-          ..write('textValue: $textValue, ')
-          ..write('valueSource: $valueSource, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    id,
-    metricId,
-    date,
-    numValue,
-    textValue,
-    valueSource,
-    createdAt,
-    updatedAt,
-  );
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is Entry &&
-          other.id == this.id &&
-          other.metricId == this.metricId &&
-          other.date == this.date &&
-          other.numValue == this.numValue &&
-          other.textValue == this.textValue &&
-          other.valueSource == this.valueSource &&
-          other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt);
-}
-
-class EntriesCompanion extends UpdateCompanion<Entry> {
-  final Value<int> id;
-  final Value<int> metricId;
-  final Value<String> date;
-  final Value<double?> numValue;
-  final Value<String?> textValue;
-  final Value<String> valueSource;
-  final Value<int> createdAt;
-  final Value<int> updatedAt;
-  const EntriesCompanion({
-    this.id = const Value.absent(),
-    this.metricId = const Value.absent(),
-    this.date = const Value.absent(),
-    this.numValue = const Value.absent(),
-    this.textValue = const Value.absent(),
-    this.valueSource = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-  });
-  EntriesCompanion.insert({
-    this.id = const Value.absent(),
-    required int metricId,
-    required String date,
-    this.numValue = const Value.absent(),
-    this.textValue = const Value.absent(),
-    this.valueSource = const Value.absent(),
-    required int createdAt,
-    required int updatedAt,
-  }) : metricId = Value(metricId),
-       date = Value(date),
-       createdAt = Value(createdAt),
-       updatedAt = Value(updatedAt);
-  static Insertable<Entry> custom({
-    Expression<int>? id,
-    Expression<int>? metricId,
-    Expression<String>? date,
-    Expression<double>? numValue,
-    Expression<String>? textValue,
-    Expression<String>? valueSource,
-    Expression<int>? createdAt,
-    Expression<int>? updatedAt,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (metricId != null) 'metric_id': metricId,
-      if (date != null) 'date': date,
-      if (numValue != null) 'num_value': numValue,
-      if (textValue != null) 'text_value': textValue,
-      if (valueSource != null) 'value_source': valueSource,
-      if (createdAt != null) 'created_at': createdAt,
-      if (updatedAt != null) 'updated_at': updatedAt,
-    });
-  }
-
-  EntriesCompanion copyWith({
-    Value<int>? id,
-    Value<int>? metricId,
-    Value<String>? date,
-    Value<double?>? numValue,
-    Value<String?>? textValue,
-    Value<String>? valueSource,
-    Value<int>? createdAt,
-    Value<int>? updatedAt,
-  }) {
-    return EntriesCompanion(
-      id: id ?? this.id,
-      metricId: metricId ?? this.metricId,
-      date: date ?? this.date,
-      numValue: numValue ?? this.numValue,
-      textValue: textValue ?? this.textValue,
-      valueSource: valueSource ?? this.valueSource,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<int>(id.value);
-    }
-    if (metricId.present) {
-      map['metric_id'] = Variable<int>(metricId.value);
-    }
-    if (date.present) {
-      map['date'] = Variable<String>(date.value);
-    }
-    if (numValue.present) {
-      map['num_value'] = Variable<double>(numValue.value);
-    }
-    if (textValue.present) {
-      map['text_value'] = Variable<String>(textValue.value);
-    }
-    if (valueSource.present) {
-      map['value_source'] = Variable<String>(valueSource.value);
-    }
-    if (createdAt.present) {
-      map['created_at'] = Variable<int>(createdAt.value);
-    }
-    if (updatedAt.present) {
-      map['updated_at'] = Variable<int>(updatedAt.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('EntriesCompanion(')
-          ..write('id: $id, ')
-          ..write('metricId: $metricId, ')
-          ..write('date: $date, ')
-          ..write('numValue: $numValue, ')
-          ..write('textValue: $textValue, ')
-          ..write('valueSource: $valueSource, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
-          ..write(')'))
-        .toString();
-  }
-}
-
-class $EntryOptionsTable extends EntryOptions
-    with TableInfo<$EntryOptionsTable, EntryOption> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $EntryOptionsTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _entryIdMeta = const VerificationMeta(
-    'entryId',
-  );
-  @override
-  late final GeneratedColumn<int> entryId = GeneratedColumn<int>(
-    'entry_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES entries (id) ON DELETE CASCADE',
-    ),
-  );
-  static const VerificationMeta _optionIdMeta = const VerificationMeta(
-    'optionId',
-  );
-  @override
-  late final GeneratedColumn<int> optionId = GeneratedColumn<int>(
-    'option_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES metric_options (id) ON DELETE CASCADE',
-    ),
-  );
-  @override
-  List<GeneratedColumn> get $columns => [entryId, optionId];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'entry_options';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<EntryOption> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('entry_id')) {
-      context.handle(
-        _entryIdMeta,
-        entryId.isAcceptableOrUnknown(data['entry_id']!, _entryIdMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_entryIdMeta);
-    }
-    if (data.containsKey('option_id')) {
-      context.handle(
-        _optionIdMeta,
-        optionId.isAcceptableOrUnknown(data['option_id']!, _optionIdMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_optionIdMeta);
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {entryId, optionId};
-  @override
-  EntryOption map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return EntryOption(
-      entryId: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}entry_id'],
-      )!,
-      optionId: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}option_id'],
-      )!,
-    );
-  }
-
-  @override
-  $EntryOptionsTable createAlias(String alias) {
-    return $EntryOptionsTable(attachedDatabase, alias);
-  }
-}
-
-class EntryOption extends DataClass implements Insertable<EntryOption> {
-  final int entryId;
-  final int optionId;
-  const EntryOption({required this.entryId, required this.optionId});
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['entry_id'] = Variable<int>(entryId);
-    map['option_id'] = Variable<int>(optionId);
-    return map;
-  }
-
-  EntryOptionsCompanion toCompanion(bool nullToAbsent) {
-    return EntryOptionsCompanion(
-      entryId: Value(entryId),
-      optionId: Value(optionId),
-    );
-  }
-
-  factory EntryOption.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return EntryOption(
-      entryId: serializer.fromJson<int>(json['entryId']),
-      optionId: serializer.fromJson<int>(json['optionId']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'entryId': serializer.toJson<int>(entryId),
-      'optionId': serializer.toJson<int>(optionId),
-    };
-  }
-
-  EntryOption copyWith({int? entryId, int? optionId}) => EntryOption(
-    entryId: entryId ?? this.entryId,
-    optionId: optionId ?? this.optionId,
-  );
-  EntryOption copyWithCompanion(EntryOptionsCompanion data) {
-    return EntryOption(
-      entryId: data.entryId.present ? data.entryId.value : this.entryId,
-      optionId: data.optionId.present ? data.optionId.value : this.optionId,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('EntryOption(')
-          ..write('entryId: $entryId, ')
-          ..write('optionId: $optionId')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(entryId, optionId);
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is EntryOption &&
-          other.entryId == this.entryId &&
-          other.optionId == this.optionId);
-}
-
-class EntryOptionsCompanion extends UpdateCompanion<EntryOption> {
-  final Value<int> entryId;
-  final Value<int> optionId;
   final Value<int> rowid;
-  const EntryOptionsCompanion({
-    this.entryId = const Value.absent(),
-    this.optionId = const Value.absent(),
+  const NotesCompanion({
+    this.id = const Value.absent(),
+    this.body = const Value.absent(),
+    this.status = const Value.absent(),
+    this.isPrivate = const Value.absent(),
+    this.source = const Value.absent(),
+    this.mergedInto = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
-  EntryOptionsCompanion.insert({
-    required int entryId,
-    required int optionId,
+  NotesCompanion.insert({
+    required String id,
+    required String body,
+    this.status = const Value.absent(),
+    this.isPrivate = const Value.absent(),
+    this.source = const Value.absent(),
+    this.mergedInto = const Value.absent(),
+    required int createdAt,
+    required int updatedAt,
     this.rowid = const Value.absent(),
-  }) : entryId = Value(entryId),
-       optionId = Value(optionId);
-  static Insertable<EntryOption> custom({
-    Expression<int>? entryId,
-    Expression<int>? optionId,
+  }) : id = Value(id),
+       body = Value(body),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<Note> custom({
+    Expression<String>? id,
+    Expression<String>? body,
+    Expression<String>? status,
+    Expression<bool>? isPrivate,
+    Expression<String>? source,
+    Expression<String>? mergedInto,
+    Expression<int>? createdAt,
+    Expression<int>? updatedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
-      if (entryId != null) 'entry_id': entryId,
-      if (optionId != null) 'option_id': optionId,
+      if (id != null) 'id': id,
+      if (body != null) 'body': body,
+      if (status != null) 'status': status,
+      if (isPrivate != null) 'is_private': isPrivate,
+      if (source != null) 'source': source,
+      if (mergedInto != null) 'merged_into': mergedInto,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
 
-  EntryOptionsCompanion copyWith({
-    Value<int>? entryId,
-    Value<int>? optionId,
+  NotesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? body,
+    Value<String>? status,
+    Value<bool>? isPrivate,
+    Value<String>? source,
+    Value<String?>? mergedInto,
+    Value<int>? createdAt,
+    Value<int>? updatedAt,
     Value<int>? rowid,
   }) {
-    return EntryOptionsCompanion(
-      entryId: entryId ?? this.entryId,
-      optionId: optionId ?? this.optionId,
+    return NotesCompanion(
+      id: id ?? this.id,
+      body: body ?? this.body,
+      status: status ?? this.status,
+      isPrivate: isPrivate ?? this.isPrivate,
+      source: source ?? this.source,
+      mergedInto: mergedInto ?? this.mergedInto,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1944,11 +470,29 @@ class EntryOptionsCompanion extends UpdateCompanion<EntryOption> {
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    if (entryId.present) {
-      map['entry_id'] = Variable<int>(entryId.value);
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
     }
-    if (optionId.present) {
-      map['option_id'] = Variable<int>(optionId.value);
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (isPrivate.present) {
+      map['is_private'] = Variable<bool>(isPrivate.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (mergedInto.present) {
+      map['merged_into'] = Variable<String>(mergedInto.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -1958,9 +502,785 @@ class EntryOptionsCompanion extends UpdateCompanion<EntryOption> {
 
   @override
   String toString() {
-    return (StringBuffer('EntryOptionsCompanion(')
-          ..write('entryId: $entryId, ')
-          ..write('optionId: $optionId, ')
+    return (StringBuffer('NotesCompanion(')
+          ..write('id: $id, ')
+          ..write('body: $body, ')
+          ..write('status: $status, ')
+          ..write('isPrivate: $isPrivate, ')
+          ..write('source: $source, ')
+          ..write('mergedInto: $mergedInto, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $NoteTagsTable extends NoteTags with TableInfo<$NoteTagsTable, NoteTag> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $NoteTagsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _noteIdMeta = const VerificationMeta('noteId');
+  @override
+  late final GeneratedColumn<String> noteId = GeneratedColumn<String>(
+    'note_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES notes (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _tagMeta = const VerificationMeta('tag');
+  @override
+  late final GeneratedColumn<String> tag = GeneratedColumn<String>(
+    'tag',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [noteId, tag];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'note_tags';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<NoteTag> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('note_id')) {
+      context.handle(
+        _noteIdMeta,
+        noteId.isAcceptableOrUnknown(data['note_id']!, _noteIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_noteIdMeta);
+    }
+    if (data.containsKey('tag')) {
+      context.handle(
+        _tagMeta,
+        tag.isAcceptableOrUnknown(data['tag']!, _tagMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tagMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {noteId, tag};
+  @override
+  NoteTag map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return NoteTag(
+      noteId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note_id'],
+      )!,
+      tag: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tag'],
+      )!,
+    );
+  }
+
+  @override
+  $NoteTagsTable createAlias(String alias) {
+    return $NoteTagsTable(attachedDatabase, alias);
+  }
+}
+
+class NoteTag extends DataClass implements Insertable<NoteTag> {
+  final String noteId;
+  final String tag;
+  const NoteTag({required this.noteId, required this.tag});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['note_id'] = Variable<String>(noteId);
+    map['tag'] = Variable<String>(tag);
+    return map;
+  }
+
+  NoteTagsCompanion toCompanion(bool nullToAbsent) {
+    return NoteTagsCompanion(noteId: Value(noteId), tag: Value(tag));
+  }
+
+  factory NoteTag.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return NoteTag(
+      noteId: serializer.fromJson<String>(json['noteId']),
+      tag: serializer.fromJson<String>(json['tag']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'noteId': serializer.toJson<String>(noteId),
+      'tag': serializer.toJson<String>(tag),
+    };
+  }
+
+  NoteTag copyWith({String? noteId, String? tag}) =>
+      NoteTag(noteId: noteId ?? this.noteId, tag: tag ?? this.tag);
+  NoteTag copyWithCompanion(NoteTagsCompanion data) {
+    return NoteTag(
+      noteId: data.noteId.present ? data.noteId.value : this.noteId,
+      tag: data.tag.present ? data.tag.value : this.tag,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NoteTag(')
+          ..write('noteId: $noteId, ')
+          ..write('tag: $tag')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(noteId, tag);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is NoteTag &&
+          other.noteId == this.noteId &&
+          other.tag == this.tag);
+}
+
+class NoteTagsCompanion extends UpdateCompanion<NoteTag> {
+  final Value<String> noteId;
+  final Value<String> tag;
+  final Value<int> rowid;
+  const NoteTagsCompanion({
+    this.noteId = const Value.absent(),
+    this.tag = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  NoteTagsCompanion.insert({
+    required String noteId,
+    required String tag,
+    this.rowid = const Value.absent(),
+  }) : noteId = Value(noteId),
+       tag = Value(tag);
+  static Insertable<NoteTag> custom({
+    Expression<String>? noteId,
+    Expression<String>? tag,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (noteId != null) 'note_id': noteId,
+      if (tag != null) 'tag': tag,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  NoteTagsCompanion copyWith({
+    Value<String>? noteId,
+    Value<String>? tag,
+    Value<int>? rowid,
+  }) {
+    return NoteTagsCompanion(
+      noteId: noteId ?? this.noteId,
+      tag: tag ?? this.tag,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (noteId.present) {
+      map['note_id'] = Variable<String>(noteId.value);
+    }
+    if (tag.present) {
+      map['tag'] = Variable<String>(tag.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NoteTagsCompanion(')
+          ..write('noteId: $noteId, ')
+          ..write('tag: $tag, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $NoteVersionsTable extends NoteVersions
+    with TableInfo<$NoteVersionsTable, NoteVersion> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $NoteVersionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _noteIdMeta = const VerificationMeta('noteId');
+  @override
+  late final GeneratedColumn<String> noteId = GeneratedColumn<String>(
+    'note_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES notes (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+    'body',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _reasonMeta = const VerificationMeta('reason');
+  @override
+  late final GeneratedColumn<String> reason = GeneratedColumn<String>(
+    'reason',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, noteId, body, reason, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'note_versions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<NoteVersion> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('note_id')) {
+      context.handle(
+        _noteIdMeta,
+        noteId.isAcceptableOrUnknown(data['note_id']!, _noteIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_noteIdMeta);
+    }
+    if (data.containsKey('body')) {
+      context.handle(
+        _bodyMeta,
+        body.isAcceptableOrUnknown(data['body']!, _bodyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bodyMeta);
+    }
+    if (data.containsKey('reason')) {
+      context.handle(
+        _reasonMeta,
+        reason.isAcceptableOrUnknown(data['reason']!, _reasonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_reasonMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  NoteVersion map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return NoteVersion(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      noteId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note_id'],
+      )!,
+      body: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}body'],
+      )!,
+      reason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reason'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $NoteVersionsTable createAlias(String alias) {
+    return $NoteVersionsTable(attachedDatabase, alias);
+  }
+}
+
+class NoteVersion extends DataClass implements Insertable<NoteVersion> {
+  final int id;
+  final String noteId;
+  final String body;
+
+  /// 'gemma' | 'revert'
+  final String reason;
+  final int createdAt;
+  const NoteVersion({
+    required this.id,
+    required this.noteId,
+    required this.body,
+    required this.reason,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['note_id'] = Variable<String>(noteId);
+    map['body'] = Variable<String>(body);
+    map['reason'] = Variable<String>(reason);
+    map['created_at'] = Variable<int>(createdAt);
+    return map;
+  }
+
+  NoteVersionsCompanion toCompanion(bool nullToAbsent) {
+    return NoteVersionsCompanion(
+      id: Value(id),
+      noteId: Value(noteId),
+      body: Value(body),
+      reason: Value(reason),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory NoteVersion.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return NoteVersion(
+      id: serializer.fromJson<int>(json['id']),
+      noteId: serializer.fromJson<String>(json['noteId']),
+      body: serializer.fromJson<String>(json['body']),
+      reason: serializer.fromJson<String>(json['reason']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'noteId': serializer.toJson<String>(noteId),
+      'body': serializer.toJson<String>(body),
+      'reason': serializer.toJson<String>(reason),
+      'createdAt': serializer.toJson<int>(createdAt),
+    };
+  }
+
+  NoteVersion copyWith({
+    int? id,
+    String? noteId,
+    String? body,
+    String? reason,
+    int? createdAt,
+  }) => NoteVersion(
+    id: id ?? this.id,
+    noteId: noteId ?? this.noteId,
+    body: body ?? this.body,
+    reason: reason ?? this.reason,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  NoteVersion copyWithCompanion(NoteVersionsCompanion data) {
+    return NoteVersion(
+      id: data.id.present ? data.id.value : this.id,
+      noteId: data.noteId.present ? data.noteId.value : this.noteId,
+      body: data.body.present ? data.body.value : this.body,
+      reason: data.reason.present ? data.reason.value : this.reason,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NoteVersion(')
+          ..write('id: $id, ')
+          ..write('noteId: $noteId, ')
+          ..write('body: $body, ')
+          ..write('reason: $reason, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, noteId, body, reason, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is NoteVersion &&
+          other.id == this.id &&
+          other.noteId == this.noteId &&
+          other.body == this.body &&
+          other.reason == this.reason &&
+          other.createdAt == this.createdAt);
+}
+
+class NoteVersionsCompanion extends UpdateCompanion<NoteVersion> {
+  final Value<int> id;
+  final Value<String> noteId;
+  final Value<String> body;
+  final Value<String> reason;
+  final Value<int> createdAt;
+  const NoteVersionsCompanion({
+    this.id = const Value.absent(),
+    this.noteId = const Value.absent(),
+    this.body = const Value.absent(),
+    this.reason = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  NoteVersionsCompanion.insert({
+    this.id = const Value.absent(),
+    required String noteId,
+    required String body,
+    required String reason,
+    required int createdAt,
+  }) : noteId = Value(noteId),
+       body = Value(body),
+       reason = Value(reason),
+       createdAt = Value(createdAt);
+  static Insertable<NoteVersion> custom({
+    Expression<int>? id,
+    Expression<String>? noteId,
+    Expression<String>? body,
+    Expression<String>? reason,
+    Expression<int>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (noteId != null) 'note_id': noteId,
+      if (body != null) 'body': body,
+      if (reason != null) 'reason': reason,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  NoteVersionsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? noteId,
+    Value<String>? body,
+    Value<String>? reason,
+    Value<int>? createdAt,
+  }) {
+    return NoteVersionsCompanion(
+      id: id ?? this.id,
+      noteId: noteId ?? this.noteId,
+      body: body ?? this.body,
+      reason: reason ?? this.reason,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (noteId.present) {
+      map['note_id'] = Variable<String>(noteId.value);
+    }
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (reason.present) {
+      map['reason'] = Variable<String>(reason.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NoteVersionsCompanion(')
+          ..write('id: $id, ')
+          ..write('noteId: $noteId, ')
+          ..write('body: $body, ')
+          ..write('reason: $reason, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $RemindersTable extends Reminders
+    with TableInfo<$RemindersTable, Reminder> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RemindersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _noteIdMeta = const VerificationMeta('noteId');
+  @override
+  late final GeneratedColumn<String> noteId = GeneratedColumn<String>(
+    'note_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES notes (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _positionMeta = const VerificationMeta(
+    'position',
+  );
+  @override
+  late final GeneratedColumn<int> position = GeneratedColumn<int>(
+    'position',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [noteId, position];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'reminders';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Reminder> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('note_id')) {
+      context.handle(
+        _noteIdMeta,
+        noteId.isAcceptableOrUnknown(data['note_id']!, _noteIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_noteIdMeta);
+    }
+    if (data.containsKey('position')) {
+      context.handle(
+        _positionMeta,
+        position.isAcceptableOrUnknown(data['position']!, _positionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_positionMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {noteId};
+  @override
+  Reminder map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Reminder(
+      noteId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note_id'],
+      )!,
+      position: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}position'],
+      )!,
+    );
+  }
+
+  @override
+  $RemindersTable createAlias(String alias) {
+    return $RemindersTable(attachedDatabase, alias);
+  }
+}
+
+class Reminder extends DataClass implements Insertable<Reminder> {
+  final String noteId;
+  final int position;
+  const Reminder({required this.noteId, required this.position});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['note_id'] = Variable<String>(noteId);
+    map['position'] = Variable<int>(position);
+    return map;
+  }
+
+  RemindersCompanion toCompanion(bool nullToAbsent) {
+    return RemindersCompanion(noteId: Value(noteId), position: Value(position));
+  }
+
+  factory Reminder.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Reminder(
+      noteId: serializer.fromJson<String>(json['noteId']),
+      position: serializer.fromJson<int>(json['position']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'noteId': serializer.toJson<String>(noteId),
+      'position': serializer.toJson<int>(position),
+    };
+  }
+
+  Reminder copyWith({String? noteId, int? position}) => Reminder(
+    noteId: noteId ?? this.noteId,
+    position: position ?? this.position,
+  );
+  Reminder copyWithCompanion(RemindersCompanion data) {
+    return Reminder(
+      noteId: data.noteId.present ? data.noteId.value : this.noteId,
+      position: data.position.present ? data.position.value : this.position,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Reminder(')
+          ..write('noteId: $noteId, ')
+          ..write('position: $position')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(noteId, position);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Reminder &&
+          other.noteId == this.noteId &&
+          other.position == this.position);
+}
+
+class RemindersCompanion extends UpdateCompanion<Reminder> {
+  final Value<String> noteId;
+  final Value<int> position;
+  final Value<int> rowid;
+  const RemindersCompanion({
+    this.noteId = const Value.absent(),
+    this.position = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RemindersCompanion.insert({
+    required String noteId,
+    required int position,
+    this.rowid = const Value.absent(),
+  }) : noteId = Value(noteId),
+       position = Value(position);
+  static Insertable<Reminder> custom({
+    Expression<String>? noteId,
+    Expression<int>? position,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (noteId != null) 'note_id': noteId,
+      if (position != null) 'position': position,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RemindersCompanion copyWith({
+    Value<String>? noteId,
+    Value<int>? position,
+    Value<int>? rowid,
+  }) {
+    return RemindersCompanion(
+      noteId: noteId ?? this.noteId,
+      position: position ?? this.position,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (noteId.present) {
+      map['note_id'] = Variable<String>(noteId.value);
+    }
+    if (position.present) {
+      map['position'] = Variable<int>(position.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RemindersCompanion(')
+          ..write('noteId: $noteId, ')
+          ..write('position: $position, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2178,231 +1498,168 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
-  late final $MetricsTable metrics = $MetricsTable(this);
-  late final $MetricOptionsTable metricOptions = $MetricOptionsTable(this);
-  late final $EntriesTable entries = $EntriesTable(this);
-  late final $EntryOptionsTable entryOptions = $EntryOptionsTable(this);
+  late final $NotesTable notes = $NotesTable(this);
+  late final $NoteTagsTable noteTags = $NoteTagsTable(this);
+  late final $NoteVersionsTable noteVersions = $NoteVersionsTable(this);
+  late final $RemindersTable reminders = $RemindersTable(this);
   late final $AppSettingsTable appSettings = $AppSettingsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
-    metrics,
-    metricOptions,
-    entries,
-    entryOptions,
+    notes,
+    noteTags,
+    noteVersions,
+    reminders,
     appSettings,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
     WritePropagation(
       on: TableUpdateQuery.onTableName(
-        'metrics',
+        'notes',
         limitUpdateKind: UpdateKind.delete,
       ),
-      result: [TableUpdate('metrics', kind: UpdateKind.delete)],
+      result: [TableUpdate('note_tags', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
-        'metrics',
+        'notes',
         limitUpdateKind: UpdateKind.delete,
       ),
-      result: [TableUpdate('metric_options', kind: UpdateKind.delete)],
+      result: [TableUpdate('note_versions', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
-        'metrics',
+        'notes',
         limitUpdateKind: UpdateKind.delete,
       ),
-      result: [TableUpdate('entries', kind: UpdateKind.delete)],
-    ),
-    WritePropagation(
-      on: TableUpdateQuery.onTableName(
-        'entries',
-        limitUpdateKind: UpdateKind.delete,
-      ),
-      result: [TableUpdate('entry_options', kind: UpdateKind.delete)],
-    ),
-    WritePropagation(
-      on: TableUpdateQuery.onTableName(
-        'metric_options',
-        limitUpdateKind: UpdateKind.delete,
-      ),
-      result: [TableUpdate('entry_options', kind: UpdateKind.delete)],
+      result: [TableUpdate('reminders', kind: UpdateKind.delete)],
     ),
   ]);
 }
 
-typedef $$MetricsTableCreateCompanionBuilder =
-    MetricsCompanion Function({
-      Value<int> id,
-      Value<int?> parentId,
-      required String key,
-      required String title,
-      required String inputType,
-      Value<String?> prevInputType,
-      Value<bool> isStarred,
-      Value<int?> starredAt,
-      Value<String?> heatmapLabel,
-      Value<String?> heatmapRule,
-      Value<int> sortOrder,
-      Value<String?> unit,
-      Value<bool> isDeletable,
-      Value<String> groupDisplay,
+typedef $$NotesTableCreateCompanionBuilder =
+    NotesCompanion Function({
+      required String id,
+      required String body,
+      Value<String> status,
+      Value<bool> isPrivate,
+      Value<String> source,
+      Value<String?> mergedInto,
       required int createdAt,
       required int updatedAt,
+      Value<int> rowid,
     });
-typedef $$MetricsTableUpdateCompanionBuilder =
-    MetricsCompanion Function({
-      Value<int> id,
-      Value<int?> parentId,
-      Value<String> key,
-      Value<String> title,
-      Value<String> inputType,
-      Value<String?> prevInputType,
-      Value<bool> isStarred,
-      Value<int?> starredAt,
-      Value<String?> heatmapLabel,
-      Value<String?> heatmapRule,
-      Value<int> sortOrder,
-      Value<String?> unit,
-      Value<bool> isDeletable,
-      Value<String> groupDisplay,
+typedef $$NotesTableUpdateCompanionBuilder =
+    NotesCompanion Function({
+      Value<String> id,
+      Value<String> body,
+      Value<String> status,
+      Value<bool> isPrivate,
+      Value<String> source,
+      Value<String?> mergedInto,
       Value<int> createdAt,
       Value<int> updatedAt,
+      Value<int> rowid,
     });
 
-final class $$MetricsTableReferences
-    extends BaseReferences<_$AppDatabase, $MetricsTable, Metric> {
-  $$MetricsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+final class $$NotesTableReferences
+    extends BaseReferences<_$AppDatabase, $NotesTable, Note> {
+  $$NotesTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static $MetricsTable _parentIdTable(_$AppDatabase db) =>
-      db.metrics.createAlias('metrics__parent_id__metrics__id');
-
-  $$MetricsTableProcessedTableManager? get parentId {
-    final $_column = $_itemColumn<int>('parent_id');
-    if ($_column == null) return null;
-    final manager = $$MetricsTableTableManager(
-      $_db,
-      $_db.metrics,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_parentIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-
-  static MultiTypedResultKey<$MetricOptionsTable, List<MetricOption>>
-  _metricOptionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
-    db.metricOptions,
-    aliasName: 'metrics__id__metric_options__metric_id',
+  static MultiTypedResultKey<$NoteTagsTable, List<NoteTag>> _noteTagsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.noteTags,
+    aliasName: 'notes__id__note_tags__note_id',
   );
 
-  $$MetricOptionsTableProcessedTableManager get metricOptionsRefs {
-    final manager = $$MetricOptionsTableTableManager(
+  $$NoteTagsTableProcessedTableManager get noteTagsRefs {
+    final manager = $$NoteTagsTableTableManager(
       $_db,
-      $_db.metricOptions,
-    ).filter((f) => f.metricId.id.sqlEquals($_itemColumn<int>('id')!));
+      $_db.noteTags,
+    ).filter((f) => f.noteId.id.sqlEquals($_itemColumn<String>('id')!));
 
-    final cache = $_typedResult.readTableOrNull(_metricOptionsRefsTable($_db));
+    final cache = $_typedResult.readTableOrNull(_noteTagsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
 
-  static MultiTypedResultKey<$EntriesTable, List<Entry>> _entriesRefsTable(
-    _$AppDatabase db,
-  ) => MultiTypedResultKey.fromTable(
-    db.entries,
-    aliasName: 'metrics__id__entries__metric_id',
+  static MultiTypedResultKey<$NoteVersionsTable, List<NoteVersion>>
+  _noteVersionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.noteVersions,
+    aliasName: 'notes__id__note_versions__note_id',
   );
 
-  $$EntriesTableProcessedTableManager get entriesRefs {
-    final manager = $$EntriesTableTableManager(
+  $$NoteVersionsTableProcessedTableManager get noteVersionsRefs {
+    final manager = $$NoteVersionsTableTableManager(
       $_db,
-      $_db.entries,
-    ).filter((f) => f.metricId.id.sqlEquals($_itemColumn<int>('id')!));
+      $_db.noteVersions,
+    ).filter((f) => f.noteId.id.sqlEquals($_itemColumn<String>('id')!));
 
-    final cache = $_typedResult.readTableOrNull(_entriesRefsTable($_db));
+    final cache = $_typedResult.readTableOrNull(_noteVersionsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$RemindersTable, List<Reminder>>
+  _remindersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.reminders,
+    aliasName: 'notes__id__reminders__note_id',
+  );
+
+  $$RemindersTableProcessedTableManager get remindersRefs {
+    final manager = $$RemindersTableTableManager(
+      $_db,
+      $_db.reminders,
+    ).filter((f) => f.noteId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_remindersRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
 }
 
-class $$MetricsTableFilterComposer
-    extends Composer<_$AppDatabase, $MetricsTable> {
-  $$MetricsTableFilterComposer({
+class $$NotesTableFilterComposer extends Composer<_$AppDatabase, $NotesTable> {
+  $$NotesTableFilterComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<int> get id => $composableBuilder(
+  ColumnFilters<String> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get key => $composableBuilder(
-    column: $table.key,
+  ColumnFilters<String> get body => $composableBuilder(
+    column: $table.body,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get title => $composableBuilder(
-    column: $table.title,
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get inputType => $composableBuilder(
-    column: $table.inputType,
+  ColumnFilters<bool> get isPrivate => $composableBuilder(
+    column: $table.isPrivate,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get prevInputType => $composableBuilder(
-    column: $table.prevInputType,
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<bool> get isStarred => $composableBuilder(
-    column: $table.isStarred,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get starredAt => $composableBuilder(
-    column: $table.starredAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get heatmapLabel => $composableBuilder(
-    column: $table.heatmapLabel,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get heatmapRule => $composableBuilder(
-    column: $table.heatmapRule,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get sortOrder => $composableBuilder(
-    column: $table.sortOrder,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get unit => $composableBuilder(
-    column: $table.unit,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isDeletable => $composableBuilder(
-    column: $table.isDeletable,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get groupDisplay => $composableBuilder(
-    column: $table.groupDisplay,
+  ColumnFilters<String> get mergedInto => $composableBuilder(
+    column: $table.mergedInto,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2416,45 +1673,22 @@ class $$MetricsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  $$MetricsTableFilterComposer get parentId {
-    final $$MetricsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.parentId,
-      referencedTable: $db.metrics,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$MetricsTableFilterComposer(
-            $db: $db,
-            $table: $db.metrics,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  Expression<bool> metricOptionsRefs(
-    Expression<bool> Function($$MetricOptionsTableFilterComposer f) f,
+  Expression<bool> noteTagsRefs(
+    Expression<bool> Function($$NoteTagsTableFilterComposer f) f,
   ) {
-    final $$MetricOptionsTableFilterComposer composer = $composerBuilder(
+    final $$NoteTagsTableFilterComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.id,
-      referencedTable: $db.metricOptions,
-      getReferencedColumn: (t) => t.metricId,
+      referencedTable: $db.noteTags,
+      getReferencedColumn: (t) => t.noteId,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$MetricOptionsTableFilterComposer(
+          }) => $$NoteTagsTableFilterComposer(
             $db: $db,
-            $table: $db.metricOptions,
+            $table: $db.noteTags,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -2464,22 +1698,47 @@ class $$MetricsTableFilterComposer
     return f(composer);
   }
 
-  Expression<bool> entriesRefs(
-    Expression<bool> Function($$EntriesTableFilterComposer f) f,
+  Expression<bool> noteVersionsRefs(
+    Expression<bool> Function($$NoteVersionsTableFilterComposer f) f,
   ) {
-    final $$EntriesTableFilterComposer composer = $composerBuilder(
+    final $$NoteVersionsTableFilterComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.id,
-      referencedTable: $db.entries,
-      getReferencedColumn: (t) => t.metricId,
+      referencedTable: $db.noteVersions,
+      getReferencedColumn: (t) => t.noteId,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$EntriesTableFilterComposer(
+          }) => $$NoteVersionsTableFilterComposer(
             $db: $db,
-            $table: $db.entries,
+            $table: $db.noteVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> remindersRefs(
+    Expression<bool> Function($$RemindersTableFilterComposer f) f,
+  ) {
+    final $$RemindersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.reminders,
+      getReferencedColumn: (t) => t.noteId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RemindersTableFilterComposer(
+            $db: $db,
+            $table: $db.reminders,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -2490,77 +1749,42 @@ class $$MetricsTableFilterComposer
   }
 }
 
-class $$MetricsTableOrderingComposer
-    extends Composer<_$AppDatabase, $MetricsTable> {
-  $$MetricsTableOrderingComposer({
+class $$NotesTableOrderingComposer
+    extends Composer<_$AppDatabase, $NotesTable> {
+  $$NotesTableOrderingComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<int> get id => $composableBuilder(
+  ColumnOrderings<String> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get key => $composableBuilder(
-    column: $table.key,
+  ColumnOrderings<String> get body => $composableBuilder(
+    column: $table.body,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get title => $composableBuilder(
-    column: $table.title,
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get inputType => $composableBuilder(
-    column: $table.inputType,
+  ColumnOrderings<bool> get isPrivate => $composableBuilder(
+    column: $table.isPrivate,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get prevInputType => $composableBuilder(
-    column: $table.prevInputType,
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<bool> get isStarred => $composableBuilder(
-    column: $table.isStarred,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get starredAt => $composableBuilder(
-    column: $table.starredAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get heatmapLabel => $composableBuilder(
-    column: $table.heatmapLabel,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get heatmapRule => $composableBuilder(
-    column: $table.heatmapRule,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get sortOrder => $composableBuilder(
-    column: $table.sortOrder,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get unit => $composableBuilder(
-    column: $table.unit,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get isDeletable => $composableBuilder(
-    column: $table.isDeletable,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get groupDisplay => $composableBuilder(
-    column: $table.groupDisplay,
+  ColumnOrderings<String> get mergedInto => $composableBuilder(
+    column: $table.mergedInto,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -2573,86 +1797,34 @@ class $$MetricsTableOrderingComposer
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
   );
-
-  $$MetricsTableOrderingComposer get parentId {
-    final $$MetricsTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.parentId,
-      referencedTable: $db.metrics,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$MetricsTableOrderingComposer(
-            $db: $db,
-            $table: $db.metrics,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
 }
 
-class $$MetricsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $MetricsTable> {
-  $$MetricsTableAnnotationComposer({
+class $$NotesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $NotesTable> {
+  $$NotesTableAnnotationComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get id =>
+  GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get key =>
-      $composableBuilder(column: $table.key, builder: (column) => column);
+  GeneratedColumn<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => column);
 
-  GeneratedColumn<String> get title =>
-      $composableBuilder(column: $table.title, builder: (column) => column);
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
 
-  GeneratedColumn<String> get inputType =>
-      $composableBuilder(column: $table.inputType, builder: (column) => column);
+  GeneratedColumn<bool> get isPrivate =>
+      $composableBuilder(column: $table.isPrivate, builder: (column) => column);
 
-  GeneratedColumn<String> get prevInputType => $composableBuilder(
-    column: $table.prevInputType,
-    builder: (column) => column,
-  );
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
 
-  GeneratedColumn<bool> get isStarred =>
-      $composableBuilder(column: $table.isStarred, builder: (column) => column);
-
-  GeneratedColumn<int> get starredAt =>
-      $composableBuilder(column: $table.starredAt, builder: (column) => column);
-
-  GeneratedColumn<String> get heatmapLabel => $composableBuilder(
-    column: $table.heatmapLabel,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get heatmapRule => $composableBuilder(
-    column: $table.heatmapRule,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<int> get sortOrder =>
-      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
-
-  GeneratedColumn<String> get unit =>
-      $composableBuilder(column: $table.unit, builder: (column) => column);
-
-  GeneratedColumn<bool> get isDeletable => $composableBuilder(
-    column: $table.isDeletable,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get groupDisplay => $composableBuilder(
-    column: $table.groupDisplay,
+  GeneratedColumn<String> get mergedInto => $composableBuilder(
+    column: $table.mergedInto,
     builder: (column) => column,
   );
 
@@ -2662,45 +1834,22 @@ class $$MetricsTableAnnotationComposer
   GeneratedColumn<int> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 
-  $$MetricsTableAnnotationComposer get parentId {
-    final $$MetricsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.parentId,
-      referencedTable: $db.metrics,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$MetricsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.metrics,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  Expression<T> metricOptionsRefs<T extends Object>(
-    Expression<T> Function($$MetricOptionsTableAnnotationComposer a) f,
+  Expression<T> noteTagsRefs<T extends Object>(
+    Expression<T> Function($$NoteTagsTableAnnotationComposer a) f,
   ) {
-    final $$MetricOptionsTableAnnotationComposer composer = $composerBuilder(
+    final $$NoteTagsTableAnnotationComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.id,
-      referencedTable: $db.metricOptions,
-      getReferencedColumn: (t) => t.metricId,
+      referencedTable: $db.noteTags,
+      getReferencedColumn: (t) => t.noteId,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$MetricOptionsTableAnnotationComposer(
+          }) => $$NoteTagsTableAnnotationComposer(
             $db: $db,
-            $table: $db.metricOptions,
+            $table: $db.noteTags,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -2710,22 +1859,47 @@ class $$MetricsTableAnnotationComposer
     return f(composer);
   }
 
-  Expression<T> entriesRefs<T extends Object>(
-    Expression<T> Function($$EntriesTableAnnotationComposer a) f,
+  Expression<T> noteVersionsRefs<T extends Object>(
+    Expression<T> Function($$NoteVersionsTableAnnotationComposer a) f,
   ) {
-    final $$EntriesTableAnnotationComposer composer = $composerBuilder(
+    final $$NoteVersionsTableAnnotationComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.id,
-      referencedTable: $db.entries,
-      getReferencedColumn: (t) => t.metricId,
+      referencedTable: $db.noteVersions,
+      getReferencedColumn: (t) => t.noteId,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$EntriesTableAnnotationComposer(
+          }) => $$NoteVersionsTableAnnotationComposer(
             $db: $db,
-            $table: $db.entries,
+            $table: $db.noteVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> remindersRefs<T extends Object>(
+    Expression<T> Function($$RemindersTableAnnotationComposer a) f,
+  ) {
+    final $$RemindersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.reminders,
+      getReferencedColumn: (t) => t.noteId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RemindersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.reminders,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -2736,197 +1910,154 @@ class $$MetricsTableAnnotationComposer
   }
 }
 
-class $$MetricsTableTableManager
+class $$NotesTableTableManager
     extends
         RootTableManager<
           _$AppDatabase,
-          $MetricsTable,
-          Metric,
-          $$MetricsTableFilterComposer,
-          $$MetricsTableOrderingComposer,
-          $$MetricsTableAnnotationComposer,
-          $$MetricsTableCreateCompanionBuilder,
-          $$MetricsTableUpdateCompanionBuilder,
-          (Metric, $$MetricsTableReferences),
-          Metric,
+          $NotesTable,
+          Note,
+          $$NotesTableFilterComposer,
+          $$NotesTableOrderingComposer,
+          $$NotesTableAnnotationComposer,
+          $$NotesTableCreateCompanionBuilder,
+          $$NotesTableUpdateCompanionBuilder,
+          (Note, $$NotesTableReferences),
+          Note,
           PrefetchHooks Function({
-            bool parentId,
-            bool metricOptionsRefs,
-            bool entriesRefs,
+            bool noteTagsRefs,
+            bool noteVersionsRefs,
+            bool remindersRefs,
           })
         > {
-  $$MetricsTableTableManager(_$AppDatabase db, $MetricsTable table)
+  $$NotesTableTableManager(_$AppDatabase db, $NotesTable table)
     : super(
         TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
-              $$MetricsTableFilterComposer($db: db, $table: table),
+              $$NotesTableFilterComposer($db: db, $table: table),
           createOrderingComposer: () =>
-              $$MetricsTableOrderingComposer($db: db, $table: table),
+              $$NotesTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
-              $$MetricsTableAnnotationComposer($db: db, $table: table),
+              $$NotesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
-                Value<int> id = const Value.absent(),
-                Value<int?> parentId = const Value.absent(),
-                Value<String> key = const Value.absent(),
-                Value<String> title = const Value.absent(),
-                Value<String> inputType = const Value.absent(),
-                Value<String?> prevInputType = const Value.absent(),
-                Value<bool> isStarred = const Value.absent(),
-                Value<int?> starredAt = const Value.absent(),
-                Value<String?> heatmapLabel = const Value.absent(),
-                Value<String?> heatmapRule = const Value.absent(),
-                Value<int> sortOrder = const Value.absent(),
-                Value<String?> unit = const Value.absent(),
-                Value<bool> isDeletable = const Value.absent(),
-                Value<String> groupDisplay = const Value.absent(),
+                Value<String> id = const Value.absent(),
+                Value<String> body = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<bool> isPrivate = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<String?> mergedInto = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
-              }) => MetricsCompanion(
+                Value<int> rowid = const Value.absent(),
+              }) => NotesCompanion(
                 id: id,
-                parentId: parentId,
-                key: key,
-                title: title,
-                inputType: inputType,
-                prevInputType: prevInputType,
-                isStarred: isStarred,
-                starredAt: starredAt,
-                heatmapLabel: heatmapLabel,
-                heatmapRule: heatmapRule,
-                sortOrder: sortOrder,
-                unit: unit,
-                isDeletable: isDeletable,
-                groupDisplay: groupDisplay,
+                body: body,
+                status: status,
+                isPrivate: isPrivate,
+                source: source,
+                mergedInto: mergedInto,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                rowid: rowid,
               ),
           createCompanionCallback:
               ({
-                Value<int> id = const Value.absent(),
-                Value<int?> parentId = const Value.absent(),
-                required String key,
-                required String title,
-                required String inputType,
-                Value<String?> prevInputType = const Value.absent(),
-                Value<bool> isStarred = const Value.absent(),
-                Value<int?> starredAt = const Value.absent(),
-                Value<String?> heatmapLabel = const Value.absent(),
-                Value<String?> heatmapRule = const Value.absent(),
-                Value<int> sortOrder = const Value.absent(),
-                Value<String?> unit = const Value.absent(),
-                Value<bool> isDeletable = const Value.absent(),
-                Value<String> groupDisplay = const Value.absent(),
+                required String id,
+                required String body,
+                Value<String> status = const Value.absent(),
+                Value<bool> isPrivate = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<String?> mergedInto = const Value.absent(),
                 required int createdAt,
                 required int updatedAt,
-              }) => MetricsCompanion.insert(
+                Value<int> rowid = const Value.absent(),
+              }) => NotesCompanion.insert(
                 id: id,
-                parentId: parentId,
-                key: key,
-                title: title,
-                inputType: inputType,
-                prevInputType: prevInputType,
-                isStarred: isStarred,
-                starredAt: starredAt,
-                heatmapLabel: heatmapLabel,
-                heatmapRule: heatmapRule,
-                sortOrder: sortOrder,
-                unit: unit,
-                isDeletable: isDeletable,
-                groupDisplay: groupDisplay,
+                body: body,
+                status: status,
+                isPrivate: isPrivate,
+                source: source,
+                mergedInto: mergedInto,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
               .map(
-                (e) => (
-                  e.readTable(table),
-                  $$MetricsTableReferences(db, table, e),
-                ),
+                (e) =>
+                    (e.readTable(table), $$NotesTableReferences(db, table, e)),
               )
               .toList(),
           prefetchHooksCallback:
               ({
-                parentId = false,
-                metricOptionsRefs = false,
-                entriesRefs = false,
+                noteTagsRefs = false,
+                noteVersionsRefs = false,
+                remindersRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
-                    if (metricOptionsRefs) db.metricOptions,
-                    if (entriesRefs) db.entries,
+                    if (noteTagsRefs) db.noteTags,
+                    if (noteVersionsRefs) db.noteVersions,
+                    if (remindersRefs) db.reminders,
                   ],
-                  addJoins:
-                      <
-                        T extends TableManagerState<
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic
-                        >
-                      >(state) {
-                        if (parentId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.parentId,
-                                    referencedTable: $$MetricsTableReferences
-                                        ._parentIdTable(db),
-                                    referencedColumn: $$MetricsTableReferences
-                                        ._parentIdTable(db)
-                                        .id,
-                                  )
-                                  as T;
-                        }
-
-                        return state;
-                      },
+                  addJoins: null,
                   getPrefetchedDataCallback: (items) async {
                     return [
-                      if (metricOptionsRefs)
-                        await $_getPrefetchedData<
-                          Metric,
-                          $MetricsTable,
-                          MetricOption
-                        >(
+                      if (noteTagsRefs)
+                        await $_getPrefetchedData<Note, $NotesTable, NoteTag>(
                           currentTable: table,
-                          referencedTable: $$MetricsTableReferences
-                              ._metricOptionsRefsTable(db),
+                          referencedTable: $$NotesTableReferences
+                              ._noteTagsRefsTable(db),
                           managerFromTypedResult: (p0) =>
-                              $$MetricsTableReferences(
+                              $$NotesTableReferences(
                                 db,
                                 table,
                                 p0,
-                              ).metricOptionsRefs,
+                              ).noteTagsRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
-                                (e) => e.metricId == item.id,
+                                (e) => e.noteId == item.id,
                               ),
                           typedResults: items,
                         ),
-                      if (entriesRefs)
-                        await $_getPrefetchedData<Metric, $MetricsTable, Entry>(
+                      if (noteVersionsRefs)
+                        await $_getPrefetchedData<
+                          Note,
+                          $NotesTable,
+                          NoteVersion
+                        >(
                           currentTable: table,
-                          referencedTable: $$MetricsTableReferences
-                              ._entriesRefsTable(db),
+                          referencedTable: $$NotesTableReferences
+                              ._noteVersionsRefsTable(db),
                           managerFromTypedResult: (p0) =>
-                              $$MetricsTableReferences(
+                              $$NotesTableReferences(
                                 db,
                                 table,
                                 p0,
-                              ).entriesRefs,
+                              ).noteVersionsRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
-                                (e) => e.metricId == item.id,
+                                (e) => e.noteId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (remindersRefs)
+                        await $_getPrefetchedData<Note, $NotesTable, Reminder>(
+                          currentTable: table,
+                          referencedTable: $$NotesTableReferences
+                              ._remindersRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$NotesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).remindersRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.noteId == item.id,
                               ),
                           typedResults: items,
                         ),
@@ -2938,924 +2069,52 @@ class $$MetricsTableTableManager
       );
 }
 
-typedef $$MetricsTableProcessedTableManager =
+typedef $$NotesTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
-      $MetricsTable,
-      Metric,
-      $$MetricsTableFilterComposer,
-      $$MetricsTableOrderingComposer,
-      $$MetricsTableAnnotationComposer,
-      $$MetricsTableCreateCompanionBuilder,
-      $$MetricsTableUpdateCompanionBuilder,
-      (Metric, $$MetricsTableReferences),
-      Metric,
+      $NotesTable,
+      Note,
+      $$NotesTableFilterComposer,
+      $$NotesTableOrderingComposer,
+      $$NotesTableAnnotationComposer,
+      $$NotesTableCreateCompanionBuilder,
+      $$NotesTableUpdateCompanionBuilder,
+      (Note, $$NotesTableReferences),
+      Note,
       PrefetchHooks Function({
-        bool parentId,
-        bool metricOptionsRefs,
-        bool entriesRefs,
+        bool noteTagsRefs,
+        bool noteVersionsRefs,
+        bool remindersRefs,
       })
     >;
-typedef $$MetricOptionsTableCreateCompanionBuilder =
-    MetricOptionsCompanion Function({
-      Value<int> id,
-      required int metricId,
-      required String label,
-      Value<int> sortOrder,
-    });
-typedef $$MetricOptionsTableUpdateCompanionBuilder =
-    MetricOptionsCompanion Function({
-      Value<int> id,
-      Value<int> metricId,
-      Value<String> label,
-      Value<int> sortOrder,
-    });
-
-final class $$MetricOptionsTableReferences
-    extends BaseReferences<_$AppDatabase, $MetricOptionsTable, MetricOption> {
-  $$MetricOptionsTableReferences(
-    super.$_db,
-    super.$_table,
-    super.$_typedResult,
-  );
-
-  static $MetricsTable _metricIdTable(_$AppDatabase db) =>
-      db.metrics.createAlias('metric_options__metric_id__metrics__id');
-
-  $$MetricsTableProcessedTableManager get metricId {
-    final $_column = $_itemColumn<int>('metric_id')!;
-
-    final manager = $$MetricsTableTableManager(
-      $_db,
-      $_db.metrics,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_metricIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-
-  static MultiTypedResultKey<$EntryOptionsTable, List<EntryOption>>
-  _entryOptionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
-    db.entryOptions,
-    aliasName: 'metric_options__id__entry_options__option_id',
-  );
-
-  $$EntryOptionsTableProcessedTableManager get entryOptionsRefs {
-    final manager = $$EntryOptionsTableTableManager(
-      $_db,
-      $_db.entryOptions,
-    ).filter((f) => f.optionId.id.sqlEquals($_itemColumn<int>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(_entryOptionsRefsTable($_db));
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-}
-
-class $$MetricOptionsTableFilterComposer
-    extends Composer<_$AppDatabase, $MetricOptionsTable> {
-  $$MetricOptionsTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get label => $composableBuilder(
-    column: $table.label,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get sortOrder => $composableBuilder(
-    column: $table.sortOrder,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  $$MetricsTableFilterComposer get metricId {
-    final $$MetricsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.metricId,
-      referencedTable: $db.metrics,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$MetricsTableFilterComposer(
-            $db: $db,
-            $table: $db.metrics,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  Expression<bool> entryOptionsRefs(
-    Expression<bool> Function($$EntryOptionsTableFilterComposer f) f,
-  ) {
-    final $$EntryOptionsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.entryOptions,
-      getReferencedColumn: (t) => t.optionId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$EntryOptionsTableFilterComposer(
-            $db: $db,
-            $table: $db.entryOptions,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-}
-
-class $$MetricOptionsTableOrderingComposer
-    extends Composer<_$AppDatabase, $MetricOptionsTable> {
-  $$MetricOptionsTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get label => $composableBuilder(
-    column: $table.label,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get sortOrder => $composableBuilder(
-    column: $table.sortOrder,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  $$MetricsTableOrderingComposer get metricId {
-    final $$MetricsTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.metricId,
-      referencedTable: $db.metrics,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$MetricsTableOrderingComposer(
-            $db: $db,
-            $table: $db.metrics,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$MetricOptionsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $MetricOptionsTable> {
-  $$MetricOptionsTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<int> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<String> get label =>
-      $composableBuilder(column: $table.label, builder: (column) => column);
-
-  GeneratedColumn<int> get sortOrder =>
-      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
-
-  $$MetricsTableAnnotationComposer get metricId {
-    final $$MetricsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.metricId,
-      referencedTable: $db.metrics,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$MetricsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.metrics,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  Expression<T> entryOptionsRefs<T extends Object>(
-    Expression<T> Function($$EntryOptionsTableAnnotationComposer a) f,
-  ) {
-    final $$EntryOptionsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.entryOptions,
-      getReferencedColumn: (t) => t.optionId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$EntryOptionsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.entryOptions,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-}
-
-class $$MetricOptionsTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $MetricOptionsTable,
-          MetricOption,
-          $$MetricOptionsTableFilterComposer,
-          $$MetricOptionsTableOrderingComposer,
-          $$MetricOptionsTableAnnotationComposer,
-          $$MetricOptionsTableCreateCompanionBuilder,
-          $$MetricOptionsTableUpdateCompanionBuilder,
-          (MetricOption, $$MetricOptionsTableReferences),
-          MetricOption,
-          PrefetchHooks Function({bool metricId, bool entryOptionsRefs})
-        > {
-  $$MetricOptionsTableTableManager(_$AppDatabase db, $MetricOptionsTable table)
-    : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$MetricOptionsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$MetricOptionsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$MetricOptionsTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                Value<int> metricId = const Value.absent(),
-                Value<String> label = const Value.absent(),
-                Value<int> sortOrder = const Value.absent(),
-              }) => MetricOptionsCompanion(
-                id: id,
-                metricId: metricId,
-                label: label,
-                sortOrder: sortOrder,
-              ),
-          createCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                required int metricId,
-                required String label,
-                Value<int> sortOrder = const Value.absent(),
-              }) => MetricOptionsCompanion.insert(
-                id: id,
-                metricId: metricId,
-                label: label,
-                sortOrder: sortOrder,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map(
-                (e) => (
-                  e.readTable(table),
-                  $$MetricOptionsTableReferences(db, table, e),
-                ),
-              )
-              .toList(),
-          prefetchHooksCallback:
-              ({metricId = false, entryOptionsRefs = false}) {
-                return PrefetchHooks(
-                  db: db,
-                  explicitlyWatchedTables: [
-                    if (entryOptionsRefs) db.entryOptions,
-                  ],
-                  addJoins:
-                      <
-                        T extends TableManagerState<
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic
-                        >
-                      >(state) {
-                        if (metricId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.metricId,
-                                    referencedTable:
-                                        $$MetricOptionsTableReferences
-                                            ._metricIdTable(db),
-                                    referencedColumn:
-                                        $$MetricOptionsTableReferences
-                                            ._metricIdTable(db)
-                                            .id,
-                                  )
-                                  as T;
-                        }
-
-                        return state;
-                      },
-                  getPrefetchedDataCallback: (items) async {
-                    return [
-                      if (entryOptionsRefs)
-                        await $_getPrefetchedData<
-                          MetricOption,
-                          $MetricOptionsTable,
-                          EntryOption
-                        >(
-                          currentTable: table,
-                          referencedTable: $$MetricOptionsTableReferences
-                              ._entryOptionsRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$MetricOptionsTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).entryOptionsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.optionId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                    ];
-                  },
-                );
-              },
-        ),
-      );
-}
-
-typedef $$MetricOptionsTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $MetricOptionsTable,
-      MetricOption,
-      $$MetricOptionsTableFilterComposer,
-      $$MetricOptionsTableOrderingComposer,
-      $$MetricOptionsTableAnnotationComposer,
-      $$MetricOptionsTableCreateCompanionBuilder,
-      $$MetricOptionsTableUpdateCompanionBuilder,
-      (MetricOption, $$MetricOptionsTableReferences),
-      MetricOption,
-      PrefetchHooks Function({bool metricId, bool entryOptionsRefs})
-    >;
-typedef $$EntriesTableCreateCompanionBuilder =
-    EntriesCompanion Function({
-      Value<int> id,
-      required int metricId,
-      required String date,
-      Value<double?> numValue,
-      Value<String?> textValue,
-      Value<String> valueSource,
-      required int createdAt,
-      required int updatedAt,
-    });
-typedef $$EntriesTableUpdateCompanionBuilder =
-    EntriesCompanion Function({
-      Value<int> id,
-      Value<int> metricId,
-      Value<String> date,
-      Value<double?> numValue,
-      Value<String?> textValue,
-      Value<String> valueSource,
-      Value<int> createdAt,
-      Value<int> updatedAt,
-    });
-
-final class $$EntriesTableReferences
-    extends BaseReferences<_$AppDatabase, $EntriesTable, Entry> {
-  $$EntriesTableReferences(super.$_db, super.$_table, super.$_typedResult);
-
-  static $MetricsTable _metricIdTable(_$AppDatabase db) =>
-      db.metrics.createAlias('entries__metric_id__metrics__id');
-
-  $$MetricsTableProcessedTableManager get metricId {
-    final $_column = $_itemColumn<int>('metric_id')!;
-
-    final manager = $$MetricsTableTableManager(
-      $_db,
-      $_db.metrics,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_metricIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-
-  static MultiTypedResultKey<$EntryOptionsTable, List<EntryOption>>
-  _entryOptionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
-    db.entryOptions,
-    aliasName: 'entries__id__entry_options__entry_id',
-  );
-
-  $$EntryOptionsTableProcessedTableManager get entryOptionsRefs {
-    final manager = $$EntryOptionsTableTableManager(
-      $_db,
-      $_db.entryOptions,
-    ).filter((f) => f.entryId.id.sqlEquals($_itemColumn<int>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(_entryOptionsRefsTable($_db));
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-}
-
-class $$EntriesTableFilterComposer
-    extends Composer<_$AppDatabase, $EntriesTable> {
-  $$EntriesTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get date => $composableBuilder(
-    column: $table.date,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<double> get numValue => $composableBuilder(
-    column: $table.numValue,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get textValue => $composableBuilder(
-    column: $table.textValue,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get valueSource => $composableBuilder(
-    column: $table.valueSource,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  $$MetricsTableFilterComposer get metricId {
-    final $$MetricsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.metricId,
-      referencedTable: $db.metrics,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$MetricsTableFilterComposer(
-            $db: $db,
-            $table: $db.metrics,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  Expression<bool> entryOptionsRefs(
-    Expression<bool> Function($$EntryOptionsTableFilterComposer f) f,
-  ) {
-    final $$EntryOptionsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.entryOptions,
-      getReferencedColumn: (t) => t.entryId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$EntryOptionsTableFilterComposer(
-            $db: $db,
-            $table: $db.entryOptions,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-}
-
-class $$EntriesTableOrderingComposer
-    extends Composer<_$AppDatabase, $EntriesTable> {
-  $$EntriesTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get date => $composableBuilder(
-    column: $table.date,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<double> get numValue => $composableBuilder(
-    column: $table.numValue,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get textValue => $composableBuilder(
-    column: $table.textValue,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get valueSource => $composableBuilder(
-    column: $table.valueSource,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  $$MetricsTableOrderingComposer get metricId {
-    final $$MetricsTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.metricId,
-      referencedTable: $db.metrics,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$MetricsTableOrderingComposer(
-            $db: $db,
-            $table: $db.metrics,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$EntriesTableAnnotationComposer
-    extends Composer<_$AppDatabase, $EntriesTable> {
-  $$EntriesTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<int> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<String> get date =>
-      $composableBuilder(column: $table.date, builder: (column) => column);
-
-  GeneratedColumn<double> get numValue =>
-      $composableBuilder(column: $table.numValue, builder: (column) => column);
-
-  GeneratedColumn<String> get textValue =>
-      $composableBuilder(column: $table.textValue, builder: (column) => column);
-
-  GeneratedColumn<String> get valueSource => $composableBuilder(
-    column: $table.valueSource,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<int> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => column);
-
-  GeneratedColumn<int> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
-
-  $$MetricsTableAnnotationComposer get metricId {
-    final $$MetricsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.metricId,
-      referencedTable: $db.metrics,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$MetricsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.metrics,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  Expression<T> entryOptionsRefs<T extends Object>(
-    Expression<T> Function($$EntryOptionsTableAnnotationComposer a) f,
-  ) {
-    final $$EntryOptionsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.entryOptions,
-      getReferencedColumn: (t) => t.entryId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$EntryOptionsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.entryOptions,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-}
-
-class $$EntriesTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $EntriesTable,
-          Entry,
-          $$EntriesTableFilterComposer,
-          $$EntriesTableOrderingComposer,
-          $$EntriesTableAnnotationComposer,
-          $$EntriesTableCreateCompanionBuilder,
-          $$EntriesTableUpdateCompanionBuilder,
-          (Entry, $$EntriesTableReferences),
-          Entry,
-          PrefetchHooks Function({bool metricId, bool entryOptionsRefs})
-        > {
-  $$EntriesTableTableManager(_$AppDatabase db, $EntriesTable table)
-    : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$EntriesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$EntriesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$EntriesTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                Value<int> metricId = const Value.absent(),
-                Value<String> date = const Value.absent(),
-                Value<double?> numValue = const Value.absent(),
-                Value<String?> textValue = const Value.absent(),
-                Value<String> valueSource = const Value.absent(),
-                Value<int> createdAt = const Value.absent(),
-                Value<int> updatedAt = const Value.absent(),
-              }) => EntriesCompanion(
-                id: id,
-                metricId: metricId,
-                date: date,
-                numValue: numValue,
-                textValue: textValue,
-                valueSource: valueSource,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-              ),
-          createCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                required int metricId,
-                required String date,
-                Value<double?> numValue = const Value.absent(),
-                Value<String?> textValue = const Value.absent(),
-                Value<String> valueSource = const Value.absent(),
-                required int createdAt,
-                required int updatedAt,
-              }) => EntriesCompanion.insert(
-                id: id,
-                metricId: metricId,
-                date: date,
-                numValue: numValue,
-                textValue: textValue,
-                valueSource: valueSource,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map(
-                (e) => (
-                  e.readTable(table),
-                  $$EntriesTableReferences(db, table, e),
-                ),
-              )
-              .toList(),
-          prefetchHooksCallback:
-              ({metricId = false, entryOptionsRefs = false}) {
-                return PrefetchHooks(
-                  db: db,
-                  explicitlyWatchedTables: [
-                    if (entryOptionsRefs) db.entryOptions,
-                  ],
-                  addJoins:
-                      <
-                        T extends TableManagerState<
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic
-                        >
-                      >(state) {
-                        if (metricId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.metricId,
-                                    referencedTable: $$EntriesTableReferences
-                                        ._metricIdTable(db),
-                                    referencedColumn: $$EntriesTableReferences
-                                        ._metricIdTable(db)
-                                        .id,
-                                  )
-                                  as T;
-                        }
-
-                        return state;
-                      },
-                  getPrefetchedDataCallback: (items) async {
-                    return [
-                      if (entryOptionsRefs)
-                        await $_getPrefetchedData<
-                          Entry,
-                          $EntriesTable,
-                          EntryOption
-                        >(
-                          currentTable: table,
-                          referencedTable: $$EntriesTableReferences
-                              ._entryOptionsRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$EntriesTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).entryOptionsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.entryId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                    ];
-                  },
-                );
-              },
-        ),
-      );
-}
-
-typedef $$EntriesTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $EntriesTable,
-      Entry,
-      $$EntriesTableFilterComposer,
-      $$EntriesTableOrderingComposer,
-      $$EntriesTableAnnotationComposer,
-      $$EntriesTableCreateCompanionBuilder,
-      $$EntriesTableUpdateCompanionBuilder,
-      (Entry, $$EntriesTableReferences),
-      Entry,
-      PrefetchHooks Function({bool metricId, bool entryOptionsRefs})
-    >;
-typedef $$EntryOptionsTableCreateCompanionBuilder =
-    EntryOptionsCompanion Function({
-      required int entryId,
-      required int optionId,
+typedef $$NoteTagsTableCreateCompanionBuilder =
+    NoteTagsCompanion Function({
+      required String noteId,
+      required String tag,
       Value<int> rowid,
     });
-typedef $$EntryOptionsTableUpdateCompanionBuilder =
-    EntryOptionsCompanion Function({
-      Value<int> entryId,
-      Value<int> optionId,
+typedef $$NoteTagsTableUpdateCompanionBuilder =
+    NoteTagsCompanion Function({
+      Value<String> noteId,
+      Value<String> tag,
       Value<int> rowid,
     });
 
-final class $$EntryOptionsTableReferences
-    extends BaseReferences<_$AppDatabase, $EntryOptionsTable, EntryOption> {
-  $$EntryOptionsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+final class $$NoteTagsTableReferences
+    extends BaseReferences<_$AppDatabase, $NoteTagsTable, NoteTag> {
+  $$NoteTagsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static $EntriesTable _entryIdTable(_$AppDatabase db) =>
-      db.entries.createAlias('entry_options__entry_id__entries__id');
+  static $NotesTable _noteIdTable(_$AppDatabase db) =>
+      db.notes.createAlias('note_tags__note_id__notes__id');
 
-  $$EntriesTableProcessedTableManager get entryId {
-    final $_column = $_itemColumn<int>('entry_id')!;
+  $$NotesTableProcessedTableManager get noteId {
+    final $_column = $_itemColumn<String>('note_id')!;
 
-    final manager = $$EntriesTableTableManager(
+    final manager = $$NotesTableTableManager(
       $_db,
-      $_db.entries,
+      $_db.notes,
     ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_entryIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-
-  static $MetricOptionsTable _optionIdTable(_$AppDatabase db) => db
-      .metricOptions
-      .createAlias('entry_options__option_id__metric_options__id');
-
-  $$MetricOptionsTableProcessedTableManager get optionId {
-    final $_column = $_itemColumn<int>('option_id')!;
-
-    final manager = $$MetricOptionsTableTableManager(
-      $_db,
-      $_db.metricOptions,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_optionIdTable($_db));
+    final item = $_typedResult.readTableOrNull(_noteIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -3863,52 +2122,34 @@ final class $$EntryOptionsTableReferences
   }
 }
 
-class $$EntryOptionsTableFilterComposer
-    extends Composer<_$AppDatabase, $EntryOptionsTable> {
-  $$EntryOptionsTableFilterComposer({
+class $$NoteTagsTableFilterComposer
+    extends Composer<_$AppDatabase, $NoteTagsTable> {
+  $$NoteTagsTableFilterComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  $$EntriesTableFilterComposer get entryId {
-    final $$EntriesTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.entryId,
-      referencedTable: $db.entries,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$EntriesTableFilterComposer(
-            $db: $db,
-            $table: $db.entries,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
+  ColumnFilters<String> get tag => $composableBuilder(
+    column: $table.tag,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  $$MetricOptionsTableFilterComposer get optionId {
-    final $$MetricOptionsTableFilterComposer composer = $composerBuilder(
+  $$NotesTableFilterComposer get noteId {
+    final $$NotesTableFilterComposer composer = $composerBuilder(
       composer: this,
-      getCurrentColumn: (t) => t.optionId,
-      referencedTable: $db.metricOptions,
+      getCurrentColumn: (t) => t.noteId,
+      referencedTable: $db.notes,
       getReferencedColumn: (t) => t.id,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$MetricOptionsTableFilterComposer(
+          }) => $$NotesTableFilterComposer(
             $db: $db,
-            $table: $db.metricOptions,
+            $table: $db.notes,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -3919,52 +2160,34 @@ class $$EntryOptionsTableFilterComposer
   }
 }
 
-class $$EntryOptionsTableOrderingComposer
-    extends Composer<_$AppDatabase, $EntryOptionsTable> {
-  $$EntryOptionsTableOrderingComposer({
+class $$NoteTagsTableOrderingComposer
+    extends Composer<_$AppDatabase, $NoteTagsTable> {
+  $$NoteTagsTableOrderingComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  $$EntriesTableOrderingComposer get entryId {
-    final $$EntriesTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.entryId,
-      referencedTable: $db.entries,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$EntriesTableOrderingComposer(
-            $db: $db,
-            $table: $db.entries,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
+  ColumnOrderings<String> get tag => $composableBuilder(
+    column: $table.tag,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  $$MetricOptionsTableOrderingComposer get optionId {
-    final $$MetricOptionsTableOrderingComposer composer = $composerBuilder(
+  $$NotesTableOrderingComposer get noteId {
+    final $$NotesTableOrderingComposer composer = $composerBuilder(
       composer: this,
-      getCurrentColumn: (t) => t.optionId,
-      referencedTable: $db.metricOptions,
+      getCurrentColumn: (t) => t.noteId,
+      referencedTable: $db.notes,
       getReferencedColumn: (t) => t.id,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$MetricOptionsTableOrderingComposer(
+          }) => $$NotesTableOrderingComposer(
             $db: $db,
-            $table: $db.metricOptions,
+            $table: $db.notes,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -3975,52 +2198,32 @@ class $$EntryOptionsTableOrderingComposer
   }
 }
 
-class $$EntryOptionsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $EntryOptionsTable> {
-  $$EntryOptionsTableAnnotationComposer({
+class $$NoteTagsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $NoteTagsTable> {
+  $$NoteTagsTableAnnotationComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  $$EntriesTableAnnotationComposer get entryId {
-    final $$EntriesTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.entryId,
-      referencedTable: $db.entries,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$EntriesTableAnnotationComposer(
-            $db: $db,
-            $table: $db.entries,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
+  GeneratedColumn<String> get tag =>
+      $composableBuilder(column: $table.tag, builder: (column) => column);
 
-  $$MetricOptionsTableAnnotationComposer get optionId {
-    final $$MetricOptionsTableAnnotationComposer composer = $composerBuilder(
+  $$NotesTableAnnotationComposer get noteId {
+    final $$NotesTableAnnotationComposer composer = $composerBuilder(
       composer: this,
-      getCurrentColumn: (t) => t.optionId,
-      referencedTable: $db.metricOptions,
+      getCurrentColumn: (t) => t.noteId,
+      referencedTable: $db.notes,
       getReferencedColumn: (t) => t.id,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$MetricOptionsTableAnnotationComposer(
+          }) => $$NotesTableAnnotationComposer(
             $db: $db,
-            $table: $db.metricOptions,
+            $table: $db.notes,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4031,61 +2234,57 @@ class $$EntryOptionsTableAnnotationComposer
   }
 }
 
-class $$EntryOptionsTableTableManager
+class $$NoteTagsTableTableManager
     extends
         RootTableManager<
           _$AppDatabase,
-          $EntryOptionsTable,
-          EntryOption,
-          $$EntryOptionsTableFilterComposer,
-          $$EntryOptionsTableOrderingComposer,
-          $$EntryOptionsTableAnnotationComposer,
-          $$EntryOptionsTableCreateCompanionBuilder,
-          $$EntryOptionsTableUpdateCompanionBuilder,
-          (EntryOption, $$EntryOptionsTableReferences),
-          EntryOption,
-          PrefetchHooks Function({bool entryId, bool optionId})
+          $NoteTagsTable,
+          NoteTag,
+          $$NoteTagsTableFilterComposer,
+          $$NoteTagsTableOrderingComposer,
+          $$NoteTagsTableAnnotationComposer,
+          $$NoteTagsTableCreateCompanionBuilder,
+          $$NoteTagsTableUpdateCompanionBuilder,
+          (NoteTag, $$NoteTagsTableReferences),
+          NoteTag,
+          PrefetchHooks Function({bool noteId})
         > {
-  $$EntryOptionsTableTableManager(_$AppDatabase db, $EntryOptionsTable table)
+  $$NoteTagsTableTableManager(_$AppDatabase db, $NoteTagsTable table)
     : super(
         TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
-              $$EntryOptionsTableFilterComposer($db: db, $table: table),
+              $$NoteTagsTableFilterComposer($db: db, $table: table),
           createOrderingComposer: () =>
-              $$EntryOptionsTableOrderingComposer($db: db, $table: table),
+              $$NoteTagsTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
-              $$EntryOptionsTableAnnotationComposer($db: db, $table: table),
+              $$NoteTagsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
-                Value<int> entryId = const Value.absent(),
-                Value<int> optionId = const Value.absent(),
+                Value<String> noteId = const Value.absent(),
+                Value<String> tag = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) => EntryOptionsCompanion(
-                entryId: entryId,
-                optionId: optionId,
-                rowid: rowid,
-              ),
+              }) => NoteTagsCompanion(noteId: noteId, tag: tag, rowid: rowid),
           createCompanionCallback:
               ({
-                required int entryId,
-                required int optionId,
+                required String noteId,
+                required String tag,
                 Value<int> rowid = const Value.absent(),
-              }) => EntryOptionsCompanion.insert(
-                entryId: entryId,
-                optionId: optionId,
+              }) => NoteTagsCompanion.insert(
+                noteId: noteId,
+                tag: tag,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
                   e.readTable(table),
-                  $$EntryOptionsTableReferences(db, table, e),
+                  $$NoteTagsTableReferences(db, table, e),
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({entryId = false, optionId = false}) {
+          prefetchHooksCallback: ({noteId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -4105,28 +2304,15 @@ class $$EntryOptionsTableTableManager
                       dynamic
                     >
                   >(state) {
-                    if (entryId) {
+                    if (noteId) {
                       state =
                           state.withJoin(
                                 currentTable: table,
-                                currentColumn: table.entryId,
-                                referencedTable: $$EntryOptionsTableReferences
-                                    ._entryIdTable(db),
-                                referencedColumn: $$EntryOptionsTableReferences
-                                    ._entryIdTable(db)
-                                    .id,
-                              )
-                              as T;
-                    }
-                    if (optionId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.optionId,
-                                referencedTable: $$EntryOptionsTableReferences
-                                    ._optionIdTable(db),
-                                referencedColumn: $$EntryOptionsTableReferences
-                                    ._optionIdTable(db)
+                                currentColumn: table.noteId,
+                                referencedTable: $$NoteTagsTableReferences
+                                    ._noteIdTable(db),
+                                referencedColumn: $$NoteTagsTableReferences
+                                    ._noteIdTable(db)
                                     .id,
                               )
                               as T;
@@ -4143,19 +2329,590 @@ class $$EntryOptionsTableTableManager
       );
 }
 
-typedef $$EntryOptionsTableProcessedTableManager =
+typedef $$NoteTagsTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
-      $EntryOptionsTable,
-      EntryOption,
-      $$EntryOptionsTableFilterComposer,
-      $$EntryOptionsTableOrderingComposer,
-      $$EntryOptionsTableAnnotationComposer,
-      $$EntryOptionsTableCreateCompanionBuilder,
-      $$EntryOptionsTableUpdateCompanionBuilder,
-      (EntryOption, $$EntryOptionsTableReferences),
-      EntryOption,
-      PrefetchHooks Function({bool entryId, bool optionId})
+      $NoteTagsTable,
+      NoteTag,
+      $$NoteTagsTableFilterComposer,
+      $$NoteTagsTableOrderingComposer,
+      $$NoteTagsTableAnnotationComposer,
+      $$NoteTagsTableCreateCompanionBuilder,
+      $$NoteTagsTableUpdateCompanionBuilder,
+      (NoteTag, $$NoteTagsTableReferences),
+      NoteTag,
+      PrefetchHooks Function({bool noteId})
+    >;
+typedef $$NoteVersionsTableCreateCompanionBuilder =
+    NoteVersionsCompanion Function({
+      Value<int> id,
+      required String noteId,
+      required String body,
+      required String reason,
+      required int createdAt,
+    });
+typedef $$NoteVersionsTableUpdateCompanionBuilder =
+    NoteVersionsCompanion Function({
+      Value<int> id,
+      Value<String> noteId,
+      Value<String> body,
+      Value<String> reason,
+      Value<int> createdAt,
+    });
+
+final class $$NoteVersionsTableReferences
+    extends BaseReferences<_$AppDatabase, $NoteVersionsTable, NoteVersion> {
+  $$NoteVersionsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $NotesTable _noteIdTable(_$AppDatabase db) =>
+      db.notes.createAlias('note_versions__note_id__notes__id');
+
+  $$NotesTableProcessedTableManager get noteId {
+    final $_column = $_itemColumn<String>('note_id')!;
+
+    final manager = $$NotesTableTableManager(
+      $_db,
+      $_db.notes,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_noteIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$NoteVersionsTableFilterComposer
+    extends Composer<_$AppDatabase, $NoteVersionsTable> {
+  $$NoteVersionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$NotesTableFilterComposer get noteId {
+    final $$NotesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.noteId,
+      referencedTable: $db.notes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NotesTableFilterComposer(
+            $db: $db,
+            $table: $db.notes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$NoteVersionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $NoteVersionsTable> {
+  $$NoteVersionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$NotesTableOrderingComposer get noteId {
+    final $$NotesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.noteId,
+      referencedTable: $db.notes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NotesTableOrderingComposer(
+            $db: $db,
+            $table: $db.notes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$NoteVersionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $NoteVersionsTable> {
+  $$NoteVersionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => column);
+
+  GeneratedColumn<String> get reason =>
+      $composableBuilder(column: $table.reason, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$NotesTableAnnotationComposer get noteId {
+    final $$NotesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.noteId,
+      referencedTable: $db.notes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NotesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.notes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$NoteVersionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $NoteVersionsTable,
+          NoteVersion,
+          $$NoteVersionsTableFilterComposer,
+          $$NoteVersionsTableOrderingComposer,
+          $$NoteVersionsTableAnnotationComposer,
+          $$NoteVersionsTableCreateCompanionBuilder,
+          $$NoteVersionsTableUpdateCompanionBuilder,
+          (NoteVersion, $$NoteVersionsTableReferences),
+          NoteVersion,
+          PrefetchHooks Function({bool noteId})
+        > {
+  $$NoteVersionsTableTableManager(_$AppDatabase db, $NoteVersionsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$NoteVersionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$NoteVersionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$NoteVersionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> noteId = const Value.absent(),
+                Value<String> body = const Value.absent(),
+                Value<String> reason = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+              }) => NoteVersionsCompanion(
+                id: id,
+                noteId: noteId,
+                body: body,
+                reason: reason,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String noteId,
+                required String body,
+                required String reason,
+                required int createdAt,
+              }) => NoteVersionsCompanion.insert(
+                id: id,
+                noteId: noteId,
+                body: body,
+                reason: reason,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$NoteVersionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({noteId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (noteId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.noteId,
+                                referencedTable: $$NoteVersionsTableReferences
+                                    ._noteIdTable(db),
+                                referencedColumn: $$NoteVersionsTableReferences
+                                    ._noteIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$NoteVersionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $NoteVersionsTable,
+      NoteVersion,
+      $$NoteVersionsTableFilterComposer,
+      $$NoteVersionsTableOrderingComposer,
+      $$NoteVersionsTableAnnotationComposer,
+      $$NoteVersionsTableCreateCompanionBuilder,
+      $$NoteVersionsTableUpdateCompanionBuilder,
+      (NoteVersion, $$NoteVersionsTableReferences),
+      NoteVersion,
+      PrefetchHooks Function({bool noteId})
+    >;
+typedef $$RemindersTableCreateCompanionBuilder =
+    RemindersCompanion Function({
+      required String noteId,
+      required int position,
+      Value<int> rowid,
+    });
+typedef $$RemindersTableUpdateCompanionBuilder =
+    RemindersCompanion Function({
+      Value<String> noteId,
+      Value<int> position,
+      Value<int> rowid,
+    });
+
+final class $$RemindersTableReferences
+    extends BaseReferences<_$AppDatabase, $RemindersTable, Reminder> {
+  $$RemindersTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $NotesTable _noteIdTable(_$AppDatabase db) =>
+      db.notes.createAlias('reminders__note_id__notes__id');
+
+  $$NotesTableProcessedTableManager get noteId {
+    final $_column = $_itemColumn<String>('note_id')!;
+
+    final manager = $$NotesTableTableManager(
+      $_db,
+      $_db.notes,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_noteIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$RemindersTableFilterComposer
+    extends Composer<_$AppDatabase, $RemindersTable> {
+  $$RemindersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$NotesTableFilterComposer get noteId {
+    final $$NotesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.noteId,
+      referencedTable: $db.notes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NotesTableFilterComposer(
+            $db: $db,
+            $table: $db.notes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RemindersTableOrderingComposer
+    extends Composer<_$AppDatabase, $RemindersTable> {
+  $$RemindersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$NotesTableOrderingComposer get noteId {
+    final $$NotesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.noteId,
+      referencedTable: $db.notes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NotesTableOrderingComposer(
+            $db: $db,
+            $table: $db.notes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RemindersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RemindersTable> {
+  $$RemindersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get position =>
+      $composableBuilder(column: $table.position, builder: (column) => column);
+
+  $$NotesTableAnnotationComposer get noteId {
+    final $$NotesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.noteId,
+      referencedTable: $db.notes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NotesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.notes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RemindersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RemindersTable,
+          Reminder,
+          $$RemindersTableFilterComposer,
+          $$RemindersTableOrderingComposer,
+          $$RemindersTableAnnotationComposer,
+          $$RemindersTableCreateCompanionBuilder,
+          $$RemindersTableUpdateCompanionBuilder,
+          (Reminder, $$RemindersTableReferences),
+          Reminder,
+          PrefetchHooks Function({bool noteId})
+        > {
+  $$RemindersTableTableManager(_$AppDatabase db, $RemindersTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RemindersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RemindersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RemindersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> noteId = const Value.absent(),
+                Value<int> position = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RemindersCompanion(
+                noteId: noteId,
+                position: position,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String noteId,
+                required int position,
+                Value<int> rowid = const Value.absent(),
+              }) => RemindersCompanion.insert(
+                noteId: noteId,
+                position: position,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$RemindersTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({noteId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (noteId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.noteId,
+                                referencedTable: $$RemindersTableReferences
+                                    ._noteIdTable(db),
+                                referencedColumn: $$RemindersTableReferences
+                                    ._noteIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$RemindersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RemindersTable,
+      Reminder,
+      $$RemindersTableFilterComposer,
+      $$RemindersTableOrderingComposer,
+      $$RemindersTableAnnotationComposer,
+      $$RemindersTableCreateCompanionBuilder,
+      $$RemindersTableUpdateCompanionBuilder,
+      (Reminder, $$RemindersTableReferences),
+      Reminder,
+      PrefetchHooks Function({bool noteId})
     >;
 typedef $$AppSettingsTableCreateCompanionBuilder =
     AppSettingsCompanion Function({
@@ -4300,14 +3057,14 @@ typedef $$AppSettingsTableProcessedTableManager =
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
-  $$MetricsTableTableManager get metrics =>
-      $$MetricsTableTableManager(_db, _db.metrics);
-  $$MetricOptionsTableTableManager get metricOptions =>
-      $$MetricOptionsTableTableManager(_db, _db.metricOptions);
-  $$EntriesTableTableManager get entries =>
-      $$EntriesTableTableManager(_db, _db.entries);
-  $$EntryOptionsTableTableManager get entryOptions =>
-      $$EntryOptionsTableTableManager(_db, _db.entryOptions);
+  $$NotesTableTableManager get notes =>
+      $$NotesTableTableManager(_db, _db.notes);
+  $$NoteTagsTableTableManager get noteTags =>
+      $$NoteTagsTableTableManager(_db, _db.noteTags);
+  $$NoteVersionsTableTableManager get noteVersions =>
+      $$NoteVersionsTableTableManager(_db, _db.noteVersions);
+  $$RemindersTableTableManager get reminders =>
+      $$RemindersTableTableManager(_db, _db.reminders);
   $$AppSettingsTableTableManager get appSettings =>
       $$AppSettingsTableTableManager(_db, _db.appSettings);
 }

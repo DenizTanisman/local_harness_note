@@ -21,7 +21,8 @@ android {
         applicationId = "dev.deniz.local_harness_not"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = 26
+        // 30: LiteRT-LM (on-device Gemma) needs Android 11+.
+        minSdk = 30
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

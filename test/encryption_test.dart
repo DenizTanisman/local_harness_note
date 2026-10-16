@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:local_harness_not/data/db/app_database.dart';
 import 'package:local_harness_not/data/db/open_connection.dart';
-import 'package:drift/drift.dart';
+import 'package:local_harness_not/data/repositories/notes_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -16,19 +16,7 @@ void main() {
     const canary = 'PLAINTEXT_CANARY_SHOULD_NOT_LEAK';
 
     var db = AppDatabase(encryptedExecutor(file, key));
-    final software = await (db.select(
-      db.metrics,
-    )..where((m) => m.key.equals('software'))).getSingle();
-    final now = DateTime.now().millisecondsSinceEpoch;
-    await db.upsertEntry(
-      EntriesCompanion.insert(
-        metricId: software.id,
-        date: '2026-06-10',
-        textValue: const Value(canary),
-        createdAt: now,
-        updatedAt: now,
-      ),
-    );
+    final id = await NotesRepository(db).create('$canary #gizli');
     await db.close();
 
     final bytes = await file.readAsBytes();
@@ -45,21 +33,20 @@ void main() {
     );
     expect(
       asLatin1,
-      isNot(contains('Software')),
-      reason: 'seed data stored in plaintext',
+      isNot(contains('canary')),
+      reason: 'search index stored in plaintext',
     );
 
     // Sanity: the right key still opens it and data round-trips.
     db = AppDatabase(encryptedExecutor(file, key));
-    final entry = await (db.select(
-      db.entries,
-    )..where((e) => e.metricId.equals(software.id))).getSingle();
-    expect(entry.textValue, canary);
+    final repo = NotesRepository(db);
+    expect((await repo.getNote(id))!.body, '$canary #gizli');
+    expect(await repo.search(query: 'plaintext canary'), hasLength(1));
     await db.close();
 
     // Wrong key must NOT open the database.
     final wrongDb = AppDatabase(encryptedExecutor(file, 'deadbeef' * 8));
-    await expectLater(wrongDb.select(wrongDb.metrics).get(), throwsA(anything));
+    await expectLater(wrongDb.select(wrongDb.notes).get(), throwsA(anything));
     await wrongDb.close();
 
     await dir.delete(recursive: true);

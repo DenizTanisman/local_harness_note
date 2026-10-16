@@ -39,6 +39,8 @@ QueryExecutor encryptedExecutor(File file, String hexKey) {
     setup: (db) {
       // The key must be applied before anything reads the database header.
       db.execute("PRAGMA key = '$hexKey'");
+      // The app and the push isolate may open the file at the same time.
+      db.execute('PRAGMA busy_timeout = 5000');
       // Fail loudly if the encryption-capable build did not load — never
       // fall back to a plaintext database (spec 11.1). On a plain build the
       // PRAGMA above is silently ignored and this function does not exist.

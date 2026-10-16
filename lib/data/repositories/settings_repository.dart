@@ -17,6 +17,9 @@ class SettingsRepository {
     for (final r in await db.select(db.appSettings).get()) r.key: r.value,
   };
 
+  Future<void> remove(String key) =>
+      (db.delete(db.appSettings)..where((s) => s.key.equals(key))).go();
+
   Future<void> set(String key, String value) => db
       .into(db.appSettings)
       .insertOnConflictUpdate(

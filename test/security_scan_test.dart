@@ -24,12 +24,11 @@ void main() {
     expect(offenders, isEmpty, reason: offenders.join('\n'));
   });
 
-  test('no health/finance values written to logs or analytics (§14)', () {
-    // Forbid logging that interpolates a sensitive value. We look for
-    // debugPrint/log/analytics lines mentioning value-bearing identifiers.
+  test('note contents never written to logs', () {
+    // Forbid logging that interpolates note text or tool payloads.
     final sensitive = RegExp(
-      r'(debugPrint|log|analytics)\b.*\$(kcal|weight|weightKg|bodyFat|'
-      r'restingHr|hr|amount|intake|kg|bmi|bmr|tdee)',
+      r'(debugPrint|log)\b.*\$\{?(body|text|note|args|result|payload|'
+      r'prompt|token|secret|config)',
       caseSensitive: false,
     );
     final offenders = <String>[];
@@ -79,10 +78,6 @@ void main() {
     ).readAsStringSync();
     expect(manifest, contains('android:protectionLevel="signature"'));
     expect(manifest, contains('dev.deniz.local_harness_not.hub'));
-    expect(
-      manifest,
-      contains('<package android:name="dev.deniz.local_harness_program" />'),
-    );
     final provider = File(
       'android/app/src/main/kotlin/dev/deniz/local_harness_not/HubProvider.kt',
     ).readAsStringSync();

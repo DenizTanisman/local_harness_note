@@ -6,81 +6,47 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/db/app_database.dart';
 import '../data/db/database_provider.dart';
-import '../data/repositories/checkin_status.dart';
+import '../data/repositories/notes_repository.dart';
+import '../features/reminders/reminder_planner.dart';
 import 'date_key.dart';
 import 'hub_bridge.dart';
+import 'note_text.dart';
 
 /// Snapshot schema version served to the hub (docs/HUB_CONTRACT.md §4).
-const hubSnapshotSchema = 1;
+/// v2: second brain — note counts and the next reminder.
+const hubSnapshotSchema = 2;
 
-/// Builds the `not` hub snapshot (contract §4) — a pure function of the DB
-/// so it is unit-testable with an in-memory database. [now] defaults to the
-/// current time and decides which day counts as "today".
+/// Builds the `not` hub snapshot — a pure function of the DB so it is
+/// unit-testable with an in-memory database.
 Future<Map<String, Object?>> buildHubSnapshot(
   AppDatabase db, {
   DateTime? now,
 }) async {
   final at = now ?? DateTime.now();
-  final date = dateKey(at);
-  final status = await loadCheckinStatus(db, date);
-
-  final metrics = await (db.select(
-    db.metrics,
-  )..orderBy([(m) => OrderingTerm.asc(m.sortOrder)])).get();
-  final entries = await (db.select(
-    db.entries,
-  )..where((e) => e.date.equals(date))).get();
-  final entryByMetric = {for (final e in entries) e.metricId: e};
-
-  final optionJoin = db.select(db.entryOptions).join([
-    innerJoin(db.entries, db.entries.id.equalsExp(db.entryOptions.entryId)),
-    innerJoin(
-      db.metricOptions,
-      db.metricOptions.id.equalsExp(db.entryOptions.optionId),
-    ),
-  ])..where(db.entries.date.equals(date));
-  final optionRows = await optionJoin.get();
-  optionRows.sort(
-    (a, b) => a
-        .readTable(db.metricOptions)
-        .sortOrder
-        .compareTo(b.readTable(db.metricOptions).sortOrder),
+  final repo = NotesRepository(db, clock: () => at);
+  final counts = await repo.counts();
+  final reminders = await repo.reminderNotes();
+  final (plan, _) = ReminderPlanner.plan(
+    now: at,
+    times: await repo.reminderTimes(),
+    ids: [for (final n in reminders) n.id],
+    cursor: await repo.loadCursor(),
+    horizonDays: 2,
   );
-  final labelsByEntry = <int, List<String>>{};
-  for (final row in optionRows) {
-    labelsByEntry
-        .putIfAbsent(row.readTable(db.entries).id, () => [])
-        .add(row.readTable(db.metricOptions).label);
+  Map<String, Object?>? next;
+  if (plan.isNotEmpty) {
+    final note = reminders.firstWhere((n) => n.id == plan.first.noteId);
+    next = {
+      // Private notes stay on the phone — the hub only learns one exists.
+      'title': note.isPrivate ? '🔒' : NoteText.title(note.body, max: 60),
+      'at': plan.first.when.toIso8601String().substring(0, 19),
+    };
   }
 
-  // Tree order: each top-level card, then its children (card order).
-  final ordered = <Metric>[];
-  for (final top in metrics.where((m) => m.parentId == null)) {
-    ordered.add(top);
-    ordered.addAll(metrics.where((m) => m.parentId == top.id));
-  }
-
-  final today = <Map<String, Object?>>[
-    for (final metric in ordered)
-      if (entryByMetric[metric.id] case final entry?)
-        {
-          'key': metric.key,
-          'title': metric.title,
-          'unit': metric.unit,
-          'value': entry.numValue,
-          'text': (entry.textValue?.trim().isEmpty ?? true)
-              ? null
-              : entry.textValue,
-          'options': labelsByEntry[entry.id] ?? const <String>[],
-        },
-  ];
-
-  final headline = status.total == 0
-      ? 'No check-in metrics yet'
-      : status.missing.isEmpty
-      ? 'Check-in complete · ${status.filled}/${status.total}'
-      : 'Check-in ${status.filled}/${status.total} · '
-            '${status.missing.length} left';
+  final headline = counts.total == 0
+      ? 'Henüz not yok'
+      : '${counts.inbox} not gelen kutusunda'
+            '${next == null ? '' : ' · sıradaki: ${next['title']}'}';
 
   return {
     'app': 'not',
@@ -89,15 +55,11 @@ Future<Map<String, Object?>> buildHubSnapshot(
     'generatedAt': DateTime.fromMillisecondsSinceEpoch(
       at.millisecondsSinceEpoch,
     ).toIso8601String(),
-    'date': date,
+    'date': dateKey(at),
     'headline': headline,
     'data': {
-      'checkin': {
-        'filled': status.filled,
-        'total': status.total,
-        'missing': [for (final m in status.missing) m.title],
-      },
-      'today': today,
+      'notes': {'total': counts.total, 'inbox': counts.inbox},
+      'nextReminder': next,
     },
   };
 }

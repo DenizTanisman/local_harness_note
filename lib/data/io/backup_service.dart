@@ -4,22 +4,30 @@ import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:cryptography/cryptography.dart';
+import 'package:drift/drift.dart';
 import 'package:path/path.dart' as p;
 
 import '../db/app_database.dart';
-import 'export_service.dart';
+import '../repositories/notes_repository.dart';
 
-/// Weekly encrypted backup (spec 10.3): entries + metrics CSVs and
-/// app_settings in a ZIP,
-/// the whole ZIP encrypted with AES-256-GCM derived from the user password
-/// via PBKDF2. Without the password the file cannot be opened.
+/// Weekly encrypted backup: notes, versions, the reminder list and
+/// app_settings as JSON in a ZIP, the whole ZIP encrypted with AES-256-GCM
+/// derived from the user password via PBKDF2. Without the password the file
+/// cannot be opened.
 class BackupService {
   BackupService(this.db);
 
   final AppDatabase db;
 
   static const keptBackups = 8;
-  static const _magic = 'DTBK1'; // format marker + version (.dtbak)
+  static const _magic = 'DTBK2'; // format marker + version (.dtbak)
+
+  /// Settings that are device state, not user data.
+  static const _deviceSettings = {
+    NotesRepository.cursorNoteKey,
+    NotesRepository.cursorSlotKey,
+    'relay_done',
+  };
 
   /// File-name prefix of this app's backups; pruning only touches these.
   static const filePrefix = 'local_harness_not_';
@@ -30,22 +38,91 @@ class BackupService {
       Pbkdf2(macAlgorithm: Hmac.sha256(), iterations: 150000, bits: 256);
 
   Future<Uint8List> _zipBytes() async {
-    final export = ExportService(db);
     final settings = await db.select(db.appSettings).get();
     final archive = Archive();
 
-    void add(String name, String content) {
-      final bytes = utf8.encode(content);
+    void add(String name, Object content) {
+      final bytes = utf8.encode(jsonEncode(content));
       archive.addFile(ArchiveFile(name, bytes.length, bytes));
     }
 
-    add('entries.csv', await export.entriesCsv());
-    add('metrics.csv', await export.metricsCsv());
-    add(
-      'app_settings.json',
-      jsonEncode({for (final s in settings) s.key: s.value}),
-    );
+    add('notes.json', [
+      for (final n in await db.select(db.notes).get()) n.toJson(),
+    ]);
+    add('note_versions.json', [
+      for (final v in await db.select(db.noteVersions).get()) v.toJson(),
+    ]);
+    add('reminders.json', [
+      for (final r in await db.select(db.reminders).get()) r.toJson(),
+    ]);
+    add('app_settings.json', {
+      for (final s in settings)
+        if (!_deviceSettings.contains(s.key)) s.key: s.value,
+    });
     return Uint8List.fromList(ZipEncoder().encode(archive)!);
+  }
+
+  /// Restores a decrypted backup ZIP: notes are upserted by id (newer
+  /// local edits are kept), versions and settings added, and the reminder
+  /// list replaced. Returns the number of notes restored.
+  Future<int> restoreZip(Uint8List zip) async {
+    final files = {
+      for (final f in ZipDecoder().decodeBytes(zip).files)
+        f.name: jsonDecode(utf8.decode(f.content as List<int>)),
+    };
+    final repo = NotesRepository(db);
+    var restored = 0;
+    await db.transaction(() async {
+      for (final raw in (files['notes.json'] as List? ?? const [])) {
+        final note = Note.fromJson((raw as Map).cast<String, dynamic>());
+        final local = await repo.getNote(note.id);
+        if (local != null && local.updatedAt >= note.updatedAt) continue;
+        await db.into(db.notes).insertOnConflictUpdate(note);
+        await repo.updateBody(note.id, note.body);
+        await (db.update(db.notes)..where((n) => n.id.equals(note.id))).write(
+          NotesCompanion(updatedAt: Value(note.updatedAt)),
+        );
+        restored++;
+      }
+      final known = {
+        for (final v in await db.select(db.noteVersions).get())
+          '${v.noteId}|${v.createdAt}|${v.body.hashCode}',
+      };
+      for (final raw in (files['note_versions.json'] as List? ?? const [])) {
+        final v = NoteVersion.fromJson((raw as Map).cast<String, dynamic>());
+        if (known.contains('${v.noteId}|${v.createdAt}|${v.body.hashCode}')) {
+          continue;
+        }
+        await db
+            .into(db.noteVersions)
+            .insert(
+              NoteVersionsCompanion.insert(
+                noteId: v.noteId,
+                body: v.body,
+                reason: v.reason,
+                createdAt: v.createdAt,
+              ),
+            );
+      }
+      final reminders = files['reminders.json'] as List?;
+      if (reminders != null && reminders.isNotEmpty) {
+        await db.delete(db.reminders).go();
+        for (final raw in reminders) {
+          await db
+              .into(db.reminders)
+              .insert(Reminder.fromJson((raw as Map).cast<String, dynamic>()));
+        }
+      }
+      final settings = files['app_settings.json'] as Map? ?? const {};
+      for (final e in settings.entries) {
+        await db
+            .into(db.appSettings)
+            .insertOnConflictUpdate(
+              AppSettingsCompanion.insert(key: '${e.key}', value: '${e.value}'),
+            );
+      }
+    });
+    return restored;
   }
 
   /// Layout: magic | salt(16) | nonce(12) | ciphertext | mac(16).

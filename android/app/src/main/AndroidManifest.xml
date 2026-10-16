@@ -4,6 +4,17 @@
          after reboot. Inexact alarms only — no SCHEDULE_EXACT_ALARM. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- Reminders fire at the minute the user picked (07:30 …): inexact
+         alarms may slip up to an hour. USE_EXACT_ALARM is granted at
+         install (no user prompt), unlike SCHEDULE_EXACT_ALARM. -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
+    <!-- Gemma model download and the Claude relay (release builds too). -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Lets the wake-up push reach the app while the phone sleeps (spec §8). -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
+    <!-- The 2.6 GB Gemma download runs as a foreground data-sync job. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
     <!-- Local Harness hub contract v1 (docs/HUB_CONTRACT.md §1): one
          signature-level permission shared by all four apps (same signing
          key) guards every HubProvider. -->
@@ -12,11 +23,6 @@
         android:protectionLevel="signature"
         android:label="Local Harness hub access" />
     <uses-permission android:name="dev.deniz.local_harness.permission.HUB" />
-    <!-- Peers this app reads (Android 11+ package visibility): the Program
-         app's snapshot feeds the Instagram auto-fill (CR-4 §3.3). -->
-    <queries>
-        <package android:name="dev.deniz.local_harness_program" />
-    </queries>
 
     <application
         android:label="Not"
@@ -43,7 +49,31 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Share sheet: text/links from other apps become a new note. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="text/plain"/>
+            </intent-filter>
         </activity>
+        <!-- WorkManager's foreground service (Gemma download) must declare
+             its type on Android 14+, or startForeground() crashes. -->
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync"
+            tools:node="merge" />
+        <!-- Home-screen "+ Not" widget (spec §7). -->
+        <receiver
+            android:name=".NewNoteWidget"
+            android:label="Yeni not"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/new_note_widget_info"/>
+        </receiver>
         <!-- Hub snapshot endpoint (contract §2). call() re-checks the
              permission itself: android:permission does not guard call() on
              every API level. -->

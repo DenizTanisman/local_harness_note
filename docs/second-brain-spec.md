@@ -2,7 +2,7 @@
 
 > **Platform:** Yalnızca Android
 > **Tarih:** 2026-10-16
-> **Durum:** Kararlar kilitli; tek açık nokta Gemma modeli (Bölüm 11)
+> **Durum:** Uygulandı (2026-10-16). Açık: Firebase + Cloudflare hesapları (Bölüm 12)
 > **Önceki hali:** Günlük check-in uygulaması (`daily-tracker-*.md`). Bu doküman onun yerini alır.
 
 ---
@@ -112,14 +112,16 @@ Alt gezinme: **Notlar** · **Hatırlatmalar**. Sağ üstte Ayarlar.
 
 ## 5. Gemma (cihaz içi)
 
-- Paket: `flutter_gemma` (LiteRT/MediaPipe altyapısı). Uygulama başlarken sürüm ve desteklenen model
-  formatı doğrulanır.
-- Model APK'ya gömülmez; Ayarlar'dan veya ilk ✨ basışında **bir kez indirilir**, uygulama dosyalarında tutulur.
-  Sonrasında internet gerekmez. İndirme ilerlemesi gösterilir, yarıda kalırsa devam eder.
+- Paket: `flutter_gemma` + `flutter_gemma_litertlm`; model **Gemma 4 E2B** (`gemma-4-E2B-it.litertlm`,
+  ~2,6 GB, Apache 2.0, token gerekmez), CPU arka ucu (GPU'da Gemma 4 rakam/tarih bozabiliyor).
+- Model APK'ya gömülmez; Ayarlar'dan veya ilk ✨ basışında **bir kez indirilir** (ön plan
+  `dataSync` servisi, bildirimde ilerleme). Sonrasında internet gerekmez.
 - Varsayılan prompt (Ayarlar'dan değiştirilebilir):
 
   > Aşağıdaki notu Türkçe olarak toparla. Ana fikirleri koru, tekrarları çıkar, gerekiyorsa
-  > maddeler halinde düzenle. Notta olmayan bilgi ekleme. Sadece düzenlenmiş metni yaz.
+  > maddeler halinde düzenle. Notta olmayan bilgi ekleme.
+  > Kurallar: ilk satır kısa başlık; düz metin (Markdown yok, madde için "- "); en son satıra
+  > yalnızca notta geçen #etiketler; sadece düzenlenmiş notu yaz.
   >
   > NOT:
   > {{not}}
@@ -150,7 +152,9 @@ Alt gezinme: **Notlar** · **Hatırlatmalar**. Sağ üstte Ayarlar.
 - Slot `k` (anchor'dan sonraki k. slot) için madde = `liste[(index(anchor_note) + k) % len]`.
 - Liste değişince (ekle/çıkar/sırala): bir sonraki slot için gösterilecek notu koruyacak şekilde anchor
   yeniden yazılır (o not listeden çıktıysa bir sonraki pozisyondaki not), ardından bildirimler yeniden planlanır.
-- Mevcut `NotificationPlanner` yapısı korunur: 14 günlük ufuk, uygulama açılışında ve açılışta (boot) yenilenir.
+- 21 günlük ufuk; uygulama açılışında, liste/not değişince ve açılışta (boot) yenilenir.
+- **Tam zamanlı** alarmlar (`USE_EXACT_ALARM`, kurulumda verilir): esnek alarm 07:30'u 1 saate
+  kadar kaydırabiliyordu. İzin yoksa esnek moda düşer.
 
 ---
 
@@ -165,19 +169,19 @@ Alt gezinme: **Notlar** · **Hatırlatmalar**. Sağ üstte Ayarlar.
 
 ```
 Claude ──MCP──▶ Cloudflare Worker (uzak MCP sunucusu, not saklamaz)
-                   │ FCM yüksek öncelikli data mesajı {req_id, tool, args}
+                   │ FCM yüksek öncelikli data mesajı: yalnızca "uyan"
                    ▼
-                Telefon: arka plan isolate'i DB'yi açar, aracı çalıştırır
-                   │ HTTPS POST /result {req_id, result}
+                Telefon: GET /phone/work → bekleyen tüm çağrılar + kuyruk,
+                         kendi DB'sinde çalıştırır (arka plan isolate'i ya da uygulama)
+                   │ HTTPS POST /phone/result {reqId, ok, result|error}
                    ▼
 Claude ◀───────── Worker (Durable Object'te bekleyen isteği cevaplar)
 ```
 
 - **Zaman aşımı:** 25 sn → Claude'a `Telefona ulaşılamadı` hatası.
-- **Sıcak pencere:** İlk çağrıdan sonra uygulama ~3 dk uyanık kalır; ardışık çağrılar hızlı döner.
-- **Claude'un yazdığı notlar:** `create_note` / `append_to_note` / `add_to_reminders` telefona ulaşamazsa
-  Worker'da kuyruğa girer; telefon her uyanışta ve uygulama açılışında kuyruğu çeker, onayladıktan sonra
-  Worker kopyayı siler.
+- **Claude'un yazdığı notlar:** yazma araçları telefona ulaşamazsa Worker'da kuyruğa girer; telefon her
+  uyanışta, uygulama açılışında ve öne gelişinde kuyruğu çeker; cevabı gönderince Worker kopyayı siler.
+  Aynı istek iki kez gelirse (`reqId`) bir kez uygulanır.
 - **Asgari kimlik doğrulama:** Telefon ↔ Worker arası paylaşılan gizli anahtar (eşleştirmede girilir);
   claude.ai custom connector'ı için gizli URL yolu. (Ayrıntılı güvenlik bu fazın kapsamı dışında.)
 - Pil optimizasyonundan muafiyet eşleştirme ekranında istenir.
@@ -240,6 +244,6 @@ Claude ◀───────── Worker (Durable Object'te bekleyen isteği
 
 ## 12. Açık Noktalar
 
-1. **Gemma modeli:** telefon modeline göre seçilecek. 8 GB+ RAM → Gemma 3n E2B (~3 GB, Türkçe iyi);
-   aksi halde Gemma 3 1B (~0,5 GB, Türkçe zayıf). F4'ten önce karar verilir.
-2. **Hesaplar (F5 öncesi):** Firebase projesi (yalnızca FCM) ve Cloudflare hesabı — kullanıcı açar.
+1. ~~Gemma modeli~~ → Gemma 4 E2B (Galaxy S24 Ultra, 12 GB RAM).
+2. **Hesaplar:** Firebase projesi (yalnızca FCM) ve Cloudflare hesabı — kullanıcı açar, sonra
+   `worker/setup.sh <google-services.json> <service-account.json>`.

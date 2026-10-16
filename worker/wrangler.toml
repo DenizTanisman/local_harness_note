@@ -1,0 +1,19 @@
+# Not — Claude MCP relay (docs/second-brain-spec.md §8).
+# Stores no notes: it holds a tool call just long enough for the phone to
+# wake up (FCM push), answer from its own database and post the result.
+name = "not-relay"
+main = "src/index.ts"
+compatibility_date = "2025-09-01"
+
+[[durable_objects.bindings]]
+name = "RELAY"
+class_name = "Relay"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Relay"]
+
+# Secrets (wrangler secret put …, see setup.sh):
+#   RELAY_SECRET         phone ↔ relay bearer token
+#   MCP_TOKEN            secret path segment of the MCP URL given to Claude
+#   FCM_SERVICE_ACCOUNT  Firebase service-account JSON (push only)

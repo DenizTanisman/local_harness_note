@@ -1,31 +1,52 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workmanager/workmanager.dart';
 
 import 'core/hub_snapshot_publisher.dart';
+import 'core/system_channel.dart';
 import 'data/db/database_provider.dart';
 import 'features/backup/backup_worker.dart';
-import 'features/home/home_providers.dart';
-import 'features/home/instagram_autofill.dart';
+import 'features/notes/note_editor_page.dart';
+import 'features/notes/notes_providers.dart';
 import 'features/notifications/notification_service.dart';
 import 'features/shell/app_shell.dart';
-import 'features/shell/tab_index.dart';
 import 'theme/app_theme.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
 
-final notificationServiceProvider = Provider<NotificationService>((ref) {
-  return NotificationService(
-    ref.watch(databaseProvider),
-    onTapPayload: (payload) {
-      // Notification entry always lands on TODAY's check-in (CR1-D).
-      ref.read(homeDateProvider.notifier).resetToToday();
-      navigatorKey.currentState?.popUntil((route) => route.isFirst);
-      ref.read(tabIndexProvider.notifier).goTo(AppTab.main);
-    },
+/// Opens a note (reminder tap) or a new one (widget / share sheet).
+void openEditor({String? noteId, String? text, String source = 'phone'}) {
+  final nav = navigatorKey.currentState;
+  if (nav == null) return;
+  nav.popUntil((route) => route.isFirst);
+  nav.push(
+    MaterialPageRoute(
+      builder: (_) =>
+          NoteEditorPage(noteId: noteId, initialText: text, source: source),
+    ),
   );
+}
+
+void _openPayload(String? payload) {
+  if (payload != null && payload.startsWith('note:')) {
+    openEditor(noteId: payload.substring(5));
+  }
+}
+
+void _openIntent(AppIntent intent) => intent.sharedText == null
+    ? openEditor()
+    : openEditor(text: intent.sharedText, source: 'share');
+
+final notificationServiceProvider = Provider<NotificationService>((ref) {
+  final service = NotificationService(
+    ref.watch(databaseProvider),
+    onTapPayload: _openPayload,
+  );
+  ref.onDispose(service.dispose);
+  return service;
 });
 
 void main() {
@@ -33,36 +54,33 @@ void main() {
     () {
       WidgetsFlutterBinding.ensureInitialized();
       FlutterError.onError = (details) {
+        // Framework diagnostics only — never note contents.
         FlutterError.presentError(details);
-        // Errors must never include DB contents or the backup password
-        // (spec §11.7) — only the framework diagnostics are logged.
       };
       Workmanager().initialize(backupCallbackDispatcher);
       final container = ProviderContainer();
       runApp(
-        UncontrolledProviderScope(
-          container: container,
-          child: const NotApp(),
-        ),
+        UncontrolledProviderScope(container: container, child: const NotApp()),
       );
-      // Initialize notifications after the first frame; reschedule the whole
-      // local queue on every app open (spec §8).
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        // CR-4 §3.3: Instagram minutes from the Program app's hub snapshot
-        // (silent no-op when Program is not installed).
-        await container.read(instagramAutofillProvider).run();
-        // Hub contract §5: publish once after the startup syncs, then keep
-        // the snapshot fresh on DB writes and when backgrounded. Must run
-        // before notification init — that awaits the Android 13+ permission
-        // dialog, and the hub would see no data until the user answers it.
+        SystemChannel.listen(_openIntent);
+        final launch = await SystemChannel.takeLaunchIntent();
+        if (launch != null) _openIntent(launch);
+
         await container.read(hubSnapshotPublisherProvider).start();
+        // Claude connection: register the push token and answer anything
+        // that queued up while the app was closed (no-op when unpaired).
+        unawaited(container.read(pushProvider).start());
+
         final service = container.read(notificationServiceProvider);
         await service.init();
+        _openPayload(await service.launchPayload());
         await service.rescheduleAll();
+        service.watchChanges();
       });
     },
     (error, stack) {
-      debugPrint('Uncaught: $error');
+      debugPrint('Uncaught: ${error.runtimeType}');
     },
   );
 }
@@ -75,8 +93,12 @@ class NotApp extends StatelessWidget {
     return MaterialApp(
       title: 'Not',
       navigatorKey: navigatorKey,
-      // Single dark theme built from tokens (CR1-B rule 7).
+      debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
+      // Turkish system strings (time picker, back, menus).
+      locale: const Locale('tr'),
+      supportedLocales: const [Locale('tr'), Locale('en')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       home: const AppShell(),
     );
   }

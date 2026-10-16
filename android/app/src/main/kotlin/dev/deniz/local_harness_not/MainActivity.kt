@@ -2,6 +2,8 @@ package dev.deniz.local_harness_not
 
 import android.content.Intent
 import android.net.Uri
+import android.os.PowerManager
+import android.provider.Settings
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -11,8 +13,43 @@ import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 
 class MainActivity : FlutterActivity() {
+    private var systemChannel: MethodChannel? = null
+
+    /** Share-sheet text or widget tap that launched the app, until Dart takes it. */
+    private var launchIntent: Map<String, String>? = null
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        launchIntent = describe(intent)
+
+        // Share sheet / home-screen widget / battery exemption (spec §7, §8).
+        systemChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "local_harness_not/system")
+            .apply {
+                setMethodCallHandler { call, result ->
+                    when (call.method) {
+                        "takeLaunchIntent" -> {
+                            result.success(launchIntent)
+                            launchIntent = null
+                        }
+                        "isIgnoringBatteryOptimizations" -> {
+                            val pm = getSystemService(POWER_SERVICE) as PowerManager
+                            result.success(pm.isIgnoringBatteryOptimizations(packageName))
+                        }
+                        "requestIgnoreBatteryOptimizations" -> {
+                            try {
+                                startActivity(
+                                    Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+                                        .setData(Uri.parse("package:$packageName"))
+                                )
+                            } catch (e: Exception) {
+                                startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+                            }
+                            result.success(null)
+                        }
+                        else -> result.notImplemented()
+                    }
+                }
+            }
         // FLAG_SECURE toggle (spec §11.6).
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "local_harness_not/secure_window")
             .setMethodCallHandler { call, result ->
@@ -73,6 +110,25 @@ class MainActivity : FlutterActivity() {
             }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        describe(intent)?.let { systemChannel?.invokeMethod("onIntent", it) }
+    }
+
+    /** What an incoming intent asks for, as the map the Dart side parses. */
+    private fun describe(intent: Intent?): Map<String, String>? = when (intent?.action) {
+        NEW_NOTE_ACTION -> mapOf("action" to "new_note")
+        Intent.ACTION_SEND -> {
+            val text = listOfNotNull(
+                intent.getStringExtra(Intent.EXTRA_SUBJECT),
+                intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString(),
+            ).filter { it.isNotBlank() }.distinct().joinToString("\n")
+            if (text.isBlank()) null else mapOf("action" to "share", "text" to text)
+        }
+        else -> null
+    }
+
     /** App id from either a bare String argument or a map {"app": ...}. */
     private fun appArg(arguments: Any?): String? = when (arguments) {
         is String -> arguments
@@ -125,4 +181,8 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun peerPackage(app: String) = "dev.deniz.local_harness_$app"
+
+    companion object {
+        const val NEW_NOTE_ACTION = "dev.deniz.local_harness_not.NEW_NOTE"
+    }
 }

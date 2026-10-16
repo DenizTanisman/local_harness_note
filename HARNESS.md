@@ -1,52 +1,49 @@
 # local_harness_not — "Not"
 
 Feature app of the Local Harness split (contract: [docs/HUB_CONTRACT.md](docs/HUB_CONTRACT.md)).
-Split from `Takip Uygulaması Android/daily_tracker` on 2026-10-04.
+Since 2026-10-16 a minimal **second brain** — spec: [docs/second-brain-spec.md](docs/second-brain-spec.md).
+The daily check-in it used to be is gone (`docs/daily-tracker-*.md` kept for reference).
 
 | | |
 |---|---|
 | Role | feature |
 | Label | Not |
-| applicationId | `dev.deniz.local_harness_not` |
+| applicationId | `dev.deniz.local_harness_not` (minSdk 30) |
 | Hub authority | `dev.deniz.local_harness_not.hub` (`HubProvider`, signature permission `dev.deniz.local_harness.permission.HUB`) |
-| Snapshot schema | 1 |
-| Reads peers | `program` (screen time → Instagram auto-fill) |
+| Snapshot schema | 2 |
+| Reads peers | — |
 
 ## What it does
 
-- **Main — Daily Check-in** (spec §6.2): metric tree cards (int / text / int+text /
-  checkbox / composite), notes, drag-to-group, ADD sheet, past-day entry via the date bar.
-- **Analysis**: monthly heatmap, daily breakdown tree, calendar row, metric detail page
-  with the continuous sparkline.
-- **Notifications**: morning quote (TR/EN pools, editable) and the evening
-  "Time to fill in your day" reminder with the missing-card count.
-- **Settings**: notification times, quotes, FLAG_SECURE, Instagram auto-fill toggle,
-  heatmap bucket editor, CSV/Excel export + entries import, encrypted weekly backup
-  (`local_harness_not_*.dtbak`: entries + metrics + settings).
+- **Notlar**: plain-text notes, `#tags`, search (FTS5 over Turkish-folded text: `isik` finds
+  `ışık`), Gelen/Arşiv + tag chips, long-press multi-select → **merge** (undo) / remind /
+  archive, private 🔒 notes, versions.
+- **✨ Gemma**: on-device Gemma 4 E2B (LiteRT-LM, `flutter_gemma`, CPU) runs the saved prompt
+  on a note; the answer streams into an editable field; *Onayla* replaces the note and keeps
+  the old text as a version. Leaving while it runs or before accepting asks "Emin misin?".
+- **Hatırlatmalar**: an ordered list the notifications walk through (default 07:30 · 14:00 ·
+  20:00, exact alarms via `USE_EXACT_ALARM`), looping at the end. Drag to reorder, swipe to
+  remove.
+- **Capture**: share sheet (`text/plain`) and the home-screen "+ Not" widget open a new note.
+- **Claude (MCP)**: see below.
+- **Settings**: reminder times, Gemma model + prompt, Claude pairing, FLAG_SECURE, encrypted
+  weekly backup (`local_harness_not_*.dtbak`, notes + versions + reminders + settings) and
+  restore.
 
 ## Database
 
-Encrypted SQLite (sqlite3mc), file `local_harness_not.db`, schema v1 (fresh install):
-`metrics`, `metric_options`, `entries` (with `value_source` manual/auto), `entry_options`,
-`app_settings`. Money, Health, Sport and screen-time tables live in the Para / Program apps.
+Encrypted SQLite (sqlite3mc), file `local_harness_not.db`, schema v2: `notes`, `note_tags`,
+`note_versions`, `reminders`, `app_settings`, plus the FTS5 table `notes_fts`. The v1 → v2
+upgrade drops the check-in tables.
 
-## Hub snapshot (`not.data`)
+## Claude connection
 
-- `checkin`: `{filled, total, missing[]}` over top-level cards (a composite is filled
-  when any child is).
-- `today`: every metric with an entry today, tree order:
-  `{key, title, unit, value, text, options[]}`.
-
-Built by `buildHubSnapshot(db)` in `lib/core/hub_snapshot_publisher.dart`; published at
-startup, ~1.5 s after DB writes, and on `AppLifecycleState.paused`.
-
-## Instagram auto-fill
-
-On startup and on resume, `InstagramAutofill` (`lib/features/home/instagram_autofill.dart`)
-reads the Program snapshot (`HubBridge.readPeerSnapshot('program')`), takes
-`data.screenTime.days[].apps[]` rows with `package == com.instagram.android` and writes
-those minutes with `value_source = 'auto'`. Manual edits always win; the setting
-`autofill_instagram = false` disables it; a missing Program app is a silent no-op.
+Notes never leave the phone. `worker/` is a Cloudflare Worker that is Claude's remote MCP
+server: on a tool call it sends an FCM "wake" push, the app (`lib/features/relay/`) pulls
+`GET /phone/work`, runs the tool on its DB (`McpTools`, private notes invisible, no delete)
+and posts `POST /phone/result`. 25 s timeout; writes the phone missed are queued and applied
+on the next wake / app open. Setup: `worker/setup.sh` (needs a Firebase project for FCM and a
+Cloudflare login).
 
 ## Dev
 
@@ -54,4 +51,6 @@ those minutes with `value_source = 'auto'`. Manual edits always win; the setting
 flutter pub get
 dart run build_runner build --delete-conflicting-outputs   # after tables.dart changes
 flutter analyze && flutter test
+flutter build apk --release --target-platform android-arm64
+(cd worker && npm install && npm test)                     # relay e2e on wrangler dev
 ```

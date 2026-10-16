@@ -2,24 +2,25 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:drift/drift.dart' show BooleanExpressionOperators, Value;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-import '../../data/db/app_database.dart';
-import '../../data/db/database_provider.dart';
-import '../../data/heatmap/heatmap_rule.dart';
-import '../../main.dart' show notificationServiceProvider;
+import '../../core/secure_window.dart';
+import '../../core/system_channel.dart';
+import '../../data/io/backup_service.dart';
+import '../../data/repositories/notes_repository.dart';
 import '../../theme/glow_background.dart';
 import '../backup/backup_worker.dart';
-import 'export_import_page.dart';
-import 'quote_editor_page.dart';
+import '../gemma/gemma_service.dart';
+import '../notes/notes_providers.dart';
+import '../notifications/notification_service.dart';
 import 'settings_providers.dart';
 
 const _backupPasswordKey = 'backup_password';
 
-/// Settings (spec 6.6): notification times, quotes, privacy, backup and the
-/// heatmap rule editor v1.
+/// Settings (spec §3.4): reminders, Gemma, the Claude connection, privacy
+/// and backup.
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 
@@ -27,101 +28,118 @@ class SettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider).value ?? const {};
     final repo = ref.read(settingsRepositoryProvider);
+    final times =
+        (settings[NotesRepository.reminderTimesKey] ??
+                NotesRepository.defaultReminderTimes.join(','))
+            .split(',');
 
-    Future<void> pickTime(String key, String fallback) async {
-      final current = (settings[key] ?? fallback).split(':');
+    Future<void> setTimes(List<String> next) async {
+      next.sort();
+      await repo.set(NotesRepository.reminderTimesKey, next.join(','));
+    }
+
+    Future<String?> pickTime(String? current) async {
+      final parts = (current ?? '12:00').split(':');
       final picked = await showTimePicker(
         context: context,
         initialTime: TimeOfDay(
-          hour: int.parse(current[0]),
-          minute: int.parse(current[1]),
+          hour: int.parse(parts[0]),
+          minute: int.parse(parts[1]),
         ),
       );
-      if (picked != null) {
-        final value =
-            '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
-        await repo.set(key, value);
-        await ref.read(notificationServiceProvider).rescheduleAll();
-      }
+      if (picked == null) return null;
+      return '${picked.hour.toString().padLeft(2, '0')}:'
+          '${picked.minute.toString().padLeft(2, '0')}';
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: const Text('Ayarlar')),
       body: GlowBackground(
         child: ListView(
           children: [
-            const _SectionHeader('Data'),
-            ListTile(
-              leading: const Icon(Icons.import_export),
-              title: const Text('Export / Import'),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ExportImportPage()),
+            const _SectionHeader('Hatırlatmalar'),
+            SwitchListTile(
+              title: const Text('Hatırlatma bildirimleri'),
+              subtitle: const Text('Listeden sıradaki not, her gün'),
+              value:
+                  settings[NotificationService.remindersEnabledKey] != 'false',
+              onChanged: (on) => repo.set(
+                NotificationService.remindersEnabledKey,
+                on.toString(),
               ),
             ),
-            const _SectionHeader('Notifications'),
+            for (var i = 0; i < times.length; i++)
+              ListTile(
+                leading: const Icon(Icons.schedule),
+                title: Text(times[i]),
+                onTap: () async {
+                  final t = await pickTime(times[i]);
+                  if (t != null) await setTimes([...times]..[i] = t);
+                },
+                trailing: times.length <= 1
+                    ? null
+                    : IconButton(
+                        icon: const Icon(Icons.remove_circle_outline),
+                        onPressed: () => setTimes([...times]..removeAt(i)),
+                      ),
+              ),
             ListTile(
-              title: const Text('Morning quote time'),
-              trailing: Text(settings['morning_time'] ?? '08:00'),
-              onTap: () => pickTime('morning_time', '08:00'),
-            ),
-            ListTile(
-              title: const Text('Evening reminder time'),
-              trailing: Text(settings['evening_time'] ?? '22:00'),
-              onTap: () => pickTime('evening_time', '22:00'),
-            ),
-            SwitchListTile(
-              title: const Text('Morning quotes'),
-              value: settings['quotes_enabled'] != 'false',
-              onChanged: (on) async {
-                await repo.set('quotes_enabled', on.toString());
-                await ref.read(notificationServiceProvider).rescheduleAll();
+              leading: const Icon(Icons.add),
+              title: const Text('Saat ekle'),
+              onTap: () async {
+                final t = await pickTime(null);
+                if (t != null && !times.contains(t)) {
+                  await setTimes([...times, t]);
+                }
               },
             ),
+            const Divider(),
+            const _SectionHeader('Gemma (cihazda)'),
+            const _GemmaTile(),
             ListTile(
-              leading: const Icon(Icons.format_quote),
-              title: const Text('Sabah ifadelerini düzenle'),
-              subtitle: const Text('Otomatik gelenleri sil/düzenle, kendin ekle'),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const QuoteEditorPage()),
+              leading: const Icon(Icons.edit_note),
+              title: const Text('Gemma komutu (prompt)'),
+              subtitle: Text(
+                (settings[GemmaService.promptKey] ?? GemmaService.defaultPrompt)
+                    .split('\n')
+                    .first,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-            ListTile(
-              title: const Text('Quote language'),
-              trailing: SegmentedButton<String>(
-                segments: const [
-                  ButtonSegment(value: 'tr', label: Text('TR')),
-                  ButtonSegment(value: 'en', label: Text('EN')),
-                ],
-                selected: {settings['quote_lang'] ?? 'tr'},
-                onSelectionChanged: (selection) async {
-                  await repo.set('quote_lang', selection.first);
-                  await ref.read(notificationServiceProvider).rescheduleAll();
-                },
-              ),
+              onTap: () async {
+                final value = await showDialog<String>(
+                  context: context,
+                  builder: (_) => _PromptDialog(
+                    initial:
+                        settings[GemmaService.promptKey] ??
+                        GemmaService.defaultPrompt,
+                  ),
+                );
+                if (value == null) return;
+                value == GemmaService.defaultPrompt
+                    ? await repo.remove(GemmaService.promptKey)
+                    : await repo.set(GemmaService.promptKey, value);
+              },
             ),
             const Divider(),
-            const _SectionHeader('Privacy'),
+            const _SectionHeader('Claude bağlantısı'),
+            const _ClaudeSection(),
+            const Divider(),
+            const _SectionHeader('Gizlilik'),
             SwitchListTile(
-              title: const Text('Block screenshots'),
-              subtitle: const Text('FLAG_SECURE, off by default'),
+              title: const Text('Ekran görüntüsünü engelle'),
+              subtitle: const Text('Son uygulamalar önizlemesi de gizlenir'),
               value: settings['flag_secure'] == 'true',
-              onChanged: (on) => repo.set('flag_secure', on.toString()),
-            ),
-            SwitchListTile(
-              title: const Text('Auto-fill Instagram from screen time'),
-              subtitle: const Text(
-                'Minutes from the Program app; manual edits win',
-              ),
-              value: settings['autofill_instagram'] != 'false', // default on
-              onChanged: (on) => repo.set('autofill_instagram', on.toString()),
+              onChanged: (on) async {
+                await repo.set('flag_secure', on.toString());
+                on ? await SecureWindow.enable() : await SecureWindow.disable();
+              },
             ),
             const Divider(),
-            const _SectionHeader('Backup'),
+            const _SectionHeader('Yedek'),
             ListTile(
-              title: const Text('Backup folder'),
-              subtitle: Text(settings['backup_dir_uri'] ?? 'Not set'),
+              title: const Text('Yedek klasörü'),
+              subtitle: Text(settings['backup_dir_uri'] ?? 'Seçilmedi'),
               trailing: const Icon(Icons.folder_open),
               onTap: () async {
                 final dir = await FilePicker.platform.getDirectoryPath();
@@ -129,8 +147,8 @@ class SettingsPage extends ConsumerWidget {
               },
             ),
             SwitchListTile(
-              title: const Text('Weekly automatic backup'),
-              subtitle: const Text('Sundays 03:00, encrypted'),
+              title: const Text('Haftalık otomatik yedek'),
+              subtitle: const Text('Pazar 03:00, şifreli'),
               value: settings['backup_enabled'] == 'true',
               onChanged: (on) async {
                 if (on && !await _ensurePassword(context)) return;
@@ -141,27 +159,57 @@ class SettingsPage extends ConsumerWidget {
               },
             ),
             ListTile(
-              title: const Text('Back up now'),
+              title: const Text('Şimdi yedekle'),
               trailing: const Icon(Icons.backup),
               onTap: () => _backupNow(context, ref, settings),
             ),
-            const Divider(),
-            const _SectionHeader('Heatmap rules'),
-            const _HeatmapRuleEditor(),
+            ListTile(
+              title: const Text('Yedek şifresini değiştir'),
+              subtitle: const Text('Sonraki yedekler yeni şifreyle alınır'),
+              trailing: const Icon(Icons.password),
+              onTap: () async {
+                final messenger = ScaffoldMessenger.of(context);
+                final password = await showDialog<String>(
+                  context: context,
+                  builder: (context) => const _PasswordDialog(
+                    title: 'Yeni yedek şifresi',
+                    warning:
+                        'Eski yedekler eski şifreyle açılır. Bu şifreyi '
+                        'kaybedersen yeni yedekler AÇILAMAZ.',
+                  ),
+                );
+                if (password == null || password.isEmpty) return;
+                await const FlutterSecureStorage().write(
+                  key: _backupPasswordKey,
+                  value: password,
+                );
+                messenger.showSnackBar(
+                  const SnackBar(content: Text('Yedek şifresi değişti')),
+                );
+              },
+            ),
+            ListTile(
+              title: const Text('Yedekten geri yükle'),
+              subtitle: const Text('.dtbak dosyası + yedek şifresi'),
+              trailing: const Icon(Icons.restore),
+              onTap: () => _restore(context, ref),
+            ),
           ],
         ),
       ),
     );
   }
 
-  /// First-time password setup with the loss warning (spec 10.3).
   Future<bool> _ensurePassword(BuildContext context) async {
     const storage = FlutterSecureStorage();
     if (await storage.read(key: _backupPasswordKey) != null) return true;
     if (!context.mounted) return false;
     final password = await showDialog<String>(
       context: context,
-      builder: (context) => const _BackupPasswordDialog(),
+      builder: (context) => const _PasswordDialog(
+        title: 'Yedek şifresi',
+        warning: 'Bu şifreyi kaybedersen yedekler AÇILAMAZ.',
+      ),
     );
     if (password == null || password.isEmpty) return false;
     await storage.write(key: _backupPasswordKey, value: password);
@@ -177,31 +225,337 @@ class SettingsPage extends ConsumerWidget {
     final dir = settings['backup_dir_uri'];
     if (dir == null) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('Pick a backup folder first.')),
+        const SnackBar(content: Text('Önce yedek klasörü seç.')),
       );
       return;
     }
     if (!await _ensurePassword(context)) return;
-    const storage = FlutterSecureStorage();
-    final password = await storage.read(key: _backupPasswordKey);
+    final password = await const FlutterSecureStorage().read(
+      key: _backupPasswordKey,
+    );
     if (password == null) return;
-    final file = await ref
-        .read(backupServiceProvider)
-        .backupTo(Directory(dir), password);
-    messenger.showSnackBar(
-      SnackBar(content: Text('Backed up to ${file.path}')),
+    try {
+      final file = await ref
+          .read(backupServiceProvider)
+          .backupTo(Directory(dir), password);
+      messenger.showSnackBar(
+        SnackBar(content: Text('Yedeklendi: ${file.path}')),
+      );
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Yedek başarısız: $e')));
+    }
+  }
+
+  Future<void> _restore(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final picked = await FilePicker.platform.pickFiles();
+    final path = picked?.files.single.path;
+    if (path == null || !context.mounted) return;
+    final password = await showDialog<String>(
+      context: context,
+      builder: (context) => const _PasswordDialog(title: 'Yedek şifresi'),
+    );
+    if (password == null || password.isEmpty) return;
+    try {
+      final zip = await BackupService.decryptBackup(
+        await File(path).readAsBytes(),
+        password,
+      );
+      final count = await ref.read(backupServiceProvider).restoreZip(zip);
+      messenger.showSnackBar(
+        SnackBar(content: Text('$count not geri yüklendi')),
+      );
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Açılamadı: dosya ya da şifre yanlış')),
+      );
+    }
+  }
+}
+
+class _GemmaTile extends ConsumerWidget {
+  const _GemmaTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final gemma = ref.watch(gemmaServiceProvider);
+    if (gemma.status.value is GemmaUnknown) gemma.refresh();
+    return ValueListenableBuilder<GemmaStatus>(
+      valueListenable: gemma.status,
+      builder: (context, status, _) => switch (status) {
+        GemmaReady() => ListTile(
+          leading: const Icon(Icons.auto_awesome),
+          title: const Text('Gemma 4 E2B hazır'),
+          subtitle: const Text('İnternetsiz çalışır'),
+          trailing: TextButton(
+            onPressed: () async {
+              final ok = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Model silinsin mi?'),
+                  content: Text(
+                    '${GemmaService.modelSizeLabel} yer açılır; ✨ için '
+                    'yeniden indirmen gerekir.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Vazgeç'),
+                    ),
+                    FilledButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('Sil'),
+                    ),
+                  ],
+                ),
+              );
+              if (ok == true) await gemma.deleteModel();
+            },
+            child: const Text('Sil'),
+          ),
+        ),
+        GemmaDownloading(:final percent) => ListTile(
+          leading: const Icon(Icons.downloading),
+          title: Text('İndiriliyor… %$percent'),
+          subtitle: LinearProgressIndicator(value: percent / 100),
+          trailing: TextButton(
+            onPressed: gemma.cancelDownload,
+            child: const Text('İptal'),
+          ),
+        ),
+        GemmaUnknown() => const ListTile(title: Text('Kontrol ediliyor…')),
+        GemmaNotInstalled() || GemmaFailed() => ListTile(
+          leading: const Icon(Icons.download),
+          title: const Text('Gemma modelini indir'),
+          subtitle: Text(
+            status is GemmaFailed
+                ? status.message
+                : '${GemmaService.modelSizeLabel} · bir kez, Wi-Fi önerilir',
+          ),
+          onTap: gemma.download,
+        ),
+      },
     );
   }
 }
 
-class _BackupPasswordDialog extends StatefulWidget {
-  const _BackupPasswordDialog();
+class _ClaudeSection extends ConsumerStatefulWidget {
+  const _ClaudeSection();
 
   @override
-  State<_BackupPasswordDialog> createState() => _BackupPasswordDialogState();
+  ConsumerState<_ClaudeSection> createState() => _ClaudeSectionState();
 }
 
-class _BackupPasswordDialogState extends State<_BackupPasswordDialog> {
+class _ClaudeSectionState extends ConsumerState<_ClaudeSection> {
+  bool? _batteryOk;
+  String? _test;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkBattery();
+  }
+
+  Future<void> _checkBattery() async {
+    final ok = await SystemChannel.isIgnoringBatteryOptimizations();
+    if (mounted) setState(() => _batteryOk = ok);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final push = ref.watch(pushProvider);
+    return ValueListenableBuilder<String>(
+      valueListenable: push.status,
+      builder: (context, status, _) {
+        final paired = status == 'Bağlı';
+        return Column(
+          children: [
+            ListTile(
+              leading: Icon(paired ? Icons.link : Icons.link_off),
+              title: Text(status),
+              subtitle: const Text(
+                'Claude notlarını telefondan okur; özel notlar hariç',
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.qr_code_2),
+              title: Text(
+                paired
+                    ? 'Bağlantı kodunu değiştir'
+                    : 'Bağlantı kodunu yapıştır',
+              ),
+              subtitle: const Text('worker/setup.sh çıktısı'),
+              onTap: () async {
+                final clip = await Clipboard.getData('text/plain');
+                if (!context.mounted) return;
+                final code = await showDialog<String>(
+                  context: context,
+                  builder: (_) => _PasteDialog(initial: clip?.text ?? ''),
+                );
+                if (code == null) return;
+                try {
+                  await push.pair(code);
+                } on FormatException catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Kod geçersiz: ${e.message}')),
+                    );
+                  }
+                }
+              },
+            ),
+            if (paired)
+              ListTile(
+                leading: const Icon(Icons.network_check),
+                title: const Text('Bağlantıyı test et'),
+                subtitle: _test == null ? null : Text(_test!),
+                onTap: () async {
+                  setState(() => _test = 'Test ediliyor…');
+                  try {
+                    final ms = await push.selfTest();
+                    setState(() => _test = 'Çalışıyor · $ms ms');
+                  } catch (e) {
+                    setState(() => _test = 'Başarısız: $e');
+                  }
+                },
+              ),
+            if (_batteryOk == false)
+              ListTile(
+                leading: const Icon(Icons.battery_alert),
+                title: const Text('Pil optimizasyonunu kapat'),
+                subtitle: const Text(
+                  'Telefon uykudayken de Claude’a cevap verebilmek için',
+                ),
+                onTap: () async {
+                  await SystemChannel.requestIgnoreBatteryOptimizations();
+                  await Future<void>.delayed(const Duration(seconds: 1));
+                  _checkBattery();
+                },
+              ),
+            // Also when pairing failed, so a bad code can be removed.
+            if (status != 'Bağlı değil')
+              ListTile(
+                leading: const Icon(Icons.link_off),
+                title: const Text('Bağlantıyı kaldır'),
+                onTap: push.unpair,
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _PasteDialog extends StatefulWidget {
+  const _PasteDialog({required this.initial});
+
+  final String initial;
+
+  @override
+  State<_PasteDialog> createState() => _PasteDialogState();
+}
+
+class _PasteDialogState extends State<_PasteDialog> {
+  late final _controller = TextEditingController(
+    text: widget.initial.trim().startsWith('{') ? widget.initial : '',
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Bağlantı kodu'),
+    content: TextField(
+      key: const Key('pair-code'),
+      controller: _controller,
+      maxLines: 6,
+      // A machine code: no autocorrect ("url" → "URL" breaks it).
+      autocorrect: false,
+      enableSuggestions: false,
+      keyboardType: TextInputType.visiblePassword,
+      decoration: const InputDecoration(hintText: '{"url": …}'),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('Vazgeç'),
+      ),
+      FilledButton(
+        onPressed: () => Navigator.pop(context, _controller.text),
+        child: const Text('Bağlan'),
+      ),
+    ],
+  );
+}
+
+class _PromptDialog extends StatefulWidget {
+  const _PromptDialog({required this.initial});
+
+  final String initial;
+
+  @override
+  State<_PromptDialog> createState() => _PromptDialogState();
+}
+
+class _PromptDialogState extends State<_PromptDialog> {
+  late final _controller = TextEditingController(text: widget.initial);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Gemma komutu'),
+    content: SizedBox(
+      width: 400,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${GemmaService.noteSlot} yerine notun metni konur.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 8),
+          TextField(controller: _controller, maxLines: 10, minLines: 6),
+        ],
+      ),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => _controller.text = GemmaService.defaultPrompt,
+        child: const Text('Varsayılan'),
+      ),
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('Vazgeç'),
+      ),
+      FilledButton(
+        onPressed: () => Navigator.pop(context, _controller.text),
+        child: const Text('Kaydet'),
+      ),
+    ],
+  );
+}
+
+class _PasswordDialog extends StatefulWidget {
+  const _PasswordDialog({required this.title, this.warning});
+
+  final String title;
+  final String? warning;
+
+  @override
+  State<_PasswordDialog> createState() => _PasswordDialogState();
+}
+
+class _PasswordDialogState extends State<_PasswordDialog> {
   final _controller = TextEditingController();
 
   @override
@@ -211,36 +565,31 @@ class _BackupPasswordDialogState extends State<_BackupPasswordDialog> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Backup password'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text(
-            'If you lose this password, your backups CANNOT '
-            'be opened.',
-          ),
-          TextField(
-            controller: _controller,
-            obscureText: true,
-            autofocus: true,
-            decoration: const InputDecoration(labelText: 'Password'),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(context, _controller.text),
-          child: const Text('Save'),
+  Widget build(BuildContext context) => AlertDialog(
+    title: Text(widget.title),
+    content: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (widget.warning != null) Text(widget.warning!),
+        TextField(
+          controller: _controller,
+          obscureText: true,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Şifre'),
         ),
       ],
-    );
-  }
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('Vazgeç'),
+      ),
+      FilledButton(
+        onPressed: () => Navigator.pop(context, _controller.text),
+        child: const Text('Tamam'),
+      ),
+    ],
+  );
 }
 
 class _SectionHeader extends StatelessWidget {
@@ -258,197 +607,4 @@ class _SectionHeader extends StatelessWidget {
       ),
     ),
   );
-}
-
-/// Heatmap rule editor v1 (spec 6.6): per-bucket min/max/color rows.
-class _HeatmapRuleEditor extends ConsumerWidget {
-  const _HeatmapRuleEditor();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final db = ref.watch(databaseProvider);
-    return StreamBuilder<List<Metric>>(
-      stream:
-          (db.select(db.metrics)..where(
-                (m) => m.isStarred.equals(true) & m.heatmapRule.isNotNull(),
-              ))
-              .watch(),
-      builder: (context, snapshot) {
-        final rows = snapshot.data ?? const <Metric>[];
-        return Column(
-          children: [
-            for (final metric in rows)
-              ListTile(
-                title: Text(metric.title),
-                trailing: const Icon(Icons.tune),
-                onTap: () => showDialog(
-                  context: context,
-                  builder: (_) => _RuleDialog(metric: metric),
-                ),
-              ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _RuleDialog extends ConsumerStatefulWidget {
-  const _RuleDialog({required this.metric});
-
-  final Metric metric;
-
-  @override
-  ConsumerState<_RuleDialog> createState() => _RuleDialogState();
-}
-
-class _RuleDialogState extends ConsumerState<_RuleDialog> {
-  late HeatmapRule _rule = HeatmapRule.decode(widget.metric.heatmapRule!);
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('${widget.metric.title} buckets'),
-      content: SizedBox(
-        width: 360,
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            for (var i = 0; i < _rule.buckets.length; i++)
-              _bucketRow(i, _rule.buckets[i]),
-            TextButton.icon(
-              onPressed: () => setState(() {
-                final last = _rule.buckets.last;
-                _rule = HeatmapRule(
-                  source: _rule.source,
-                  buckets: [
-                    ..._rule.buckets,
-                    HeatmapBucket(
-                      min: last.max ?? last.min,
-                      max: null,
-                      color: 'blue',
-                    ),
-                  ],
-                );
-              }),
-              icon: const Icon(Icons.add),
-              label: const Text('Add bucket'),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: () async {
-            final db = ref.read(databaseProvider);
-            await (db.update(
-              db.metrics,
-            )..where((m) => m.id.equals(widget.metric.id))).write(
-              MetricsCompanion(
-                heatmapRule: Value(_rule.encode()),
-                updatedAt: Value(DateTime.now().millisecondsSinceEpoch),
-              ),
-            );
-            if (context.mounted) Navigator.pop(context);
-          },
-          child: const Text('Save'),
-        ),
-      ],
-    );
-  }
-
-  Widget _bucketRow(int index, HeatmapBucket bucket) {
-    void replace(HeatmapBucket updated) => setState(() {
-      final buckets = [..._rule.buckets];
-      buckets[index] = updated;
-      _rule = HeatmapRule(source: _rule.source, buckets: buckets);
-    });
-
-    return Row(
-      children: [
-        Expanded(
-          child: TextFormField(
-            initialValue: bucket.min.toString(),
-            decoration: const InputDecoration(labelText: 'min'),
-            keyboardType: TextInputType.number,
-            onChanged: (v) {
-              final min = double.tryParse(v);
-              if (min != null) {
-                replace(
-                  HeatmapBucket(min: min, max: bucket.max, color: bucket.color),
-                );
-              }
-            },
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: TextFormField(
-            initialValue: bucket.max?.toString() ?? '',
-            decoration: const InputDecoration(labelText: 'max (empty = ∞)'),
-            keyboardType: TextInputType.number,
-            onChanged: (v) {
-              replace(
-                HeatmapBucket(
-                  min: bucket.min,
-                  max: v.trim().isEmpty ? null : double.tryParse(v),
-                  color: bucket.color,
-                ),
-              );
-            },
-          ),
-        ),
-        const SizedBox(width: 8),
-        DropdownButton<String>(
-          value: bucket.color,
-          items: [
-            for (final name in HeatColorsNames.all)
-              DropdownMenuItem(value: name, child: Text(name)),
-          ],
-          onChanged: (color) {
-            if (color != null) {
-              replace(
-                HeatmapBucket(min: bucket.min, max: bucket.max, color: color),
-              );
-            }
-          },
-        ),
-        IconButton(
-          icon: const Icon(Icons.delete_outline),
-          onPressed: _rule.buckets.length <= 1
-              ? null
-              : () => setState(() {
-                  final buckets = [..._rule.buckets]..removeAt(index);
-                  _rule = HeatmapRule(source: _rule.source, buckets: buckets);
-                }),
-        ),
-      ],
-    );
-  }
-}
-
-/// Color name list for the editor dropdown.
-class HeatColorsNames {
-  static const all = [
-    'black',
-    'white',
-    'lightBlue',
-    'blue',
-    'darkBlue',
-    'lightYellow',
-    'yellow',
-    'darkYellow',
-    'lightGreen',
-    'green',
-    'darkGreen',
-    'orange',
-    'lightPink',
-    'pink',
-    'darkPink',
-    'red',
-  ];
 }

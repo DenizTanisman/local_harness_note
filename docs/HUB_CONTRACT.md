@@ -6,7 +6,7 @@ The Daily Tracker monolith was split into four independent Android apps under
 | Folder | Dart package | applicationId | Label | Owns |
 |---|---|---|---|---|
 | local_harness_para | local_harness_para | dev.deniz.local_harness_para | Para | Money: transactions, categories, recurring, reports, search, upcoming, expense reminders |
-| local_harness_not | local_harness_not | dev.deniz.local_harness_not | Not | Daily Check-in (metric tree + entries + notes), Analysis (heatmap, breakdown), metric detail, morning quote + evening fill-in reminder |
+| local_harness_not | local_harness_not | dev.deniz.local_harness_not | Not | Second brain: notes (search, tags, merge, versions), on-device Gemma, sequential reminder list, Claude access via MCP relay |
 | local_harness_program | local_harness_program | dev.deniz.local_harness_program | Program | Sport (workout programs, program log, calories, saved foods/exercises), Health (profile, body log, Health Connect samples), Screen time (usage stats) |
 | local_harness_hub | local_harness_hub | dev.deniz.local_harness_hub | Hub | No DB of its own. Reads the other three apps' snapshots, shows a combined dashboard, launches them. |
 
@@ -49,7 +49,7 @@ Kotlin class `dev.deniz.local_harness_<app>.HubProvider : ContentProvider`, decl
 | method | args | result | who |
 |---|---|---|---|
 | publishSnapshot | String json | null. Writes filesDir/hub_snapshot.json atomically (tmp file + rename) | feature apps |
-| readPeerSnapshot | String app ("para"/"not"/"program") | String? json. `contentResolver.call(Uri.parse("content://dev.deniz.local_harness_$app.hub"), "snapshot", null, null)?.getString("json")`; return null on any exception (not installed, SecurityException) | hub; not (for Instagram auto-fill from program) |
+| readPeerSnapshot | String app ("para"/"not"/"program") | String? json. `contentResolver.call(Uri.parse("content://dev.deniz.local_harness_$app.hub"), "snapshot", null, null)?.getString("json")`; return null on any exception (not installed, SecurityException) | hub |
 | isInstalled | String app | bool | hub |
 | launchApp | String app, String? route | bool. `packageManager.getLaunchIntentForPackage(pkg)` + extra `lh_route`, FLAG_ACTIVITY_NEW_TASK | hub |
 
@@ -99,14 +99,15 @@ All numbers are plain JSON numbers; missing values are `null`; dates are `YYYY-M
 ```
 `recent` = last 5 transactions; `upcoming` = next items from recurring rules within 30 days (empty list if not readily available).
 
-**not.data**
+**not.data** — schema **2** since 2026-10-16 (second brain, docs/second-brain-spec.md §10)
 ```json
 {
-  "checkin": { "filled": 0, "total": 0, "missing": ["Software", "Water"] },
-  "today": [ {"key": "software", "title": "Software", "unit": "min", "value": 45, "text": "note", "options": ["Morning"]} ]
+  "notes": { "total": 0, "inbox": 0 },
+  "nextReminder": { "title": "first line of the next reminder note", "at": "2026-10-16T14:00:00" }
 }
 ```
-`total`/`missing` count top-level metrics (composites count as filled if any child is filled).
+`nextReminder` is `null` when the reminder list is empty; a private note's title is sent as `"🔒"`.
+Schema 1 (`checkin`, `today`) is gone — the hub must read schema 2 for `not`.
 
 **program.data**
 ```json
@@ -122,7 +123,7 @@ All numbers are plain JSON numbers; missing values are `null`; dates are `YYYY-M
   }
 }
 ```
-`screenTime.days` = last 14 days (newest first) — the `not` app reads it to auto-fill Instagram.
+`screenTime.days` = last 14 days (newest first).
 
 ## 5. When feature apps publish
 

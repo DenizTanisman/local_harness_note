@@ -35,10 +35,6 @@ class AppTokens {
 
   static const danger = Color(0xFFFF5C6C);
 
-  // Data colors that must NOT follow the theme (CR1-B rules 3/5):
-  /// GitHub neon green sparkline.
-  static const sparkline = Color(0xFF39D353);
-
   // Radii
   static const radiusCard = 20.0;
   static const radiusPill = 999.0;
