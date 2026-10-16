@@ -35,7 +35,9 @@ object QuickNoteBubble {
                 enableVibration(false)
             }
         )
-        val icon = Icon.createWithResource(context, R.mipmap.ic_launcher)
+        // Not the launcher icon: the system already badges a conversation
+        // bubble with the app icon, so the same picture would show twice.
+        val icon = Icon.createWithResource(context, R.mipmap.ic_quick_note)
         val person = Person.Builder().setName("Not").setIcon(icon).setImportant(true).build()
         context.getSystemService(ShortcutManager::class.java).pushDynamicShortcut(
             ShortcutInfo.Builder(context, SHORTCUT)
