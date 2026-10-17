@@ -261,9 +261,10 @@ class _NotesPageState extends ConsumerState<NotesPage> {
   );
 }
 
-/// Gelen/Arşiv, then the top-level #tags; picking one opens a row with its
-/// sub-tags (`#question-llm` → `llm` under `question`), and so on down.
-/// The picked tag shows its own notes and everything under it.
+/// [Gelen] [Arşiv] | [Kategoriler ▾]: the categories button opens a menu
+/// with every #tag as a tree (`#question-llm` indented under `#question`),
+/// note counts included. The picked tag shows its notes and everything
+/// under it.
 class _FilterChips extends StatelessWidget {
   const _FilterChips({
     required this.status,
@@ -281,80 +282,119 @@ class _FilterChips extends StatelessWidget {
   final ValueChanged<String> onStatus;
   final ValueChanged<String?> onTag;
 
-  Widget _row(List<Widget> children) => SizedBox(
-    height: 48,
-    child: ListView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      children: children,
-    ),
-  );
-
-  Widget _chip(TagNode node, {required bool selected, required String? up}) =>
-      Padding(
-        padding: const EdgeInsets.only(right: 6),
-        child: FilterChip(
-          key: Key('tag-${node.path}'),
-          label: Text('#${node.name}  ${node.count}'),
-          selected: selected,
-          // Tapping the picked tag again steps back up one level.
-          onSelected: (_) => onTag(selected ? up : node.path),
-        ),
-      );
+  /// The whole tree, depth first, with each node's depth.
+  static List<(TagNode, int)> _flatten(
+    List<({String noteId, String tag})> rows, [
+    String? parent,
+    int depth = 0,
+  ]) => [
+    for (final node in TagTree.children(rows, parent)) ...[
+      (node, depth),
+      ..._flatten(rows, node.path, depth + 1),
+    ],
+  ];
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return StreamBuilder<List<({String noteId, String tag})>>(
       stream: rows,
       builder: (context, snap) {
-        final all = snap.data ?? const <({String noteId, String tag})>[];
-        final path = tag == null ? const <String>[] : TagTree.ancestry(tag!);
-        final top = TagTree.children(all, null);
-        final levels = <Widget>[];
-        for (var i = 0; i < path.length; i++) {
-          final children = TagTree.children(all, path[i]);
-          if (children.isEmpty) continue;
-          levels.add(
-            _row([
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: Center(
-                  child: Text(
-                    '#${path[i].split(TagTree.separator).last} ›',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ),
-              ),
-              for (final child in children)
-                _chip(child, selected: path.contains(child.path), up: path[i]),
-            ]),
-          );
-        }
-        return Column(
-          children: [
-            _row([
-              for (final (value, label) in [
+        final tree = _flatten(snap.data ?? const []);
+        final picked = tag;
+        final label = picked == null
+            ? 'Kategoriler'
+            : '#${picked.split(TagTree.separator).join(' › ')}';
+        return SizedBox(
+          height: 48,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            children: [
+              for (final (value, text) in [
                 ('inbox', 'Gelen'),
                 ('archived', 'Arşiv'),
               ])
                 Padding(
                   padding: const EdgeInsets.only(right: 6),
                   child: ChoiceChip(
-                    label: Text(label),
+                    label: Text(text),
                     selected: status == value,
                     onSelected: (_) => onStatus(value),
                   ),
                 ),
-              if (top.isNotEmpty) const VerticalDivider(width: 12),
-              for (final node in top)
-                _chip(
-                  node,
-                  selected: path.isNotEmpty && path.first == node.path,
-                  up: null,
+              const VerticalDivider(width: 12),
+              MenuAnchor(
+                style: MenuStyle(
+                  maximumSize: WidgetStatePropertyAll(
+                    Size(320, MediaQuery.sizeOf(context).height * 0.6),
+                  ),
                 ),
-            ]),
-            ...levels,
-          ],
+                menuChildren: [
+                  MenuItemButton(
+                    key: const Key('category-all'),
+                    leadingIcon: Icon(
+                      picked == null ? Icons.check : Icons.label_off_outlined,
+                      size: 18,
+                    ),
+                    onPressed: () => onTag(null),
+                    child: const Text('Tümü'),
+                  ),
+                  if (tree.isEmpty)
+                    const MenuItemButton(
+                      onPressed: null,
+                      child: Text('Henüz etiket yok — notta #etiket yaz'),
+                    ),
+                  for (final (node, depth) in tree)
+                    MenuItemButton(
+                      key: Key('category-${node.path}'),
+                      leadingIcon: SizedBox(
+                        width: 18.0 + depth * 18,
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: Icon(
+                            picked == node.path
+                                ? Icons.check
+                                : depth == 0
+                                ? Icons.tag
+                                : Icons.subdirectory_arrow_right,
+                            size: 18,
+                          ),
+                        ),
+                      ),
+                      trailingIcon: Text(
+                        '${node.count}',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                      onPressed: () => onTag(node.path),
+                      child: Text(depth == 0 ? '#${node.name}' : node.name),
+                    ),
+                ],
+                builder: (context, controller, _) => FilterChip(
+                  key: const Key('categories'),
+                  avatar: Icon(
+                    controller.isOpen ? Icons.expand_less : Icons.expand_more,
+                    size: 18,
+                  ),
+                  label: Text(
+                    label,
+                    // Same contrast as the picked Gelen/Arşiv chip.
+                    style: picked == null
+                        ? null
+                        : const TextStyle(color: Colors.white),
+                  ),
+                  iconTheme: picked == null
+                      ? null
+                      : const IconThemeData(color: Colors.white),
+                  selected: picked != null,
+                  showCheckmark: false,
+                  onSelected: (_) => controller.isOpen
+                      ? controller.close()
+                      : controller.open(),
+                ),
+              ),
+            ],
+          ),
         );
       },
     );
