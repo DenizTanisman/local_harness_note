@@ -124,8 +124,8 @@ flutter:
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
 
-# App launcher icon (deep navy + blue glow + neon-green sparkline).
-# Sources rendered by test/render_icon_test.dart.
+# App launcher icon: the colour-burst light bulb (ideas).
+# Sources: assets/icon/ (square crop; adaptive foreground keeps the bulb in the safe zone).
 flutter_launcher_icons:
   android: true
   ios: false
