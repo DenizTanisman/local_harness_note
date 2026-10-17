@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/note_links.dart';
 import '../../core/note_text.dart';
+import '../../core/tag_tree.dart';
 import '../../data/repositories/notes_repository.dart';
 import '../../theme/app_tokens.dart';
 import '../gemma/gemma_page.dart';
@@ -25,10 +26,22 @@ class _NotesPageState extends ConsumerState<NotesPage> {
   String? _tag;
   final _selected = <String>{};
   Stream<List<NoteItem>>? _notes;
-  Stream<List<String>>? _tags;
+  Stream<List<({String noteId, String tag})>>? _tagRows;
+  String? _tagRowsStatus;
   Object? _notesKey;
 
   bool get _selecting => _selected.isNotEmpty;
+
+  /// Tag tree source for the current Gelen/Arşiv view.
+  Stream<List<({String noteId, String tag})>> _tagRowsStream(
+    NotesRepository repo,
+  ) {
+    if (_tagRows == null || _tagRowsStatus != _status) {
+      _tagRowsStatus = _status;
+      _tagRows = repo.watchTagRows(status: _status);
+    }
+    return _tagRows!;
+  }
 
   /// Re-subscribes only when a filter changes, not on every rebuild.
   Stream<List<NoteItem>> _notesStream(NotesRepository repo) {
@@ -170,7 +183,7 @@ class _NotesPageState extends ConsumerState<NotesPage> {
               _FilterChips(
                 status: _status,
                 tag: _tag,
-                tags: _tags ??= repo.watchTags(),
+                rows: _tagRowsStream(repo),
                 onStatus: (s) => setState(() {
                   _status = s;
                   _selected.clear();
@@ -256,33 +269,78 @@ class _NotesPageState extends ConsumerState<NotesPage> {
   );
 }
 
+/// Gelen/Arşiv, then the top-level #tags; picking one opens a row with its
+/// sub-tags (`#question-llm` → `llm` under `question`), and so on down.
+/// The picked tag shows its own notes and everything under it.
 class _FilterChips extends StatelessWidget {
   const _FilterChips({
     required this.status,
     required this.tag,
-    required this.tags,
+    required this.rows,
     required this.onStatus,
     required this.onTag,
   });
 
   final String status;
+
+  /// Picked tag path, e.g. "question-llm".
   final String? tag;
-  final Stream<List<String>> tags;
+  final Stream<List<({String noteId, String tag})>> rows;
   final ValueChanged<String> onStatus;
   final ValueChanged<String?> onTag;
 
+  Widget _row(List<Widget> children) => SizedBox(
+    height: 48,
+    child: ListView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      children: children,
+    ),
+  );
+
+  Widget _chip(TagNode node, {required bool selected, required String? up}) =>
+      Padding(
+        padding: const EdgeInsets.only(right: 6),
+        child: FilterChip(
+          key: Key('tag-${node.path}'),
+          label: Text('#${node.name}  ${node.count}'),
+          selected: selected,
+          // Tapping the picked tag again steps back up one level.
+          onSelected: (_) => onTag(selected ? up : node.path),
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 48,
-      child: StreamBuilder<List<String>>(
-        stream: tags,
-        builder: (context, snap) {
-          final all = snap.data ?? const <String>[];
-          return ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            children: [
+    return StreamBuilder<List<({String noteId, String tag})>>(
+      stream: rows,
+      builder: (context, snap) {
+        final all = snap.data ?? const <({String noteId, String tag})>[];
+        final path = tag == null ? const <String>[] : TagTree.ancestry(tag!);
+        final top = TagTree.children(all, null);
+        final levels = <Widget>[];
+        for (var i = 0; i < path.length; i++) {
+          final children = TagTree.children(all, path[i]);
+          if (children.isEmpty) continue;
+          levels.add(
+            _row([
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Center(
+                  child: Text(
+                    '#${path[i].split(TagTree.separator).last} ›',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ),
+              for (final child in children)
+                _chip(child, selected: path.contains(child.path), up: path[i]),
+            ]),
+          );
+        }
+        return Column(
+          children: [
+            _row([
               for (final (value, label) in [
                 ('inbox', 'Gelen'),
                 ('archived', 'Arşiv'),
@@ -295,20 +353,18 @@ class _FilterChips extends StatelessWidget {
                     onSelected: (_) => onStatus(value),
                   ),
                 ),
-              if (all.isNotEmpty) const VerticalDivider(width: 12),
-              for (final t in all)
-                Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: FilterChip(
-                    label: Text('#$t'),
-                    selected: tag == t,
-                    onSelected: (on) => onTag(on ? t : null),
-                  ),
+              if (top.isNotEmpty) const VerticalDivider(width: 12),
+              for (final node in top)
+                _chip(
+                  node,
+                  selected: path.isNotEmpty && path.first == node.path,
+                  up: null,
                 ),
-            ],
-          );
-        },
-      ),
+            ]),
+            ...levels,
+          ],
+        );
+      },
     );
   }
 }

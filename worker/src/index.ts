@@ -31,7 +31,8 @@ const INSTRUCTIONS = `These are the user's personal notes and ideas ("second bra
 Every call wakes the phone, so a call can take a few seconds; if the phone is offline you get an error after ~25 s.
 To find something, call search_notes with a few keyword variants (search ignores Turkish diacritics and matches word prefixes), then get_note for the full text. list_recent shows what was written lately.
 Notes the user marked private are never visible. There is no delete tool; archive_note hides a note from the inbox, and archived notes are deleted automatically after 45 days (see auto_delete_on).
-add_to_reminders puts a note on the user's reminder list (shown in order at 07:30, 14:00 and 20:00).`;
+add_to_reminders puts a note on the user's reminder list (shown in order at 07:30, 14:00 and 20:00).
+Hashtags are hierarchical: '-' separates levels, so #question-llm is the sub-topic 'llm' under #question; filtering by a tag includes its sub-tags. Use this form when tagging new notes under an existing topic.`;
 
 const TOOLS = [
   {
@@ -43,7 +44,11 @@ const TOOLS = [
       type: "object",
       properties: {
         query: { type: "string", description: "Keywords; may include #tags" },
-        tag: { type: "string", description: "Only notes with this tag (without #)" },
+        tag: {
+          type: "string",
+          description:
+            "Only notes with this tag (without #). Tags are hierarchical with '-': 'question' also matches 'question-llm'.",
+        },
         since: { type: "string", description: "Only notes changed on/after YYYY-MM-DD" },
         include_archived: { type: "boolean", description: "Also search the archive" },
         limit: { type: "integer", minimum: 1, maximum: 30, description: "Default 20" },

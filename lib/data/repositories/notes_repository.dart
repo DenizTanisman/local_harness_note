@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../../core/note_links.dart';
 import '../../core/note_text.dart';
+import '../../core/tag_tree.dart';
 import '../../features/reminders/reminder_planner.dart';
 import '../db/app_database.dart';
 
@@ -120,12 +121,20 @@ class NotesRepository {
       where.add('n.updated_at >= ?');
       vars.add(Variable.withInt(since.millisecondsSinceEpoch));
     }
+    // A tag also matches its sub-tags: #question finds #question-llm.
     for (final t in tags) {
+      final tag = NoteText.lowerTr(t);
+      final like = tag
+          .replaceAll(r'\', r'\\')
+          .replaceAll('%', r'\%')
+          .replaceAll('_', r'\_');
       where.add(
         'EXISTS (SELECT 1 FROM note_tags t WHERE t.note_id = n.id '
-        'AND t.tag = ?)',
+        "AND (t.tag = ? OR t.tag LIKE ? ESCAPE '\\'))",
       );
-      vars.add(Variable.withString(NoteText.lowerTr(t)));
+      vars
+        ..add(Variable.withString(tag))
+        ..add(Variable.withString('$like${TagTree.separator}%'));
     }
     final from = fts == null
         ? 'notes n'
@@ -174,16 +183,24 @@ class NotesRepository {
       t.tag,
   ];
 
-  /// Tags used by inbox notes, most used first (filter chips).
-  Stream<List<String>> watchTags() => db
+  /// (note, tag) pairs for the notes in [status] — the filter chips build
+  /// the tag tree from these (TagTree.children).
+  Stream<List<({String noteId, String tag})>> watchTagRows({
+    String status = 'inbox',
+  }) => db
       .customSelect(
-        'SELECT t.tag, COUNT(*) AS c FROM note_tags t '
-        "JOIN notes n ON n.id = t.note_id WHERE n.status = 'inbox' "
-        'GROUP BY t.tag ORDER BY c DESC, t.tag',
+        'SELECT t.note_id, t.tag FROM note_tags t '
+        'JOIN notes n ON n.id = t.note_id WHERE n.status = ?',
+        variables: [Variable.withString(status)],
         readsFrom: {db.notes, db.noteTags},
       )
       .watch()
-      .map((rows) => [for (final r in rows) r.read<String>('tag')]);
+      .map(
+        (rows) => [
+          for (final r in rows)
+            (noteId: r.read<String>('note_id'), tag: r.read<String>('tag')),
+        ],
+      );
 
   /// Every tag in use (inbox and archive) with its note count, most used
   /// first — the editor's `#` suggestions.
