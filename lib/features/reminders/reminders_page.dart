@@ -33,16 +33,6 @@ class _RemindersPageState extends ConsumerState<RemindersPage> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      floatingActionButton: FloatingActionButton(
-        key: const Key('new-reminder'),
-        tooltip: 'Listeye yeni madde',
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => const NoteEditorPage(addToReminders: true),
-          ),
-        ),
-        child: const Icon(Icons.add),
-      ),
       body: SafeArea(
         child: StreamBuilder<List<NoteItem>>(
           stream: _items ??= repo.watchReminders(),
@@ -67,7 +57,7 @@ class _RemindersPageState extends ConsumerState<RemindersPage> {
                   Expanded(
                     child: Center(
                       child: Text(
-                        'Liste boş.\nBir notta 🔔 ile ekle ya da + ile yaz.',
+                        'Liste boş.\nBir notta 🔔 ile ekle ya da sağ alttaki + ile yaz.',
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
@@ -77,7 +67,7 @@ class _RemindersPageState extends ConsumerState<RemindersPage> {
                   Expanded(
                     child: ReorderableListView.builder(
                       buildDefaultDragHandles: false,
-                      padding: const EdgeInsets.fromLTRB(12, 4, 12, 96),
+                      padding: const EdgeInsets.fromLTRB(12, 4, 12, 120),
                       itemCount: items.length,
                       onReorderItem: (from, to) {
                         final ids = [for (final i in items) i.id];

@@ -35,6 +35,16 @@ class AppTokens {
 
   static const danger = Color(0xFFFF5C6C);
 
+  // Floating bottom navigation (pill bar + action circle)
+  static const navBarFill = Color(0xF00E1A30); // navy, a step above bgBase
+  static const navBarBorder = Color(0x1F5EA8FF); // accentEnd 12%
+  static const navSelectedFill = Color(0x332E7CF6); // accentStart 20%
+  static const navShadow = BoxShadow(
+    color: Color(0x80000000),
+    blurRadius: 24,
+    offset: Offset(0, 8),
+  );
+
   // Radii
   static const radiusCard = 20.0;
   static const radiusPill = 999.0;

@@ -4,11 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/secure_window.dart';
 import '../../data/db/database_provider.dart';
 import '../../theme/glow_background.dart';
+import '../notes/note_editor_page.dart';
 import '../notes/notes_page.dart';
 import '../notes/notes_providers.dart';
 import '../reminders/reminders_page.dart';
 import '../settings/settings_button.dart';
 import '../settings/settings_providers.dart';
+import 'floating_nav_bar.dart';
 
 /// Two tabs — Notlar · Hatırlatmalar — with Settings in the app bar.
 class AppShell extends ConsumerStatefulWidget {
@@ -73,21 +75,26 @@ class _AppShellState extends ConsumerState<AppShell>
           children: const [NotesPage(), RemindersPage()],
         ),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _tab,
-        onDestinationSelected: (i) => setState(() => _tab = i),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.sticky_note_2_outlined),
-            selectedIcon: Icon(Icons.sticky_note_2),
-            label: 'Notlar',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.notifications_outlined),
-            selectedIcon: Icon(Icons.notifications),
-            label: 'Hatırlatmalar',
+      // The floating bar sits over the content; lists pad their bottom.
+      extendBody: true,
+      bottomNavigationBar: FloatingNavBar(
+        index: _tab,
+        onSelect: (i) => setState(() => _tab = i),
+        items: const [
+          NavItem(Icons.sticky_note_2_outlined, Icons.sticky_note_2, 'Notlar'),
+          NavItem(
+            Icons.notifications_outlined,
+            Icons.notifications,
+            'Hatırlatmalar',
           ),
         ],
+        actionIcon: Icons.add,
+        actionTooltip: _tab == 0 ? 'Yeni not' : 'Listeye yeni madde',
+        onAction: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => NoteEditorPage(addToReminders: _tab == 1),
+          ),
+        ),
       ),
     );
   }

@@ -144,14 +144,6 @@ class _NotesPageState extends ConsumerState<NotesPage> {
       },
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        floatingActionButton: _selecting
-            ? null
-            : FloatingActionButton(
-                key: const Key('new-note'),
-                tooltip: 'Yeni not',
-                onPressed: () => _open(null),
-                child: const Icon(Icons.add),
-              ),
         body: SafeArea(
           child: Column(
             children: [
@@ -200,7 +192,7 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                       return _Empty(status: _status, query: _query);
                     }
                     return ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(12, 4, 12, 96),
+                      padding: const EdgeInsets.fromLTRB(12, 4, 12, 120),
                       itemCount: items.length,
                       itemBuilder: (context, i) {
                         final item = items[i];
