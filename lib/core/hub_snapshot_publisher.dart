@@ -10,6 +10,7 @@ import '../data/repositories/notes_repository.dart';
 import '../features/reminders/reminder_planner.dart';
 import 'date_key.dart';
 import 'hub_bridge.dart';
+import 'note_links.dart';
 import 'note_text.dart';
 
 /// Snapshot schema version served to the hub (docs/HUB_CONTRACT.md §4).
@@ -38,7 +39,9 @@ Future<Map<String, Object?>> buildHubSnapshot(
     final note = reminders.firstWhere((n) => n.id == plan.first.noteId);
     next = {
       // Private notes stay on the phone — the hub only learns one exists.
-      'title': note.isPrivate ? '🔒' : NoteText.title(note.body, max: 60),
+      'title': note.isPrivate
+          ? '🔒'
+          : NoteText.title(NoteLinks.displayText(note.body), max: 60),
       'at': plan.first.when.toIso8601String().substring(0, 19),
     };
   }

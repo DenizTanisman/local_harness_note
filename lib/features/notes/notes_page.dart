@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/note_links.dart';
 import '../../core/note_text.dart';
 import '../../data/repositories/notes_repository.dart';
 import '../../theme/app_tokens.dart';
@@ -330,7 +331,8 @@ class _NoteTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final preview = item.snippet ?? NoteText.rest(item.note.body);
+    final preview =
+        item.snippet ?? NoteText.rest(NoteLinks.displayText(item.note.body));
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
       shape: RoundedRectangleBorder(

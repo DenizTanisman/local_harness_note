@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import '../../core/note_links.dart';
 import '../../core/note_text.dart';
 import '../../features/reminders/reminder_planner.dart';
 import '../db/app_database.dart';
@@ -21,7 +22,7 @@ class NoteItem {
   final String? snippet;
 
   String get id => note.id;
-  String get title => NoteText.title(note.body);
+  String get title => NoteText.title(NoteLinks.displayText(note.body));
 }
 
 /// Everything needed to put the notes back the way they were before a merge.
@@ -156,7 +157,7 @@ class NotesRepository {
       inReminders: row.read<bool>('in_reminders'),
       snippet: NoteText.terms(query).isEmpty
           ? null
-          : NoteText.snippet(note.body, query),
+          : NoteText.snippet(NoteLinks.displayText(note.body), query),
     );
   }
 

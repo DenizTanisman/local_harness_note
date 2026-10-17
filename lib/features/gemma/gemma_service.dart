@@ -55,6 +55,7 @@ class GemmaService {
       '- En son satıra yalnızca notta geçen #etiketleri yaz (örnek: '
       '#fikir #proje); önüne başka kelime koyma. Etiket yoksa bu satırı '
       'yazma.\n'
+      '- Linkleri ve [kısa ad](link) yazımlarını harfi harfine koru.\n'
       '- Sadece düzenlenmiş notu yaz, açıklama ekleme.\n\n'
       'NOT:\n$noteSlot';
 

@@ -1,5 +1,6 @@
 package dev.deniz.local_harness_not
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.os.PowerManager
@@ -34,6 +35,10 @@ class MainActivity : FlutterActivity() {
                         "isIgnoringBatteryOptimizations" -> {
                             val pm = getSystemService(POWER_SERVICE) as PowerManager
                             result.success(pm.isIgnoringBatteryOptimizations(packageName))
+                        }
+                        "openUrl" -> {
+                            val url = call.arguments as? String
+                            result.success(url != null && openUrl(url))
                         }
                         "showBubble" -> {
                             QuickNoteBubble.show(this@MainActivity)
@@ -140,6 +145,26 @@ class MainActivity : FlutterActivity() {
             if (text.isBlank()) null else mapOf("action" to "share", "text" to text)
         }
         else -> null
+    }
+
+    /**
+     * Opens a link in the app that owns it (YouTube, Instagram, X …) and
+     * only falls back to the browser when no such app is installed.
+     */
+    private fun openUrl(url: String): Boolean {
+        val view = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            .addCategory(Intent.CATEGORY_BROWSABLE)
+        return try {
+            startActivity(Intent(view).addFlags(Intent.FLAG_ACTIVITY_REQUIRE_NON_BROWSER))
+            true
+        } catch (e: ActivityNotFoundException) {
+            try {
+                startActivity(view)
+                true
+            } catch (e: Exception) {
+                false
+            }
+        }
     }
 
     /** App id from either a bare String argument or a map {"app": ...}. */

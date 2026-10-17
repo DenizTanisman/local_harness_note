@@ -47,6 +47,16 @@ class SystemChannel {
     });
   }
 
+  /// Opens [url] in its own app when one is installed (YouTube, Instagram,
+  /// X …), else in the browser. False when nothing could open it.
+  static Future<bool> openUrl(String url) async {
+    try {
+      return await _channel.invokeMethod<bool>('openUrl', url) ?? false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
   /// Shows the quick-note bubble; returns [bubbleStatus].
   static Future<BubbleStatus?> showBubble() async {
     try {

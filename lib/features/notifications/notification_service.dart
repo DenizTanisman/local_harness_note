@@ -6,6 +6,7 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../core/note_links.dart';
 import '../../core/note_text.dart';
 import '../../data/db/app_database.dart';
 import '../../data/repositories/notes_repository.dart';
@@ -120,8 +121,9 @@ class NotificationService {
     final byId = {for (final n in notes) n.id: n};
     for (var i = 0; i < plan.length; i++) {
       final note = byId[plan[i].noteId]!;
-      final title = NoteText.title(note.body, max: 60);
-      final rest = NoteText.rest(note.body);
+      final shown = NoteLinks.displayText(note.body);
+      final title = NoteText.title(shown, max: 60);
+      final rest = NoteText.rest(shown);
       await _plugin.zonedSchedule(
         id: _baseId + i,
         title: '🔔 $title',

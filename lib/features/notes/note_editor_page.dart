@@ -9,6 +9,8 @@ import '../../data/db/app_database.dart';
 import '../../theme/app_tokens.dart';
 import '../gemma/gemma_page.dart';
 import 'notes_providers.dart';
+import 'link_action_bar.dart';
+import 'note_body_view.dart';
 import 'tag_suggestion_bar.dart';
 
 /// Plain-text editor (spec §3.2) with auto-save. A new note opens with the
@@ -41,6 +43,10 @@ class _NoteEditorPageState extends ConsumerState<NoteEditorPage> {
   Note? _note;
   bool _inReminders = false;
   bool _loading = true;
+
+  /// Existing notes open as they read (links tappable); a tap on the text
+  /// switches to editing at that spot. New notes start in editing.
+  late bool _editing = widget.noteId == null;
   Timer? _save;
   String _saved = '';
   StreamSubscription<Note?>? _watch;
@@ -126,6 +132,24 @@ class _NoteEditorPageState extends ConsumerState<NoteEditorPage> {
       ).showSnackBar(const SnackBar(content: Text('Önce bir şey yaz')));
     }
     return _id;
+  }
+
+  void _startEditing(int offset) {
+    setState(() => _editing = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _text.selection = TextSelection.collapsed(
+        offset: offset.clamp(0, _text.text.length),
+      );
+      _focus.requestFocus();
+      SystemChannels.textInput.invokeMethod<void>('TextInput.show');
+    });
+  }
+
+  Future<void> _stopEditing() async {
+    _focus.unfocus();
+    setState(() => _editing = false);
+    await _flush();
   }
 
   Future<void> _close() async {
@@ -256,6 +280,13 @@ class _NoteEditorPageState extends ConsumerState<NoteEditorPage> {
             style: Theme.of(context).textTheme.bodySmall,
           ),
           actions: [
+            if (_editing && _id != null)
+              IconButton(
+                key: const Key('editor-done'),
+                tooltip: 'Bitti',
+                icon: const Icon(Icons.check),
+                onPressed: _stopEditing,
+              ),
             IconButton(
               key: const Key('editor-gemma'),
               tooltip: 'Gemma ile toparla',
@@ -299,6 +330,23 @@ class _NoteEditorPageState extends ConsumerState<NoteEditorPage> {
         ),
         body: _loading
             ? const SizedBox.shrink()
+            : !_editing
+            ? GestureDetector(
+                // Below the text: edit at the end.
+                behavior: HitTestBehavior.opaque,
+                onTap: () => _startEditing(_text.text.length),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: NoteBodyView(
+                      key: const Key('editor-view'),
+                      body: _text.text,
+                      onTapText: _startEditing,
+                    ),
+                  ),
+                ),
+              )
             : Column(
                 children: [
                   Expanded(
@@ -326,6 +374,11 @@ class _NoteEditorPageState extends ConsumerState<NoteEditorPage> {
                     ),
                   ),
                   TagSuggestionBar(
+                    controller: _text,
+                    focusNode: _focus,
+                    onChanged: _scheduleSave,
+                  ),
+                  LinkActionBar(
                     controller: _text,
                     focusNode: _focus,
                     onChanged: _scheduleSave,
