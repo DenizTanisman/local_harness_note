@@ -35,8 +35,20 @@ class AppTokens {
 
   static const danger = Color(0xFFFF5C6C);
 
+  // Category colours: each main #tag gets a pixel icon in one of these.
+  static const catOrange = Color(0xFFFFA657);
+  static const catGreen = Color(0xFF7EE787);
+  static const catYellow = Color(0xFFF2CC60);
+  static const catPink = Color(0xFFF778BA);
+  static const catBlue = Color(0xFF79C0FF);
+  static const catPurple = Color(0xFFD2A8FF);
+  static const catRed = Color(0xFFFF7B72);
+  static const catTeal = Color(0xFF56D4DD);
+  static const catGrey = Color(0xFF8FA3C8);
+
   // Floating bottom navigation (pill bar + action circle)
   static const navBarFill = Color(0xF00E1A30); // navy, a step above bgBase
+  static const menuFill = Color(0xFF0E1A30); // navBarFill, opaque
   static const navBarBorder = Color(0x1F5EA8FF); // accentEnd 12%
   static const navSelectedFill = Color(0x332E7CF6); // accentStart 20%
   static const navShadow = BoxShadow(

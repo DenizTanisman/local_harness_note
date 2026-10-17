@@ -198,6 +198,17 @@ class SettingsPage extends ConsumerWidget {
               trailing: const Icon(Icons.restore),
               onTap: () => _restore(context, ref),
             ),
+            const Divider(),
+            const _SectionHeader('Hakkında'),
+            ListTile(
+              leading: const Icon(Icons.description_outlined),
+              title: const Text('Lisanslar'),
+              subtitle: const Text(
+                'Kategori ikonları: Streamline Pixel (CC BY 4.0)',
+              ),
+              onTap: () =>
+                  showLicensePage(context: context, applicationName: 'Not'),
+            ),
           ],
         ),
       ),

@@ -53,6 +53,7 @@ dependencies:
   flutter_gemma_litertlm: ^1.8.6
   firebase_core: ^4.15.0
   firebase_messaging: ^16.7.0
+  flutter_svg: ^2.3.0
 
 # Build sqlite3 natives with SQLite3 Multiple Ciphers — at-rest encryption
 # (spec 11.1). sqlcipher_flutter_libs is EOL with sqlite3 3.x; sqlite3mc is
@@ -88,6 +89,9 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+
+  assets:
+    - assets/icons/pixel/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

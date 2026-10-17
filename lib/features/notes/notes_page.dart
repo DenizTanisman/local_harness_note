@@ -7,6 +7,7 @@ import '../../core/tag_tree.dart';
 import '../../data/repositories/notes_repository.dart';
 import '../../theme/app_tokens.dart';
 import '../gemma/gemma_page.dart';
+import 'category_icon.dart';
 import 'note_editor_page.dart';
 import 'notes_providers.dart';
 
@@ -296,7 +297,6 @@ class _FilterChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return StreamBuilder<List<({String noteId, String tag})>>(
       stream: rows,
       builder: (context, snap) {
@@ -304,7 +304,7 @@ class _FilterChips extends StatelessWidget {
         final picked = tag;
         final label = picked == null
             ? 'Kategoriler'
-            : '#${picked.split(TagTree.separator).join(' › ')}';
+            : picked.split(TagTree.separator).join(' › ');
         return SizedBox(
           height: 48,
           child: ListView(
@@ -325,57 +325,87 @@ class _FilterChips extends StatelessWidget {
                 ),
               const VerticalDivider(width: 12),
               MenuAnchor(
+                alignmentOffset: const Offset(0, 6),
                 style: MenuStyle(
+                  backgroundColor: const WidgetStatePropertyAll(
+                    AppTokens.menuFill,
+                  ),
+                  surfaceTintColor: const WidgetStatePropertyAll(
+                    Colors.transparent,
+                  ),
+                  elevation: const WidgetStatePropertyAll(12),
+                  shadowColor: const WidgetStatePropertyAll(Colors.black),
+                  padding: const WidgetStatePropertyAll(EdgeInsets.all(8)),
+                  shape: WidgetStatePropertyAll(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppTokens.radiusCard),
+                      side: const BorderSide(color: AppTokens.navBarBorder),
+                    ),
+                  ),
                   maximumSize: WidgetStatePropertyAll(
-                    Size(320, MediaQuery.sizeOf(context).height * 0.6),
+                    Size(300, MediaQuery.sizeOf(context).height * 0.6),
                   ),
                 ),
                 menuChildren: [
-                  MenuItemButton(
+                  _CategoryRow(
                     key: const Key('category-all'),
-                    leadingIcon: Icon(
-                      picked == null ? Icons.check : Icons.label_off_outlined,
-                      size: 18,
-                    ),
+                    leading: const _AllIcon(),
+                    label: 'Tümü',
+                    selected: picked == null,
                     onPressed: () => onTag(null),
-                    child: const Text('Tümü'),
                   ),
+                  if (tree.isNotEmpty)
+                    const Divider(height: 12, indent: 8, endIndent: 8),
                   if (tree.isEmpty)
-                    const MenuItemButton(
-                      onPressed: null,
-                      child: Text('Henüz etiket yok — notta #etiket yaz'),
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(16, 8, 16, 12),
+                      child: Text(
+                        'Henüz kategori yok.\nNotta #yemek gibi yaz.',
+                      ),
                     ),
                   for (final (node, depth) in tree)
-                    MenuItemButton(
-                      key: Key('category-${node.path}'),
-                      leadingIcon: SizedBox(
-                        width: 18.0 + depth * 18,
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: Icon(
-                            picked == node.path
-                                ? Icons.check
-                                : depth == 0
-                                ? Icons.tag
-                                : Icons.subdirectory_arrow_right,
-                            size: 18,
+                    depth == 0
+                        ? _CategoryRow(
+                            key: Key('category-${node.path}'),
+                            leading: CategoryIcon(tag: node.path, size: 32),
+                            label: node.name,
+                            count: node.count,
+                            selected: picked == node.path,
+                            onPressed: () => onTag(node.path),
+                          )
+                        // Sub-tags keep the plain indented look.
+                        : _CategoryRow(
+                            key: Key('category-${node.path}'),
+                            leading: SizedBox(
+                              width: 32.0 + (depth - 1) * 18,
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: Icon(
+                                  picked == node.path
+                                      ? Icons.check
+                                      : Icons.subdirectory_arrow_right,
+                                  size: 18,
+                                  color: AppTokens.textSecondary,
+                                ),
+                              ),
+                            ),
+                            label: node.name,
+                            count: node.count,
+                            selected: picked == node.path,
+                            dense: true,
+                            onPressed: () => onTag(node.path),
                           ),
-                        ),
-                      ),
-                      trailingIcon: Text(
-                        '${node.count}',
-                        style: theme.textTheme.bodySmall,
-                      ),
-                      onPressed: () => onTag(node.path),
-                      child: Text(depth == 0 ? '#${node.name}' : node.name),
-                    ),
                 ],
                 builder: (context, controller, _) => FilterChip(
                   key: const Key('categories'),
-                  avatar: Icon(
-                    controller.isOpen ? Icons.expand_less : Icons.expand_more,
-                    size: 18,
-                  ),
+                  avatar: picked == null
+                      ? Icon(
+                          controller.isOpen
+                              ? Icons.expand_less
+                              : Icons.expand_more,
+                          size: 18,
+                        )
+                      : CategoryIcon(tag: picked, size: 22),
                   label: Text(
                     label,
                     // Same contrast as the picked Gelen/Arşiv chip.
@@ -383,9 +413,6 @@ class _FilterChips extends StatelessWidget {
                         ? null
                         : const TextStyle(color: Colors.white),
                   ),
-                  iconTheme: picked == null
-                      ? null
-                      : const IconThemeData(color: Colors.white),
                   selected: picked != null,
                   showCheckmark: false,
                   onSelected: (_) => controller.isOpen
@@ -399,6 +426,93 @@ class _FilterChips extends StatelessWidget {
       },
     );
   }
+}
+
+/// One row of the categories menu: icon, name, note count; the picked row
+/// sits on the accent tint.
+class _CategoryRow extends StatelessWidget {
+  const _CategoryRow({
+    super.key,
+    required this.leading,
+    required this.label,
+    required this.selected,
+    required this.onPressed,
+    this.count,
+    this.dense = false,
+  });
+
+  final Widget leading;
+  final String label;
+  final int? count;
+  final bool selected;
+  final bool dense;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return MenuItemButton(
+      onPressed: onPressed,
+      style: ButtonStyle(
+        minimumSize: WidgetStatePropertyAll(Size(260, dense ? 40 : 52)),
+        padding: const WidgetStatePropertyAll(
+          EdgeInsets.symmetric(horizontal: 10),
+        ),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+        backgroundColor: WidgetStatePropertyAll(
+          selected ? AppTokens.navSelectedFill : Colors.transparent,
+        ),
+        overlayColor: const WidgetStatePropertyAll(AppTokens.surfaceCard),
+      ),
+      leadingIcon: leading,
+      trailingIcon: count == null
+          ? null
+          : Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppTokens.surfaceCard,
+                borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+              ),
+              child: Text(
+                '$count',
+                style: text.labelSmall?.copyWith(
+                  color: AppTokens.textSecondary,
+                ),
+              ),
+            ),
+      child: Padding(
+        padding: const EdgeInsets.only(left: 4),
+        child: Text(
+          label,
+          style: (dense ? text.bodyMedium : text.titleSmall)?.copyWith(
+            color: selected ? AppTokens.textPrimary : null,
+            fontWeight: dense ? FontWeight.w500 : FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AllIcon extends StatelessWidget {
+  const _AllIcon();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 32,
+    height: 32,
+    decoration: BoxDecoration(
+      color: AppTokens.navSelectedFill,
+      borderRadius: BorderRadius.circular(10),
+    ),
+    child: const Icon(
+      Icons.grid_view_rounded,
+      size: 18,
+      color: AppTokens.accentEnd,
+    ),
+  );
 }
 
 class _NoteTile extends StatelessWidget {

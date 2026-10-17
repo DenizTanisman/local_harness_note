@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/note_text.dart';
+import '../../core/tag_categories.dart';
 import '../../theme/app_tokens.dart';
+import 'category_icon.dart';
 import 'notes_providers.dart';
 
 /// Existing `#tags` for the hashtag being typed in [controller], most used
@@ -61,9 +63,24 @@ class _TagSuggestionBarState extends ConsumerState<TagSuggestionBar> {
             widget.controller.selection.baseOffset,
           )
         : null;
+    final used = [for (final c in _counts) c.tag];
     final next = at == null
         ? const <String>[]
-        : NoteText.suggestTags([for (final c in _counts) c.tag], at.prefix);
+        : NoteText.suggestTags(
+            [
+              ...used,
+              // Ready-made categories the user has not used yet, after the
+              // ones in use (main tags only).
+              for (final c in TagCategories.all)
+                if (!used.any(
+                  (u) =>
+                      NoteText.fold(u.split('-').first) == NoteText.fold(c.tag),
+                ))
+                  c.tag,
+            ],
+            at.prefix,
+            limit: 20,
+          );
     if (!mounted || listEquals(next, _suggestions)) return;
     setState(() => _suggestions = next);
   }
@@ -98,7 +115,12 @@ class _TagSuggestionBarState extends ConsumerState<TagSuggestionBar> {
             Padding(
               padding: const EdgeInsets.only(right: 6),
               child: ActionChip(
-                label: Text('#$tag  ${counts[tag] ?? ''}'),
+                avatar: tag.contains('-')
+                    ? null
+                    : CategoryIcon(tag: tag, size: 22),
+                label: Text(
+                  counts[tag] == null ? '#$tag' : '#$tag  ${counts[tag]}',
+                ),
                 onPressed: () => _pick(tag),
               ),
             ),

@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workmanager/workmanager.dart';
@@ -61,6 +63,13 @@ void main() {
         FlutterError.presentError(details);
       };
       Workmanager().initialize(backupCallbackDispatcher);
+      // Streamline "Pixel" icons are CC BY 4.0: credit them on the
+      // licenses page.
+      LicenseRegistry.addLicense(() async* {
+        yield LicenseEntryWithLineBreaks([
+          'Streamline Pixel icons',
+        ], await rootBundle.loadString('assets/icons/pixel/LICENSE.md'));
+      });
       final container = ProviderContainer();
       runApp(
         UncontrolledProviderScope(container: container, child: const NotApp()),
