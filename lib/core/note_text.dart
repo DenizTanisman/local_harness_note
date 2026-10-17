@@ -28,6 +28,22 @@ class NoteText {
     return out.toString();
   }
 
+  static const _trAlphabet = 'abcçdefgğhıijklmnoöprsştuüvwxyz';
+
+  /// Compares two strings in Turkish alphabetical order (c < ç < d,
+  /// ı < i), case-insensitive; other characters by code point.
+  static int compareTr(String a, String b) {
+    final x = lowerTr(a), y = lowerTr(b);
+    final n = x.length < y.length ? x.length : y.length;
+    for (var i = 0; i < n; i++) {
+      if (x[i] == y[i]) continue;
+      final p = _trAlphabet.indexOf(x[i]), q = _trAlphabet.indexOf(y[i]);
+      if (p >= 0 && q >= 0) return p - q;
+      return x.codeUnitAt(i) - y.codeUnitAt(i);
+    }
+    return x.length - y.length;
+  }
+
   /// Turkish-aware lower case for display (İ→i, I→ı).
   static String lowerTr(String text) =>
       text.replaceAll('İ', 'i').replaceAll('I', 'ı').toLowerCase();

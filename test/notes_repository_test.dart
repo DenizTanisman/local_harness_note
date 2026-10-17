@@ -169,6 +169,28 @@ void main() {
     });
   });
 
+  group('sort', () {
+    test('Turkish alphabetical compare', () {
+      final words = ['çorba', 'Ilık', 'cam', 'şeker', 'İnce', 'su', 'ağaç'];
+      words.sort(NoteText.compareTr);
+      expect(words, ['ağaç', 'cam', 'çorba', 'Ilık', 'İnce', 'su', 'şeker']);
+    });
+
+    test('every list order', () async {
+      final b = await note('Beta');
+      final c = await note('Çay');
+      final a = await note('Alfa');
+      await repo.updateBody(b, 'Beta (düzenlendi)');
+      Future<List<String>> ids(NoteSort sort) async =>
+          [for (final n in await repo.watchNotes(sort: sort).first) n.id];
+      expect(await ids(NoteSort.updated), [b, a, c]);
+      expect(await ids(NoteSort.newest), [a, c, b]);
+      expect(await ids(NoteSort.oldest), [b, c, a]);
+      expect(await ids(NoteSort.az), [a, b, c]);
+      expect(await ids(NoteSort.za), [c, b, a]);
+    });
+  });
+
   group('merge', () {
     test('oldest first with date lines; originals archived', () async {
       final a = await note('ilk parça #x');

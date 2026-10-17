@@ -5,6 +5,7 @@ import '../../core/note_links.dart';
 import '../../core/note_text.dart';
 import '../../core/tag_tree.dart';
 import '../../data/repositories/notes_repository.dart';
+import '../settings/settings_providers.dart';
 import '../../theme/app_tokens.dart';
 import '../gemma/gemma_page.dart';
 import '../gemma/gemma_prompt_sheet.dart';
@@ -20,6 +21,8 @@ class NotesPage extends ConsumerStatefulWidget {
   @override
   ConsumerState<NotesPage> createState() => _NotesPageState();
 }
+
+const _sortKey = 'notes_sort';
 
 class _NotesPageState extends ConsumerState<NotesPage> {
   final _search = TextEditingController();
@@ -46,11 +49,16 @@ class _NotesPageState extends ConsumerState<NotesPage> {
   }
 
   /// Re-subscribes only when a filter changes, not on every rebuild.
-  Stream<List<NoteItem>> _notesStream(NotesRepository repo) {
-    final key = (_status, _query, _tag);
+  Stream<List<NoteItem>> _notesStream(NotesRepository repo, NoteSort sort) {
+    final key = (_status, _query, _tag, sort);
     if (_notes == null || key != _notesKey) {
       _notesKey = key;
-      _notes = repo.watchNotes(status: _status, query: _query, tag: _tag);
+      _notes = repo.watchNotes(
+        status: _status,
+        query: _query,
+        tag: _tag,
+        sort: sort,
+      );
     }
     return _notes!;
   }
@@ -139,6 +147,7 @@ class _NotesPageState extends ConsumerState<NotesPage> {
   @override
   Widget build(BuildContext context) {
     final repo = ref.watch(notesRepositoryProvider);
+    final sort = NoteSort.parse(ref.watch(settingsProvider).value?[_sortKey]);
     return PopScope(
       canPop: !_selecting,
       onPopInvokedWithResult: (didPop, _) {
@@ -183,10 +192,13 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                   _selected.clear();
                 }),
                 onTag: (t) => setState(() => _tag = t),
+                sort: sort,
+                onSort: (v) =>
+                    ref.read(settingsRepositoryProvider).set(_sortKey, v.name),
               ),
               Expanded(
                 child: StreamBuilder<List<NoteItem>>(
-                  stream: _notesStream(repo),
+                  stream: _notesStream(repo, sort),
                   builder: (context, snap) {
                     final items = snap.data;
                     if (items == null) return const SizedBox.shrink();
@@ -268,17 +280,19 @@ class _NotesPageState extends ConsumerState<NotesPage> {
   );
 }
 
-/// [Gelen] [Arşiv] | [Kategoriler ▾]: the categories button opens a menu
-/// with every #tag as a tree (`#question-llm` indented under `#question`),
-/// note counts included. The picked tag shows its notes and everything
-/// under it.
-class _FilterChips extends StatelessWidget {
+/// [Gelen] [Arşiv] | [Kategoriler ▾] [sort]: the categories menu lists
+/// the main #tags; tapping one picks it (its notes and everything under
+/// it) and opens its sub-tags right below, menu still open. Until a
+/// sub-tag is picked, the main tag's notes all show.
+class _FilterChips extends StatefulWidget {
   const _FilterChips({
     required this.status,
     required this.tag,
     required this.rows,
     required this.onStatus,
     required this.onTag,
+    required this.sort,
+    required this.onSort,
   });
 
   final String status;
@@ -288,26 +302,46 @@ class _FilterChips extends StatelessWidget {
   final Stream<List<({String noteId, String tag})>> rows;
   final ValueChanged<String> onStatus;
   final ValueChanged<String?> onTag;
+  final NoteSort sort;
+  final ValueChanged<NoteSort> onSort;
 
-  /// The whole tree, depth first, with each node's depth.
-  static List<(TagNode, int)> _flatten(
+  @override
+  State<_FilterChips> createState() => _FilterChipsState();
+}
+
+class _FilterChipsState extends State<_FilterChips> {
+  /// Tags whose sub-tags are shown in the menu.
+  Set<String> _open = {};
+
+  /// Visible menu rows: main tags, plus the children of opened ones.
+  List<(TagNode, int, bool)> _visible(
     List<({String noteId, String tag})> rows, [
     String? parent,
     int depth = 0,
   ]) => [
     for (final node in TagTree.children(rows, parent)) ...[
-      (node, depth),
-      ..._flatten(rows, node.path, depth + 1),
+      (node, depth, TagTree.children(rows, node.path).isNotEmpty),
+      if (_open.contains(node.path)) ..._visible(rows, node.path, depth + 1),
     ],
   ];
 
+  void _pick(TagNode node, bool hasChildren, MenuController menu) {
+    widget.onTag(node.path);
+    if (hasChildren) {
+      // Show what is under it; keep the menu open for an optional sub-tag.
+      setState(() => _open = TagTree.ancestry(node.path).toSet());
+    } else {
+      menu.close();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final picked = widget.tag;
     return StreamBuilder<List<({String noteId, String tag})>>(
-      stream: rows,
+      stream: widget.rows,
       builder: (context, snap) {
-        final tree = _flatten(snap.data ?? const []);
-        final picked = tag;
+        final all = snap.data ?? const <({String noteId, String tag})>[];
         final label = picked == null
             ? 'Kategoriler'
             : picked.split(TagTree.separator).join(' › ').replaceAll('_', ' ');
@@ -325,82 +359,77 @@ class _FilterChips extends StatelessWidget {
                   padding: const EdgeInsets.only(right: 6),
                   child: ChoiceChip(
                     label: Text(text),
-                    selected: status == value,
-                    onSelected: (_) => onStatus(value),
+                    selected: widget.status == value,
+                    onSelected: (_) => widget.onStatus(value),
                   ),
                 ),
               const VerticalDivider(width: 12),
               MenuAnchor(
                 alignmentOffset: const Offset(0, 6),
-                style: MenuStyle(
-                  backgroundColor: const WidgetStatePropertyAll(
-                    AppTokens.menuFill,
-                  ),
-                  surfaceTintColor: const WidgetStatePropertyAll(
-                    Colors.transparent,
-                  ),
-                  elevation: const WidgetStatePropertyAll(12),
-                  shadowColor: const WidgetStatePropertyAll(Colors.black),
-                  padding: const WidgetStatePropertyAll(EdgeInsets.all(8)),
-                  shape: WidgetStatePropertyAll(
-                    RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppTokens.radiusCard),
-                      side: const BorderSide(color: AppTokens.navBarBorder),
-                    ),
-                  ),
-                  maximumSize: WidgetStatePropertyAll(
-                    Size(300, MediaQuery.sizeOf(context).height * 0.6),
-                  ),
+                onOpen: () => setState(
+                  () => _open = picked == null
+                      ? {}
+                      : TagTree.ancestry(picked).toSet(),
                 ),
+                style: _menuStyle(context),
                 menuChildren: [
-                  _CategoryRow(
-                    key: const Key('category-all'),
-                    leading: const _AllIcon(),
-                    label: 'Tümü',
-                    selected: picked == null,
-                    onPressed: () => onTag(null),
-                  ),
-                  if (tree.isNotEmpty)
-                    const Divider(height: 12, indent: 8, endIndent: 8),
-                  if (tree.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.fromLTRB(16, 8, 16, 12),
-                      child: Text(
-                        'Henüz kategori yok.\nNotta #yemek gibi yaz.',
-                      ),
-                    ),
-                  for (final (node, depth) in tree)
-                    depth == 0
-                        ? _CategoryRow(
-                            key: Key('category-${node.path}'),
-                            leading: CategoryIcon(tag: node.path, size: 32),
-                            label: node.name.replaceAll('_', ' '),
-                            count: node.count,
-                            selected: picked == node.path,
-                            onPressed: () => onTag(node.path),
-                          )
-                        // Sub-tags keep the plain indented look.
-                        : _CategoryRow(
-                            key: Key('category-${node.path}'),
-                            leading: SizedBox(
-                              width: 32.0 + (depth - 1) * 18,
-                              child: Align(
-                                alignment: Alignment.centerRight,
-                                child: Icon(
-                                  picked == node.path
-                                      ? Icons.check
-                                      : Icons.subdirectory_arrow_right,
-                                  size: 18,
-                                  color: AppTokens.textSecondary,
-                                ),
+                  Builder(
+                    builder: (context) {
+                      final menu = MenuController.maybeOf(context);
+                      final tree = _visible(all);
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _CategoryRow(
+                            key: const Key('category-all'),
+                            leading: const _AllIcon(),
+                            label: 'Tümü',
+                            selected: picked == null,
+                            onPressed: () {
+                              widget.onTag(null);
+                              menu?.close();
+                            },
+                          ),
+                          if (tree.isNotEmpty)
+                            const Divider(height: 12, indent: 8, endIndent: 8),
+                          if (tree.isEmpty)
+                            const Padding(
+                              padding: EdgeInsets.fromLTRB(16, 8, 16, 12),
+                              child: Text(
+                                'Henüz kategori yok.\nNotta #yemek gibi yaz.',
                               ),
                             ),
-                            label: node.name.replaceAll('_', ' '),
-                            count: node.count,
-                            selected: picked == node.path,
-                            dense: true,
-                            onPressed: () => onTag(node.path),
-                          ),
+                          for (final (node, depth, hasChildren) in tree)
+                            _CategoryRow(
+                              key: Key('category-${node.path}'),
+                              leading: depth == 0
+                                  ? CategoryIcon(tag: node.path, size: 32)
+                                  : SizedBox(
+                                      width: 32.0 + (depth - 1) * 18,
+                                      child: Align(
+                                        alignment: Alignment.centerRight,
+                                        child: Icon(
+                                          picked == node.path
+                                              ? Icons.check
+                                              : Icons.subdirectory_arrow_right,
+                                          size: 18,
+                                          color: AppTokens.textSecondary,
+                                        ),
+                                      ),
+                                    ),
+                              label: node.name.replaceAll('_', ' '),
+                              count: node.count,
+                              selected: picked == node.path,
+                              dense: depth > 0,
+                              expandable: hasChildren,
+                              expanded: _open.contains(node.path),
+                              onPressed: () => _pick(node, hasChildren, menu!),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
                 ],
                 builder: (context, controller, _) => FilterChip(
                   key: const Key('categories'),
@@ -426,12 +455,81 @@ class _FilterChips extends StatelessWidget {
                       : controller.open(),
                 ),
               ),
+              const SizedBox(width: 6),
+              MenuAnchor(
+                alignmentOffset: const Offset(0, 6),
+                style: _menuStyle(context),
+                menuChildren: [
+                  Builder(
+                    builder: (context) => Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        for (final option in NoteSort.values)
+                          _CategoryRow(
+                            key: Key('sort-${option.name}'),
+                            leading: Icon(
+                              widget.sort == option
+                                  ? Icons.check
+                                  : _sortIcon(option),
+                              size: 20,
+                              color: widget.sort == option
+                                  ? AppTokens.accentEnd
+                                  : AppTokens.textSecondary,
+                            ),
+                            label: option.label,
+                            selected: widget.sort == option,
+                            dense: true,
+                            onPressed: () {
+                              widget.onSort(option);
+                              MenuController.maybeOf(context)?.close();
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+                builder: (context, controller, _) => ActionChip(
+                  key: const Key('sort'),
+                  tooltip: 'Sırala: ${widget.sort.label}',
+                  avatar: Icon(_sortIcon(widget.sort), size: 18),
+                  label: Text(widget.sort.label),
+                  onPressed: () => controller.isOpen
+                      ? controller.close()
+                      : controller.open(),
+                ),
+              ),
             ],
           ),
         );
       },
     );
   }
+
+  static IconData _sortIcon(NoteSort s) => switch (s) {
+    NoteSort.updated => Icons.edit_calendar_outlined,
+    NoteSort.newest => Icons.arrow_downward,
+    NoteSort.oldest => Icons.arrow_upward,
+    NoteSort.az => Icons.sort_by_alpha,
+    NoteSort.za => Icons.sort_by_alpha,
+  };
+
+  static MenuStyle _menuStyle(BuildContext context) => MenuStyle(
+    backgroundColor: const WidgetStatePropertyAll(AppTokens.menuFill),
+    surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+    elevation: const WidgetStatePropertyAll(12),
+    shadowColor: const WidgetStatePropertyAll(Colors.black),
+    padding: const WidgetStatePropertyAll(EdgeInsets.all(8)),
+    shape: WidgetStatePropertyAll(
+      RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTokens.radiusCard),
+        side: const BorderSide(color: AppTokens.navBarBorder),
+      ),
+    ),
+    maximumSize: WidgetStatePropertyAll(
+      Size(300, MediaQuery.sizeOf(context).height * 0.6),
+    ),
+  );
 }
 
 /// One row of the categories menu: icon, name, note count; the picked row
@@ -445,6 +543,8 @@ class _CategoryRow extends StatelessWidget {
     required this.onPressed,
     this.count,
     this.dense = false,
+    this.expandable = false,
+    this.expanded = false,
   });
 
   final Widget leading;
@@ -452,6 +552,10 @@ class _CategoryRow extends StatelessWidget {
   final int? count;
   final bool selected;
   final bool dense;
+
+  /// Has sub-tags: shows a chevron; picking it keeps the menu open.
+  final bool expandable;
+  final bool expanded;
   final VoidCallback onPressed;
 
   @override
@@ -459,6 +563,8 @@ class _CategoryRow extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     return MenuItemButton(
       onPressed: onPressed,
+      // The caller decides when the menu closes.
+      closeOnActivate: false,
       style: ButtonStyle(
         minimumSize: WidgetStatePropertyAll(Size(260, dense ? 40 : 52)),
         padding: const WidgetStatePropertyAll(
@@ -475,18 +581,32 @@ class _CategoryRow extends StatelessWidget {
       leadingIcon: leading,
       trailingIcon: count == null
           ? null
-          : Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: AppTokens.surfaceCard,
-                borderRadius: BorderRadius.circular(AppTokens.radiusPill),
-              ),
-              child: Text(
-                '$count',
-                style: text.labelSmall?.copyWith(
-                  color: AppTokens.textSecondary,
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTokens.surfaceCard,
+                    borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+                  ),
+                  child: Text(
+                    '$count',
+                    style: text.labelSmall?.copyWith(
+                      color: AppTokens.textSecondary,
+                    ),
+                  ),
                 ),
-              ),
+                if (expandable)
+                  Icon(
+                    expanded ? Icons.expand_less : Icons.expand_more,
+                    size: 18,
+                    color: AppTokens.textSecondary,
+                  ),
+              ],
             ),
       child: Padding(
         padding: const EdgeInsets.only(left: 4),

@@ -6,6 +6,21 @@ import '../../core/tag_tree.dart';
 import '../../features/reminders/reminder_planner.dart';
 import '../db/app_database.dart';
 
+/// How the notes list is ordered (Notlar › sort button).
+enum NoteSort {
+  updated('Son düzenlenen'),
+  newest('En yeni eklenen'),
+  oldest('En eski eklenen'),
+  az('A → Z'),
+  za('Z → A');
+
+  const NoteSort(this.label);
+  final String label;
+
+  static NoteSort parse(String? name) =>
+      values.firstWhere((s) => s.name == name, orElse: () => updated);
+}
+
 /// A note as lists show it.
 class NoteItem {
   const NoteItem({
@@ -61,12 +76,14 @@ class NotesRepository {
     String status = 'inbox',
     String query = '',
     String? tag,
+    NoteSort sort = NoteSort.updated,
   }) {
     final q = _buildQuery(
       statuses: [status],
       query: query,
       tags: [?tag, ...NoteText.queryTags(query)],
       includePrivate: true,
+      sort: sort,
     );
     return db
         .customSelect(
@@ -75,7 +92,14 @@ class NotesRepository {
           readsFrom: {db.notes, db.noteTags, db.reminders},
         )
         .watch()
-        .map((rows) => rows.map((r) => _item(r, query)).toList());
+        .map((rows) {
+          final items = rows.map((r) => _item(r, query)).toList();
+          if (sort == NoteSort.az || sort == NoteSort.za) {
+            items.sort((a, b) => NoteText.compareTr(a.title, b.title));
+            if (sort == NoteSort.za) return items.reversed.toList();
+          }
+          return items;
+        });
   }
 
   /// One-shot variant used by the MCP tools.
@@ -106,6 +130,7 @@ class NotesRepository {
     required String query,
     required List<String> tags,
     required bool includePrivate,
+    NoteSort sort = NoteSort.updated,
     DateTime? since,
     int? limit,
     int offset = 0,
@@ -143,7 +168,14 @@ class NotesRepository {
       where.insert(0, 'notes_fts MATCH ?');
       vars.insert(0, Variable.withString(fts));
     }
-    final order = fts == null ? 'n.updated_at DESC' : 'bm25(notes_fts)';
+    // A search keeps relevance order unless another order was picked;
+    // A→Z / Z→A are applied in Dart (Turkish alphabet, title line).
+    final order = switch (sort) {
+      NoteSort.newest => 'n.created_at DESC',
+      NoteSort.oldest => 'n.created_at ASC',
+      _ when fts != null => 'bm25(notes_fts)',
+      _ => 'n.updated_at DESC',
+    };
     final page = limit == null ? '' : ' LIMIT $limit OFFSET $offset';
     return (
       sql:
