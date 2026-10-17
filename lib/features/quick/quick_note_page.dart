@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/note_text.dart';
+import '../../core/selection_menu.dart';
 import '../../theme/app_tokens.dart';
 import '../notes/notes_providers.dart';
 import '../notes/tag_suggestion_bar.dart';
@@ -21,6 +22,7 @@ class _QuickNotePageState extends ConsumerState<QuickNotePage>
     with WidgetsBindingObserver {
   final _text = TextEditingController();
   final _focus = FocusNode();
+  late final _selectionMenu = SelectionMenuOnRange(_text, _focus);
   String? _lastSaved;
   bool _saving = false;
 
@@ -29,12 +31,14 @@ class _QuickNotePageState extends ConsumerState<QuickNotePage>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _text.addListener(() => setState(() {}));
+    _selectionMenu; // start listening
     WidgetsBinding.instance.addPostFrameCallback((_) => _showKeyboard());
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _selectionMenu.dispose();
     _text.dispose();
     _focus.dispose();
     super.dispose();

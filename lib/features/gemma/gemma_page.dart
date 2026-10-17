@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/selection_menu.dart';
 import '../../data/db/app_database.dart';
 import '../../theme/app_tokens.dart';
 import '../notes/notes_providers.dart';
@@ -24,6 +25,8 @@ class GemmaPage extends ConsumerStatefulWidget {
 
 class _GemmaPageState extends ConsumerState<GemmaPage> {
   final _output = TextEditingController();
+  final _outputFocus = FocusNode();
+  late final _selectionMenu = SelectionMenuOnRange(_output, _outputFocus);
   Note? _note;
   bool _running = false;
   bool _accepted = false;
@@ -40,6 +43,7 @@ class _GemmaPageState extends ConsumerState<GemmaPage> {
   @override
   void initState() {
     super.initState();
+    _selectionMenu; // start listening
     _start();
   }
 
@@ -158,6 +162,8 @@ class _GemmaPageState extends ConsumerState<GemmaPage> {
   void dispose() {
     _sub?.cancel();
     if (_running) _gemma.stop();
+    _selectionMenu.dispose();
+    _outputFocus.dispose();
     _output.dispose();
     super.dispose();
   }
@@ -290,6 +296,7 @@ class _GemmaPageState extends ConsumerState<GemmaPage> {
               child: TextField(
                 key: const Key('gemma-output'),
                 controller: _output,
+                focusNode: _outputFocus,
                 readOnly: _running,
                 maxLines: null,
                 expands: true,

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/note_text.dart';
+import '../../core/selection_menu.dart';
 import '../../data/db/app_database.dart';
 import '../../theme/app_tokens.dart';
 import '../gemma/gemma_page.dart';
@@ -39,6 +40,7 @@ class NoteEditorPage extends ConsumerStatefulWidget {
 class _NoteEditorPageState extends ConsumerState<NoteEditorPage> {
   final _text = TextEditingController();
   final _focus = FocusNode();
+  late final _selectionMenu = SelectionMenuOnRange(_text, _focus);
   String? _id;
   Note? _note;
   bool _inReminders = false;
@@ -54,6 +56,7 @@ class _NoteEditorPageState extends ConsumerState<NoteEditorPage> {
   void initState() {
     super.initState();
     _id = widget.noteId;
+    _selectionMenu; // start listening
     _load();
   }
 
@@ -165,6 +168,7 @@ class _NoteEditorPageState extends ConsumerState<NoteEditorPage> {
   void dispose() {
     _save?.cancel();
     _watch?.cancel();
+    _selectionMenu.dispose();
     _text.dispose();
     _focus.dispose();
     super.dispose();
