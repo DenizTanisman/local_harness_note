@@ -19,7 +19,8 @@ void main() {
   });
 
   test('reading view shows labels and short URLs', () {
-    const body = 'a [Konuşma](https://youtu.be/abc) b https://x.com/deniz/status/1';
+    const body =
+        'a [Konuşma](https://youtu.be/abc) b https://x.com/deniz/status/1';
     expect(NoteLinks.displayText(body), 'a Konuşma b x.com/deniz/status/1');
     expect(NoteLinks.shortUrl(yt), 'youtube.com/watch?v=dQw4w9WgXcQ');
     expect(NoteLinks.shortUrl('https://www.instagram.com/'), 'instagram.com');

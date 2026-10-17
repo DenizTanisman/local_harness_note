@@ -7,7 +7,7 @@ import '../../core/selection_menu.dart';
 import '../../data/db/app_database.dart';
 import '../../theme/app_tokens.dart';
 import '../notes/notes_providers.dart';
-import '../settings/settings_providers.dart';
+import 'gemma_prompts.dart';
 import 'gemma_service.dart';
 
 /// ✨ flow (spec §5): Gemma runs the saved prompt on the note, the answer
@@ -15,9 +15,16 @@ import 'gemma_service.dart';
 /// text is kept as a version). Leaving while Gemma runs, or with an answer
 /// not yet accepted, asks first.
 class GemmaPage extends ConsumerStatefulWidget {
-  const GemmaPage({super.key, required this.noteId});
+  const GemmaPage({
+    super.key,
+    required this.noteId,
+    this.prompt = GemmaPrompts.tidy,
+  });
 
   final String noteId;
+
+  /// What Gemma is asked to do (picked on ✨; "Toparla" by default).
+  final GemmaPrompt prompt;
 
   @override
   ConsumerState<GemmaPage> createState() => _GemmaPageState();
@@ -58,11 +65,7 @@ class _GemmaPageState extends ConsumerState<GemmaPage> {
   Future<void> _generate() async {
     final note = _note;
     if (note == null) return;
-    final settings = await ref.read(settingsRepositoryProvider).loadAll();
-    final prompt = GemmaService.buildPrompt(
-      settings[GemmaService.promptKey],
-      note.body,
-    );
+    final prompt = GemmaService.buildPrompt(widget.prompt.prompt, note.body);
     await _sub?.cancel();
     setState(() {
       _output.clear();
@@ -182,11 +185,16 @@ class _GemmaPageState extends ConsumerState<GemmaPage> {
             tooltip: 'Vazgeç',
             onPressed: _leave,
           ),
-          title: const Row(
+          title: Row(
             children: [
-              Icon(Icons.auto_awesome, color: AppTokens.accentEnd),
-              SizedBox(width: 8),
-              Text('Gemma'),
+              const Icon(Icons.auto_awesome, color: AppTokens.accentEnd),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  'Gemma · ${widget.prompt.name}',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
         ),

@@ -19,10 +19,7 @@ void main() {
 
   test('top level counts every note under a tag once', () {
     final top = TagTree.children(rows, null);
-    expect(top.map((t) => (t.path, t.count)), [
-      ('question', 4),
-      ('kitap', 1),
-    ]);
+    expect(top.map((t) => (t.path, t.count)), [('question', 4), ('kitap', 1)]);
   });
 
   test('children of a tag, deeper levels folded in', () {
@@ -31,10 +28,9 @@ void main() {
       ('llm', 'question-llm', 2),
       ('flutter', 'question-flutter', 1),
     ]);
-    expect(
-      TagTree.children(rows, 'question-llm').map((t) => t.path),
-      ['question-llm-rag'],
-    );
+    expect(TagTree.children(rows, 'question-llm').map((t) => t.path), [
+      'question-llm-rag',
+    ]);
     expect(TagTree.children(rows, 'kitap'), isEmpty);
   });
 
@@ -45,8 +41,7 @@ void main() {
     expect(TagTree.within('questions', 'question'), isFalse);
   });
 
-  test('filtering by a tag includes its sub-tags, not look-alikes',
-      () async {
+  test('filtering by a tag includes its sub-tags, not look-alikes', () async {
     final db = AppDatabase(NativeDatabase.memory());
     final repo = NotesRepository(db);
     final main = await repo.create('Genel soru #question');
@@ -55,8 +50,9 @@ void main() {
     await repo.create('Benzer ama değil #questions');
     await repo.create('Alt çizgi #question_x');
 
-    Future<Set<String>> ids(String tag) async =>
-        {for (final n in await repo.search(tag: tag)) n.id};
+    Future<Set<String>> ids(String tag) async => {
+      for (final n in await repo.search(tag: tag)) n.id,
+    };
 
     expect(await ids('question'), {main, llm, rag});
     expect(await ids('question-llm'), {llm, rag});

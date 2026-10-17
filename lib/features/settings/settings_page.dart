@@ -12,6 +12,8 @@ import '../../data/io/backup_service.dart';
 import '../../data/repositories/notes_repository.dart';
 import '../../theme/glow_background.dart';
 import '../backup/backup_worker.dart';
+import '../gemma/gemma_prompts.dart';
+import '../gemma/gemma_prompts_page.dart';
 import '../gemma/gemma_service.dart';
 import '../notes/notes_providers.dart';
 import '../notifications/notification_service.dart';
@@ -102,28 +104,14 @@ class SettingsPage extends ConsumerWidget {
             const _GemmaTile(),
             ListTile(
               leading: const Icon(Icons.edit_note),
-              title: const Text('Gemma komutu (prompt)'),
+              title: const Text('Gemma komutları'),
               subtitle: Text(
-                (settings[GemmaService.promptKey] ?? GemmaService.defaultPrompt)
-                    .split('\n')
-                    .first,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                GemmaPrompts.load(settings).map((p) => p.name).join(' · '),
               ),
-              onTap: () async {
-                final value = await showDialog<String>(
-                  context: context,
-                  builder: (_) => _PromptDialog(
-                    initial:
-                        settings[GemmaService.promptKey] ??
-                        GemmaService.defaultPrompt,
-                  ),
-                );
-                if (value == null) return;
-                value == GemmaService.defaultPrompt
-                    ? await repo.remove(GemmaService.promptKey)
-                    : await repo.set(GemmaService.promptKey, value);
-              },
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const GemmaPromptsPage()),
+              ),
             ),
             const Divider(),
             const _SectionHeader('Claude bağlantısı'),
@@ -597,59 +585,6 @@ class _PasteDialogState extends State<_PasteDialog> {
       FilledButton(
         onPressed: () => Navigator.pop(context, _controller.text),
         child: const Text('Bağlan'),
-      ),
-    ],
-  );
-}
-
-class _PromptDialog extends StatefulWidget {
-  const _PromptDialog({required this.initial});
-
-  final String initial;
-
-  @override
-  State<_PromptDialog> createState() => _PromptDialogState();
-}
-
-class _PromptDialogState extends State<_PromptDialog> {
-  late final _controller = TextEditingController(text: widget.initial);
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Gemma komutu'),
-    content: SizedBox(
-      width: 400,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '${GemmaService.noteSlot} yerine notun metni konur.',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          const SizedBox(height: 8),
-          TextField(controller: _controller, maxLines: 10, minLines: 6),
-        ],
-      ),
-    ),
-    actions: [
-      TextButton(
-        onPressed: () => _controller.text = GemmaService.defaultPrompt,
-        child: const Text('Varsayılan'),
-      ),
-      TextButton(
-        onPressed: () => Navigator.pop(context),
-        child: const Text('Vazgeç'),
-      ),
-      FilledButton(
-        onPressed: () => Navigator.pop(context, _controller.text),
-        child: const Text('Kaydet'),
       ),
     ],
   );

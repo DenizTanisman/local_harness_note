@@ -8,7 +8,7 @@ import '../../core/note_text.dart';
 import '../../core/selection_menu.dart';
 import '../../data/db/app_database.dart';
 import '../../theme/app_tokens.dart';
-import '../gemma/gemma_page.dart';
+import '../gemma/gemma_prompt_sheet.dart';
 import 'notes_providers.dart';
 import 'link_action_bar.dart';
 import 'note_body_view.dart';
@@ -177,9 +177,7 @@ class _NoteEditorPageState extends ConsumerState<NoteEditorPage> {
   Future<void> _gemma() async {
     final id = await _ensureSaved();
     if (id == null || !mounted) return;
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => GemmaPage(noteId: id)));
+    await openGemma(context, ref, id);
     final note = await ref.read(notesRepositoryProvider).getNote(id);
     if (note != null && mounted) {
       setState(() => _text.text = _saved = note.body);

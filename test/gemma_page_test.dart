@@ -91,7 +91,14 @@ void main() {
     expect(gemma.lastPrompt, contains('toparla'));
     gemma.tokens!.add('Topar');
     await tester.pump();
-    expect(find.textContaining('Topar'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('gemma-output')),
+        matching: find.textContaining('Topar'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Gemma · Toparla'), findsOneWidget);
 
     // System back while Gemma writes → dialog.
     await tester.binding.handlePopRoute();

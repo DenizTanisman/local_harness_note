@@ -23,7 +23,7 @@ class TagCategory {
 class TagCategories {
   TagCategories._();
 
-  static const all = [
+  static const _base = [
     TagCategory('yemek', 'yemek', AppTokens.catOrange, [
       'yemek', 'food', 'mutfak', 'tarif', 'recipe', 'beslenme', //
       'restoran', 'restaurant', 'cooking', 'yemekler',
@@ -151,7 +151,6 @@ class TagCategories {
       'hedefler',
       'goal',
       'goals',
-      'plan',
       'okr',
     ]),
     TagCategory('aile', 'aile', AppTokens.catPink, [
@@ -170,6 +169,48 @@ class TagCategories {
       'camera',
     ]),
   ];
+
+  static const _more = [
+    TagCategory('yazilar', 'yazılar', AppTokens.catYellow, [
+      'yazilar',
+      'yazi',
+      'yazilarim',
+      'writing',
+      'hikayeler',
+      'denemeler',
+    ]),
+    TagCategory('gelisim', 'gelişim', AppTokens.catGreen, [
+      'gelisim',
+      'growth',
+      'kisiselgelisim',
+      'selfimprovement',
+    ]),
+    TagCategory('iletisim', 'iletişim', AppTokens.catTeal, [
+      'iletisim',
+      'communication',
+      'sohbet',
+      'konusma',
+    ]),
+    TagCategory('iliskiler', 'ilişkiler', AppTokens.catPink, [
+      'iliskiler', 'iliski', 'relationship', 'relationships', 'flort', //
+      'sevgili',
+    ]),
+    TagCategory('projeler', 'projeler', AppTokens.catOrange, [
+      'projeler',
+      'proje',
+      'project',
+      'projects',
+    ]),
+    TagCategory('planlar', 'planlar', AppTokens.catBlue, [
+      'planlar',
+      'plan',
+      'planning',
+      'takvim',
+      'ajanda',
+    ]),
+  ];
+
+  static const all = [..._base, ..._more];
 
   /// For tags that match no category.
   static const other = TagCategory('etiket', '', AppTokens.catGrey, []);

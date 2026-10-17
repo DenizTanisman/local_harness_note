@@ -7,6 +7,7 @@ import '../../core/tag_tree.dart';
 import '../../data/repositories/notes_repository.dart';
 import '../../theme/app_tokens.dart';
 import '../gemma/gemma_page.dart';
+import '../gemma/gemma_prompt_sheet.dart';
 import 'category_icon.dart';
 import 'note_editor_page.dart';
 import 'notes_providers.dart';
@@ -203,7 +204,12 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                           onTap: () =>
                               _selecting ? _toggle(item.id) : _open(item.id),
                           onLongPress: () => _toggle(item.id),
-                          onGemma: () => _push(GemmaPage(noteId: item.id)),
+                          onGemma: () {
+                            ScaffoldMessenger.of(context)
+                              ..hideCurrentSnackBar()
+                              ..hideCurrentMaterialBanner();
+                            openGemma(context, ref, item.id);
+                          },
                         );
                       },
                     );
@@ -304,7 +310,7 @@ class _FilterChips extends StatelessWidget {
         final picked = tag;
         final label = picked == null
             ? 'Kategoriler'
-            : picked.split(TagTree.separator).join(' › ');
+            : picked.split(TagTree.separator).join(' › ').replaceAll('_', ' ');
         return SizedBox(
           height: 48,
           child: ListView(
@@ -368,7 +374,7 @@ class _FilterChips extends StatelessWidget {
                         ? _CategoryRow(
                             key: Key('category-${node.path}'),
                             leading: CategoryIcon(tag: node.path, size: 32),
-                            label: node.name,
+                            label: node.name.replaceAll('_', ' '),
                             count: node.count,
                             selected: picked == node.path,
                             onPressed: () => onTag(node.path),
@@ -389,7 +395,7 @@ class _FilterChips extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            label: node.name,
+                            label: node.name.replaceAll('_', ' '),
                             count: node.count,
                             selected: picked == node.path,
                             dense: true,

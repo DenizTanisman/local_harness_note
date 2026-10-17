@@ -334,7 +334,10 @@ export class Relay extends DurableObject<Env> {
           message: {
             token,
             data: { wake: "1" },
-            android: { priority: "HIGH", ttl: "30s", collapse_key: "wake" },
+            // No collapse_key: collapsible messages are throttled to a
+            // burst of 20, then one every 3 minutes per device — a bulk
+            // import stalled on it. Plain messages allow 240/minute.
+            android: { priority: "HIGH", ttl: "30s" },
           },
         }),
       },
