@@ -9,13 +9,16 @@ import 'package:voice_player/voice_player.dart';
 /// action needs no database.
 const playActionPrefix = 'play:';
 
-String playActionId(String path, String title) =>
-    '$playActionPrefix${jsonEncode({'p': path, 't': title})}';
+String playActionId(String path, String title, {String? image}) =>
+    '$playActionPrefix${jsonEncode({'p': path, 't': title, 'i': ?image})}';
 
-/// "🎬 İzle" on a reminder with a video: opens the app on the player.
+/// "🎬 İzle" on a reminder with a video: Android plays it in a floating
+/// picture-in-picture window over whatever is on screen (MainActivity
+/// hands the intent to VideoPipActivity; the app itself stays closed).
 const watchActionPrefix = 'watch:';
 
-String watchActionId(String attachmentId) => '$watchActionPrefix$attachmentId';
+String watchActionId(String path, String title) =>
+    '$watchActionPrefix${jsonEncode({'p': path, 't': title})}';
 
 /// Handles a notification action; false when it is not one of ours.
 Future<bool> handleNotificationAction(NotificationResponse response) async {
@@ -28,7 +31,11 @@ Future<bool> handleNotificationAction(NotificationResponse response) async {
     return true;
   }
   if (data is Map && data['p'] is String) {
-    await VoicePlayer.play(data['p'] as String, title: '${data['t'] ?? ''}');
+    await VoicePlayer.play(
+      data['p'] as String,
+      title: '${data['t'] ?? ''}',
+      image: data['i'] as String?,
+    );
   }
   return true;
 }

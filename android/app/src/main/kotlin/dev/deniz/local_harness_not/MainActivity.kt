@@ -9,6 +9,7 @@ import android.graphics.ImageDecoder
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.webkit.MimeTypeMap
+import android.os.Bundle
 import android.os.Environment
 import android.os.PowerManager
 import android.provider.DocumentsContract
@@ -18,6 +19,7 @@ import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import org.json.JSONObject
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
@@ -243,7 +245,62 @@ class MainActivity : FlutterActivity() {
         }.start()
     }
 
+    /** Whether this screen was in front when an intent arrived. */
+    private var inFront = false
+
+    override fun onResume() {
+        super.onResume()
+        inFront = true
+    }
+
+    override fun onPause() {
+        super.onPause()
+        inFront = false
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        // "🎬 İzle" with the app closed: play in picture-in-picture and step
+        // back to whatever was on screen. The extra is dropped so Flutter does
+        // not also treat it as a notification tap.
+        val watch = watchRequest(intent)
+        if (watch != null) intent = Intent(intent).apply { removeExtra(ACTION_ID_EXTRA) }
+        super.onCreate(savedInstanceState)
+        if (watch != null) {
+            startPip(watch)
+            moveTaskToBack(true)
+        }
+    }
+
+    /** (path, title) of a reminder's "🎬 İzle" action, if [intent] is one. */
+    private fun watchRequest(intent: Intent?): Pair<String, String>? {
+        val id = intent?.getStringExtra(ACTION_ID_EXTRA) ?: return null
+        if (!id.startsWith(WATCH_PREFIX)) return null
+        return try {
+            val o = JSONObject(id.removePrefix(WATCH_PREFIX))
+            o.getString("p") to o.optString("t")
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun startPip(watch: Pair<String, String>) {
+        startActivity(
+            Intent(this, VideoPipActivity::class.java)
+                .putExtra(VideoPipActivity.EXTRA_PATH, watch.first)
+                .putExtra(VideoPipActivity.EXTRA_TITLE, watch.second)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+        )
+    }
+
     override fun onNewIntent(intent: Intent) {
+        val watch = watchRequest(intent)
+        if (watch != null) {
+            // Not handed to Flutter: the video floats over the current app.
+            val wasInFront = inFront
+            startPip(watch)
+            if (!wasInFront) moveTaskToBack(true)
+            return
+        }
         super.onNewIntent(intent)
         setIntent(intent)
         describe(intent)?.let { systemChannel?.invokeMethod("onIntent", it) }
@@ -474,6 +531,10 @@ class MainActivity : FlutterActivity() {
         val LESSON_DIR = Environment.DIRECTORY_DOCUMENTS + "/Not/Dersler/"
         const val MAX_LESSON_BYTES = 16 * 1024 * 1024
         const val PICK_LESSON = 7301
+
+        /** flutter_local_notifications puts a tapped action's id here. */
+        const val ACTION_ID_EXTRA = "actionId"
+        const val WATCH_PREFIX = "watch:"
         const val EXTERNAL_DOCS = "com.android.externalstorage.documents"
     }
 }

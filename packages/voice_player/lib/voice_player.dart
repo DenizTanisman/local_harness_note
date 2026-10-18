@@ -24,12 +24,17 @@ class VoicePlayer {
   static const _channel = MethodChannel('voice_player');
 
   /// Starts [path], replacing whatever plays. [title] names the clip in the
-  /// "Çalınıyor" notification.
-  static Future<bool> play(String path, {String title = ''}) async {
+  /// "Çalınıyor" notification and [image] (a picture file) is shown in it.
+  static Future<bool> play(
+    String path, {
+    String title = '',
+    String? image,
+  }) async {
     try {
       return await _channel.invokeMethod<bool>('play', {
             'path': path,
             'title': title,
+            'image': ?image,
           }) ??
           false;
     } on MissingPluginException {

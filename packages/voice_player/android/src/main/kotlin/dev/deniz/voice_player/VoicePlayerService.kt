@@ -8,6 +8,8 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
@@ -27,9 +29,10 @@ class VoicePlayerService : Service() {
             ACTION_PLAY -> {
                 val path = intent.getStringExtra(EXTRA_PATH)
                 val title = intent.getStringExtra(EXTRA_TITLE).orEmpty()
+                val image = intent.getStringExtra(EXTRA_IMAGE)
                 startForeground(
                     NOTIFICATION_ID,
-                    notification(title),
+                    notification(title, image),
                     ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK,
                 )
                 if (path == null || !start(this, path) { finish() }) finish()
@@ -50,7 +53,21 @@ class VoicePlayerService : Service() {
         stopSelf()
     }
 
-    private fun notification(title: String): Notification {
+    /** The reminder's picture (or video frame), small enough for a notification. */
+    private fun picture(path: String?): Bitmap? {
+        if (path.isNullOrBlank()) return null
+        return try {
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(path, bounds)
+            var sample = 1
+            while (maxOf(bounds.outWidth, bounds.outHeight) / sample > 1024) sample *= 2
+            BitmapFactory.decodeFile(path, BitmapFactory.Options().apply { inSampleSize = sample })
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun notification(title: String, image: String?): Notification {
         val manager = getSystemService(NotificationManager::class.java)
         if (manager.getNotificationChannel(CHANNEL) == null) {
             manager.createNotificationChannel(
@@ -64,10 +81,25 @@ class VoicePlayerService : Service() {
             Intent(this, VoicePlayerService::class.java).setAction(ACTION_STOP),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
+        val shown = if (title.isBlank()) "🔊 Sesli not" else "🔊 $title"
+        val bitmap = picture(image)
         return Notification.Builder(this, CHANNEL)
             .setSmallIcon(android.R.drawable.ic_lock_silent_mode_off)
-            .setContentTitle(if (title.isBlank()) "🔊 Sesli not" else "🔊 $title")
+            .setContentTitle(shown)
             .setContentText("Çalınıyor")
+            .apply {
+                // Keeps what the reminder showed: its picture stays in view
+                // while the clip plays.
+                if (bitmap != null) {
+                    setLargeIcon(bitmap)
+                    setStyle(
+                        Notification.BigPictureStyle()
+                            .bigPicture(bitmap)
+                            .bigLargeIcon(null as Bitmap?)
+                            .setSummaryText("Çalınıyor"),
+                    )
+                }
+            }
             .setOngoing(true)
             .setCategory(Notification.CATEGORY_TRANSPORT)
             .addAction(
@@ -81,6 +113,7 @@ class VoicePlayerService : Service() {
         const val ACTION_STOP = "dev.deniz.voice_player.STOP"
         const val EXTRA_PATH = "path"
         const val EXTRA_TITLE = "title"
+        const val EXTRA_IMAGE = "image"
         private const val CHANNEL = "voice_player"
         private const val NOTIFICATION_ID = 4343
 

@@ -8,17 +8,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workmanager/workmanager.dart';
 
 import 'core/hub_snapshot_publisher.dart';
-import 'core/note_text.dart';
 import 'core/system_channel.dart';
 import 'data/db/database_provider.dart';
-import 'data/repositories/notes_repository.dart';
 import 'features/backup/backup_worker.dart';
 import 'features/lessons/lesson_page.dart';
 import 'features/lessons/lessons_providers.dart';
 import 'features/notes/attachments_view.dart';
 import 'features/notes/note_editor_page.dart';
-import 'features/notes/video_view.dart';
-import 'features/notifications/notification_actions.dart';
 import 'features/notes/notes_providers.dart';
 import 'features/notifications/notification_service.dart';
 import 'features/quick/quick_note_page.dart';
@@ -65,35 +61,9 @@ void openLesson(String lessonId, {String? section, bool recall = false}) {
   );
 }
 
-/// "🎬 İzle" on a reminder: the video, full screen.
-Future<void> _openVideo(String attachmentId) async {
-  final context = navigatorKey.currentContext;
-  if (context == null) return;
-  final repo = ProviderScope.containerOf(
-    context,
-  ).read(attachmentsRepositoryProvider);
-  final attachment = await repo.get(attachmentId);
-  if (attachment == null) return;
-  final file = await repo.fileOf(attachment);
-  final note = await NotesRepository(repo.db).getNote(attachment.noteId);
-  final nav = navigatorKey.currentState;
-  if (nav == null) return;
-  nav.popUntil((route) => route.isFirst);
-  nav.push(
-    MaterialPageRoute(
-      builder: (_) => VideoPlayerPage(
-        file: file,
-        title: note == null ? null : NoteText.title(note.body, max: 60),
-      ),
-    ),
-  );
-}
-
 void _openPayload(String? payload) {
   if (payload == null) return;
-  if (payload.startsWith(watchActionPrefix)) {
-    unawaited(_openVideo(payload.substring(watchActionPrefix.length)));
-  } else if (payload.startsWith('note:')) {
+  if (payload.startsWith('note:')) {
     openEditor(noteId: payload.substring(5));
   } else if (payload.startsWith('recall:')) {
     final parts = payload.substring(7).split(':');

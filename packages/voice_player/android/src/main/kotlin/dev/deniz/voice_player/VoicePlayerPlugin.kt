@@ -34,6 +34,7 @@ class VoicePlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     .setAction(VoicePlayerService.ACTION_PLAY)
                     .putExtra(VoicePlayerService.EXTRA_PATH, path)
                     .putExtra(VoicePlayerService.EXTRA_TITLE, call.argument<String>("title") ?: "")
+                    .putExtra(VoicePlayerService.EXTRA_IMAGE, call.argument<String>("image"))
                 try {
                     context.startForegroundService(intent)
                     result.success(true)

@@ -94,6 +94,18 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize" />
+        <!-- A reminder's video, floating over other apps (🎬 İzle). Own task,
+             so the Not app stays in the background. -->
+        <activity
+            android:name=".VideoPipActivity"
+            android:exported="false"
+            android:supportsPictureInPicture="true"
+            android:resizeableActivity="true"
+            android:launchMode="singleTask"
+            android:taskAffinity="dev.deniz.local_harness_not.pip"
+            android:excludeFromRecents="true"
+            android:theme="@style/NormalTheme"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation" />
         <!-- WorkManager's foreground service (Gemma download) must declare
              its type on Android 14+, or startForeground() crashes. -->
         <service

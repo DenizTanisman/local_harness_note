@@ -79,13 +79,13 @@ class NotificationService {
         : [
             if (clip != null)
               AndroidNotificationAction(
-                playActionId(clip, title),
+                playActionId(clip, title, image: picture),
                 '▶ Oynat',
                 cancelNotification: false,
               ),
             if (video != null)
               AndroidNotificationAction(
-                watchActionId(video),
+                watchActionId(video, title),
                 '🎬 İzle',
                 showsUserInterface: true,
                 cancelNotification: false,
@@ -110,12 +110,9 @@ class NotificationService {
       ),
       onDidReceiveNotificationResponse: (response) async {
         if (await handleNotificationAction(response)) return;
-        final action = response.actionId;
-        onTapPayload?.call(
-          action != null && action.startsWith(watchActionPrefix)
-              ? action
-              : response.payload ?? '',
-        );
+        // "🎬 İzle" is taken by MainActivity (picture-in-picture).
+        if (response.actionId?.startsWith(watchActionPrefix) ?? false) return;
+        onTapPayload?.call(response.payload ?? '');
       },
       onDidReceiveBackgroundNotificationResponse: notificationActionBackground,
     );
@@ -132,9 +129,10 @@ class NotificationService {
     final details = await _plugin.getNotificationAppLaunchDetails();
     if (details?.didNotificationLaunchApp != true) return null;
     final response = details!.notificationResponse;
-    final action = response?.actionId;
-    // "🎬 İzle" started the app: open the video rather than the note.
-    if (action != null && action.startsWith(watchActionPrefix)) return action;
+    // "🎬 İzle" is played in picture-in-picture by MainActivity.
+    if (response?.actionId?.startsWith(watchActionPrefix) ?? false) {
+      return null;
+    }
     return response?.payload;
   }
 
@@ -246,7 +244,7 @@ class NotificationService {
               ? null
               : (await files.notificationFileOf(picture))?.path,
           clip: clip == null ? null : (await files.fileOf(clip)).path,
-          video: video?.id,
+          video: video == null ? null : (await files.fileOf(video)).path,
         ),
       ),
     );
