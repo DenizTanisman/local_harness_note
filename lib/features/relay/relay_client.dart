@@ -6,6 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../data/db/app_database.dart';
+import '../../data/repositories/attachments_repository.dart';
+import '../notes/attachment_importer.dart';
 import 'mcp_tools.dart';
 
 /// What the pairing code carries (spec §8): the relay Worker and the
@@ -94,6 +96,24 @@ class RelayClient {
     return text.isEmpty ? null : jsonDecode(text);
   }
 
+  /// A queued clip, sent as base64 text.
+  Future<List<int>> _blob(String id) async {
+    final request = await _http
+        .getUrl(
+          Uri.parse('${config.url}/phone/blob/${Uri.encodeComponent(id)}'),
+        )
+        .timeout(const Duration(seconds: 15));
+    request.headers.set('authorization', 'Bearer ${config.secret}');
+    final response = await request.close().timeout(const Duration(seconds: 60));
+    final text = await response.transform(utf8.decoder).join();
+    // Gone (already handed over): the note still comes, without the clip.
+    if (response.statusCode == 404) return const [];
+    if (response.statusCode != 200) {
+      throw HttpException('blob → ${response.statusCode}');
+    }
+    return base64Decode(text);
+  }
+
   Future<void> register(String fcmToken) =>
       _call('POST', '/phone/register', {'token': fcmToken});
 
@@ -122,7 +142,14 @@ class RelayClient {
           ...(work['inflight'] as List? ?? const []),
           ...(work['queued'] as List? ?? const []),
         ].cast<Map>();
-        final tools = McpTools(db);
+        final tools = McpTools(
+          db,
+          fetchBlob: _blob,
+          attachments: AttachmentsRepository(
+            db,
+            importer: deviceAttachmentImporter,
+          ),
+        );
         for (final item in items) {
           final reqId = '${item['reqId']}';
           Map<String, Object?> payload;
@@ -134,6 +161,8 @@ class RelayClient {
               reqId: reqId,
             );
             payload = {'reqId': reqId, 'ok': true, 'result': result};
+          } on RetryLater {
+            continue; // stays queued on the relay
           } on ToolError catch (e) {
             payload = {'reqId': reqId, 'ok': false, 'error': e.message};
           } catch (e) {

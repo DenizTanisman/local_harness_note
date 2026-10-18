@@ -1,5 +1,11 @@
+import 'dart:io';
+
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+
 import '../../core/note_text.dart';
 import '../../data/db/app_database.dart';
+import '../../data/repositories/attachments_repository.dart';
 import '../../data/repositories/notes_repository.dart';
 
 /// A tool call the phone could not carry out (unknown note, bad args …).
@@ -11,13 +17,32 @@ class ToolError implements Exception {
   String toString() => message;
 }
 
+/// A call that could not run for now (e.g. the clip could not be
+/// downloaded): left on the relay's queue for the next wake.
+class RetryLater implements Exception {
+  const RetryLater();
+}
+
+/// Downloads a clip queued on the relay (`/phone/blob/<id>`).
+typedef BlobFetcher = Future<List<int>> Function(String id);
+
 /// The phone side of the MCP tools (spec §8.1). Private notes are invisible
 /// to every tool; there is no delete tool.
 class McpTools {
-  McpTools(this.db) : repo = NotesRepository(db);
+  McpTools(
+    this.db, {
+    this.fetchBlob,
+    AttachmentsRepository? attachments,
+    Future<Directory> Function()? tempDir,
+  }) : repo = NotesRepository(db),
+       attachments = attachments ?? AttachmentsRepository(db),
+       _tempDir = tempDir ?? getTemporaryDirectory;
 
   final AppDatabase db;
   final NotesRepository repo;
+  final AttachmentsRepository attachments;
+  final BlobFetcher? fetchBlob;
+  final Future<Directory> Function() _tempDir;
 
   static const writeTools = {
     'create_note',
@@ -94,8 +119,39 @@ class McpTools {
         if (text == null || text.trim().isEmpty) {
           throw const ToolError('text boş olamaz');
         }
+        // A clip from the Mac (/inbox) comes first: if it cannot be
+        // fetched yet, nothing is written and the call stays queued.
+        final audio = args['audio'];
+        File? clip;
+        if (audio is Map && audio['blob'] is String && fetchBlob != null) {
+          final List<int> bytes;
+          try {
+            bytes = await fetchBlob!(audio['blob'] as String);
+          } on IOException {
+            throw const RetryLater();
+          }
+          if (bytes.isNotEmpty) {
+            final name = p.basename('${audio['name'] ?? 'ses.mp3'}');
+            clip = File(p.join((await _tempDir()).path, 'inbox-$name'));
+            await clip.writeAsBytes(bytes);
+          }
+        }
         final id = await repo.create(text.trim(), source: 'claude');
-        return {'id': id, 'title': NoteText.title(text)};
+        if (clip != null) {
+          await attachments.add(
+            id,
+            clip.path,
+            '${(audio as Map)['mime'] ?? 'audio/mpeg'}',
+          );
+          await clip.delete();
+        }
+        if (args['add_to_reminders'] == true) await repo.addToReminders(id);
+        return {
+          'id': id,
+          'title': NoteText.title(text),
+          if (clip != null) 'audio': true,
+          if (args['add_to_reminders'] == true) 'in_reminders': true,
+        };
       case 'append_to_note':
         final note = await _visible(args['id']);
         final text = _str(args['text']);

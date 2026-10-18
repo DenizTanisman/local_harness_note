@@ -144,3 +144,33 @@ test("silent phone: write is queued, read errors; queue drains", { timeout: 90_0
   await phone("result", { reqId: work.queued[0].reqId, ok: true, result: { id: "n1" } });
   assert.equal((await phone("work")).queued.length, 0);
 });
+
+test("inbox: a note with a clip from the Mac reaches the phone, then the clip goes", async () => {
+  const inbox = (body, secret = SECRET) =>
+    fetch(`${BASE}/inbox`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${secret}`, "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  assert.equal((await inbox({ text: "x" }, "wrong")).status, 401);
+  assert.equal((await inbox({ text: "  " })).status, 400);
+
+  const data = Buffer.alloc(250_000, 7).toString("base64"); // spans several chunks
+  const r = await (await inbox({ text: "Başlık\n\nmetin", reminders: true, audio: { name: "a.mp3", mime: "audio/mpeg", data } })).json();
+  assert.equal(r.ok, true);
+
+  const work = await phone("work");
+  const call = work.queued.find((c) => c.reqId === r.reqId);
+  assert.equal(call.tool, "create_note");
+  assert.equal(call.args.add_to_reminders, true);
+  assert.equal(call.args.text, "Başlık\n\nmetin");
+  const blobUrl = `${BASE}/phone/blob/${call.args.audio.blob}`;
+  const auth = { authorization: `Bearer ${SECRET}` };
+  assert.equal((await fetch(blobUrl)).status, 401);
+  const got = await fetch(blobUrl, { headers: auth });
+  assert.equal(await got.text(), data);
+
+  await phone("result", { reqId: r.reqId, ok: true, result: { id: "n2" } });
+  assert.equal((await phone("work")).queued.length, 0);
+  assert.equal((await fetch(blobUrl, { headers: auth })).status, 404);
+});

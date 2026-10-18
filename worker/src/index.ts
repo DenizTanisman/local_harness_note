@@ -7,6 +7,11 @@
 // Notes live only on the phone. The Durable Object keeps a call in memory
 // until the phone answers (25 s at most); write calls the phone missed are
 // queued and handed over on its next wake, then dropped.
+//
+// POST /inbox (same secret as the phone) queues a new note from the user's
+// own Mac — e.g. a voice clip with its tidied transcript for the reminder
+// list. The clip waits here in chunks until the phone has fetched it
+// (GET /phone/blob/<id>) and answered; then it is deleted.
 
 import { DurableObject } from "cloudflare:workers";
 
@@ -19,6 +24,10 @@ export interface Env {
 }
 
 const TIMEOUT_MS = 25_000;
+/** Base64 characters per stored chunk (well under the value size limit). */
+const BLOB_CHUNK = 100_000;
+/** Largest clip /inbox accepts (base64 characters ≈ 15 MB of audio). */
+const BLOB_MAX = 20_000_000;
 const WRITE_TOOLS = new Set([
   "create_note",
   "append_to_note",
@@ -89,7 +98,13 @@ const TOOLS = [
       "Saves a new note on the phone. Plain text; the first line is its title; put #tags inline. Use when the user asks you to note/remember something.",
     inputSchema: {
       type: "object",
-      properties: { text: { type: "string" } },
+      properties: {
+        text: { type: "string" },
+        add_to_reminders: {
+          type: "boolean",
+          description: "Also put it at the end of the user's reminder list",
+        },
+      },
       required: ["text"],
     },
     annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
@@ -155,11 +170,11 @@ export default {
       }
       return relay.fetch(new Request("https://relay/mcp", request));
     }
-    if (head === "phone") {
+    if (head === "phone" || head === "inbox") {
       if (!env.RELAY_SECRET || request.headers.get("authorization") !== `Bearer ${env.RELAY_SECRET}`) {
         return new Response("unauthorized", { status: 401 });
       }
-      return relay.fetch(new Request(`https://relay/phone/${tail ?? ""}`, request));
+      return relay.fetch(new Request(`https://relay${url.pathname}`, request));
     }
     if (url.pathname === "/") return new Response("not-relay ok");
     return new Response("not found", { status: 404 });
@@ -173,7 +188,10 @@ export class Relay extends DurableObject<Env> {
 
   async fetch(request: Request): Promise<Response> {
     const path = new URL(request.url).pathname;
+    if (path.startsWith("/phone/blob/")) return this.blob(path.slice("/phone/blob/".length));
     switch (path) {
+      case "/inbox":
+        return this.inbox(request);
       case "/mcp":
         return this.mcp(request);
       case "/phone/register": {
@@ -195,6 +213,10 @@ export class Relay extends DurableObject<Env> {
         const queue = (await this.ctx.storage.get<Call[]>("queue")) ?? [];
         const rest = queue.filter((c) => c.reqId !== r.reqId);
         if (rest.length !== queue.length) await this.ctx.storage.put("queue", rest);
+        for (const done of queue.filter((c) => c.reqId === r.reqId)) {
+          const blob = (done.args.audio as { blob?: string } | undefined)?.blob;
+          if (blob) await this.dropBlob(blob);
+        }
         return json({ ok: true });
       }
       case "/phone/selftest": {
@@ -206,6 +228,63 @@ export class Relay extends DurableObject<Env> {
       }
     }
     return new Response("not found", { status: 404 });
+  }
+
+  // ---------------------------------------------------------------- inbox
+
+  /** A note (optionally with a voice clip) from the user's Mac → queue. */
+  private async inbox(request: Request): Promise<Response> {
+    if (request.method !== "POST") return new Response(null, { status: 405, headers: { allow: "POST" } });
+    let body: { text?: unknown; reminders?: unknown; audio?: { name?: unknown; mime?: unknown; data?: unknown } };
+    try {
+      body = await request.json();
+    } catch {
+      return json({ ok: false, error: "JSON expected" }, 400);
+    }
+    if (typeof body.text !== "string" || !body.text.trim()) return json({ ok: false, error: "text missing" }, 400);
+    const args: Record<string, unknown> = { text: body.text, add_to_reminders: body.reminders === true };
+    const audio = body.audio;
+    if (audio) {
+      if (typeof audio.data !== "string" || !audio.data) return json({ ok: false, error: "audio.data missing" }, 400);
+      if (audio.data.length > BLOB_MAX) return json({ ok: false, error: "audio too large" }, 413);
+      const id = crypto.randomUUID();
+      const chunks = Math.ceil(audio.data.length / BLOB_CHUNK);
+      for (let i = 0; i < chunks; i++) {
+        await this.ctx.storage.put(`blob:${id}:${i}`, audio.data.slice(i * BLOB_CHUNK, (i + 1) * BLOB_CHUNK));
+      }
+      await this.ctx.storage.put(`blob:${id}`, chunks);
+      args.audio = {
+        blob: id,
+        name: typeof audio.name === "string" ? audio.name : "ses.mp3",
+        mime: typeof audio.mime === "string" ? audio.mime : "audio/mpeg",
+      };
+    }
+    const call: Call = { reqId: crypto.randomUUID(), tool: "create_note", args, ts: Date.now() };
+    const queue = (await this.ctx.storage.get<Call[]>("queue")) ?? [];
+    await this.ctx.storage.put("queue", [...queue, call]);
+    let woke = true;
+    try {
+      await this.push();
+    } catch {
+      woke = false; // stays queued; the phone takes it when the app opens
+    }
+    return json({ ok: true, reqId: call.reqId, woke });
+  }
+
+  /** A queued clip's base64, for the phone. */
+  private async blob(id: string): Promise<Response> {
+    const chunks = await this.ctx.storage.get<number>(`blob:${id}`);
+    if (chunks === undefined) return json({ ok: false, error: "no such blob" }, 404);
+    let data = "";
+    for (let i = 0; i < chunks; i++) data += (await this.ctx.storage.get<string>(`blob:${id}:${i}`)) ?? "";
+    return new Response(data, { headers: { "content-type": "text/plain" } });
+  }
+
+  private async dropBlob(id: string): Promise<void> {
+    const chunks = (await this.ctx.storage.get<number>(`blob:${id}`)) ?? 0;
+    const keys = [`blob:${id}`];
+    for (let i = 0; i < chunks; i++) keys.push(`blob:${id}:${i}`);
+    for (let i = 0; i < keys.length; i += 128) await this.ctx.storage.delete(keys.slice(i, i + 128));
   }
 
   // ------------------------------------------------------------------ MCP

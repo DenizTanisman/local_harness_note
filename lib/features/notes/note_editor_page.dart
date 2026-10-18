@@ -315,6 +315,41 @@ class _NoteEditorPageState extends ConsumerState<NoteEditorPage> {
     }
   }
 
+  /// Reading mode: the title line, then the note's voice clips and
+  /// pictures, then the rest of the text.
+  Widget _readingBody() {
+    final body = _text.text;
+    final cut = body.indexOf('\n');
+    final head = cut < 0 ? body : body.substring(0, cut);
+    final tail = cut < 0 ? '' : body.substring(cut + 1);
+    const pad = EdgeInsets.symmetric(horizontal: 16);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: pad,
+          child: NoteBodyView(
+            key: const Key('editor-view'),
+            body: head,
+            onTapText: _startEditing,
+          ),
+        ),
+        if (_id != null) ...[
+          const SizedBox(height: 8),
+          AttachmentStrip(noteId: _id!, title: NoteText.title(body, max: 60)),
+        ],
+        if (tail.isNotEmpty)
+          Padding(
+            padding: pad,
+            child: NoteBodyView(
+              body: tail,
+              onTapText: (offset) => _startEditing(cut + 1 + offset),
+            ),
+          ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final private = _note?.isPrivate ?? false;
@@ -401,24 +436,7 @@ class _NoteEditorPageState extends ConsumerState<NoteEditorPage> {
                 onTap: () => _startEditing(_text.text.length),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(0, 4, 0, 120),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (_id != null)
-                        AttachmentStrip(
-                          noteId: _id!,
-                          title: NoteText.title(_text.text, max: 60),
-                        ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: NoteBodyView(
-                          key: const Key('editor-view'),
-                          body: _text.text,
-                          onTapText: _startEditing,
-                        ),
-                      ),
-                    ],
-                  ),
+                  child: _readingBody(),
                 ),
               )
             : Column(
