@@ -428,7 +428,13 @@ class NotesRepository {
   /// Merges [ids] into one new note (spec §4): parts oldest → newest, each
   /// under a date line; originals archived with `merged_into` set; the new
   /// note takes the earliest reminder slot of the originals.
-  Future<MergeUndo> merge(List<String> ids) => db.transaction(() async {
+  /// Merges [ids] into one new note (oldest first, each under its date) and
+  /// archives them. [tag] (from a tag page) is added at the end when the
+  /// merged text does not carry it.
+  Future<MergeUndo> merge(
+    List<String> ids, {
+    String? tag,
+  }) => db.transaction(() async {
     final originals = await (db.select(
       db.notes,
     )..where((n) => n.id.isIn(ids))).get();
@@ -441,8 +447,12 @@ class NotesRepository {
         '${NoteText.mergeHeader(DateTime.fromMillisecondsSinceEpoch(n.createdAt))}'
             '\n${n.body.trim()}',
     ].join('\n\n');
+    final withTag =
+        tag == null || NoteText.tags(body).contains(NoteText.lowerTr(tag))
+        ? body
+        : '$body\n\n#$tag';
     final mergedId = await create(
-      body,
+      withTag,
       source: 'merge',
       isPrivate: originals.any((n) => n.isPrivate),
     );

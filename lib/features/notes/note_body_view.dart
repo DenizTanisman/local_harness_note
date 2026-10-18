@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 import '../../core/note_links.dart';
+import '../../core/note_text.dart';
 import '../../core/system_channel.dart';
 import '../../theme/app_tokens.dart';
 
@@ -20,10 +21,18 @@ Future<void> openNoteLink(BuildContext context, NoteLink link) async {
 /// open on tap; `#tags` are highlighted. Tapping anywhere else reports the
 /// matching raw offset through [onTapText], so editing starts right there.
 class NoteBodyView extends StatefulWidget {
-  const NoteBodyView({super.key, required this.body, required this.onTapText});
+  const NoteBodyView({
+    super.key,
+    required this.body,
+    required this.onTapText,
+    this.onTapTag,
+  });
 
   final String body;
   final ValueChanged<int> onTapText;
+
+  /// A `#tag` was tapped (lower-case, without '#'): its notes page.
+  final ValueChanged<String>? onTapTag;
 
   @override
   State<NoteBodyView> createState() => _NoteBodyViewState();
@@ -55,10 +64,18 @@ class _NoteBodyViewState extends State<NoteBodyView> {
     var i = 0;
     for (final m in _tag.allMatches(text)) {
       if (m.start > i) spans.add(TextSpan(text: text.substring(i, m.start)));
+      final tag = m.group(0)!;
+      TapGestureRecognizer? tap;
+      if (widget.onTapTag != null) {
+        tap = TapGestureRecognizer()
+          ..onTap = () => widget.onTapTag!(NoteText.lowerTr(tag.substring(1)));
+        _recognizers.add(tap);
+      }
       spans.add(
         TextSpan(
-          text: m.group(0),
+          text: tag,
           style: base.copyWith(color: AppTokens.textAccent),
+          recognizer: tap,
         ),
       );
       i = m.end;

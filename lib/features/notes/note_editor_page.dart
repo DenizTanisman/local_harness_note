@@ -18,6 +18,7 @@ import 'attachments_view.dart';
 import 'notes_providers.dart';
 import 'link_action_bar.dart';
 import 'note_body_view.dart';
+import 'tag_notes_page.dart';
 import 'tag_suggestion_bar.dart';
 
 /// Plain-text editor (spec §3.2) with auto-save. A new note opens with the
@@ -124,6 +125,13 @@ class _NoteEditorPageState extends ConsumerState<NoteEditorPage> {
     final body = _text.text;
     if (body == _saved) return;
     final repo = ref.read(notesRepositoryProvider);
+    if (_id != null &&
+        body.trim().isEmpty &&
+        (await ref.read(attachmentsRepositoryProvider).of(_id!)).isEmpty) {
+      // Erased to nothing: the stored text stays until leaving asks whether
+      // the note should go to the archive (_confirmEmptied).
+      return;
+    }
     if (_id == null) {
       if (body.trim().isEmpty) return;
       _id = await repo.create(body, source: widget.source);
@@ -167,17 +175,74 @@ class _NoteEditorPageState extends ConsumerState<NoteEditorPage> {
     await _flush();
   }
 
-  Future<void> _close() async {
-    // Runs while the page is being disposed: take what we need first.
-    final repo = ref.read(notesRepositoryProvider);
-    final attachments = ref.read(attachmentsRepositoryProvider);
-    final emptied = _text.text.trim().isEmpty;
-    await _flush();
-    // A note emptied out is not worth keeping — unless it holds a voice
-    // clip or a picture.
-    if (_id != null && emptied && (await attachments.of(_id!)).isEmpty) {
-      await repo.delete(_id!);
+  Future<void> _close() => _flush();
+
+  /// An existing note whose text was erased completely, about to be left.
+  bool get _emptied =>
+      _id != null && !_archivedOnExit && _text.text.trim().isEmpty;
+  bool _archivedOnExit = false;
+
+  /// Erasing a note's whole text asks first: yes → it goes to the archive
+  /// as it was before (restorable there), no → the text comes back.
+  Future<void> _confirmEmptied() async {
+    final id = _id;
+    if (id == null) return;
+    // A note with a voice clip or a picture keeps living without text.
+    if ((await ref.read(attachmentsRepositoryProvider).of(id)).isNotEmpty) {
+      _archivedOnExit = true;
+      await _flush();
+      if (mounted) Navigator.of(context).pop();
+      return;
     }
+    if (!mounted) return;
+    final archive = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Bu notu silmek istiyor musun?'),
+        content: const Text(
+          'Not arşive taşınır; istersen oradan geri alabilirsin '
+          '(arşivdekiler 45 gün sonra kendiliğinden silinir).',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Vazgeç'),
+          ),
+          FilledButton(
+            key: const Key('emptied-archive'),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Arşive taşı'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    if (archive == true) {
+      _save?.cancel();
+      _save = null;
+      // The stored body is still the last non-empty one.
+      await ref.read(notesRepositoryProvider).archive(id);
+      _archivedOnExit = true;
+      if (mounted) Navigator.of(context).pop();
+    } else {
+      setState(() => _text.text = _saved);
+    }
+  }
+
+  /// A tapped `#tag`: its notes, ready to merge with this one.
+  Future<void> _openTag(String tag) async {
+    await _flush();
+    if (!mounted) return;
+    final merged = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => TagNotesPage(tag: tag, fromNoteId: _id),
+      ),
+    );
+    if (merged == null || !mounted) return;
+    // This note is archived now: show the merged one in its place.
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => NoteEditorPage(noteId: merged)),
+    );
   }
 
   Future<void> _attach() async {
@@ -332,6 +397,7 @@ class _NoteEditorPageState extends ConsumerState<NoteEditorPage> {
             key: const Key('editor-view'),
             body: head,
             onTapText: _startEditing,
+            onTapTag: _openTag,
           ),
         ),
         if (_id != null) ...[
@@ -344,6 +410,7 @@ class _NoteEditorPageState extends ConsumerState<NoteEditorPage> {
             child: NoteBodyView(
               body: tail,
               onTapText: (offset) => _startEditing(cut + 1 + offset),
+              onTapTag: _openTag,
             ),
           ),
       ],
@@ -354,10 +421,19 @@ class _NoteEditorPageState extends ConsumerState<NoteEditorPage> {
   Widget build(BuildContext context) {
     final private = _note?.isPrivate ?? false;
     final archived = _note?.status == 'archived';
-    return PopScope(
-      onPopInvokedWithResult: (didPop, _) {
-        if (didPop) _close();
-      },
+    return ListenableBuilder(
+      listenable: _text,
+      builder: (context, child) => PopScope(
+        canPop: !_emptied,
+        onPopInvokedWithResult: (didPop, _) {
+          if (didPop) {
+            _close();
+          } else {
+            _confirmEmptied();
+          }
+        },
+        child: child!,
+      ),
       child: Scaffold(
         appBar: AppBar(
           title: Text(
