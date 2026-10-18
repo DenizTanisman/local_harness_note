@@ -435,7 +435,7 @@ var css = `
 .not-badge{align-self:flex-start;margin:8px 8px 0;padding:3px 10px;border-radius:999px;background:#e5484d;color:#fff;font-size:12px;font-weight:700;line-height:1.4}
 .not-flash{animation:notflash 1.4s ease-out 1}
 @keyframes notflash{0%{box-shadow:0 0 0 0 rgba(229,72,77,.8)}100%{box-shadow:0 0 0 22px rgba(229,72,77,0)}}
-[id]{scroll-margin-top:16px}`;
+:where([id]){scroll-margin-top:16px}`;
 var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 function send(o){ try { NotRecall.postMessage(JSON.stringify(o)); } catch(e){} }
 var t = null;
