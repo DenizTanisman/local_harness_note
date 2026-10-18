@@ -29,13 +29,20 @@ class VideoPipActivity : Activity() {
 
     private val controls = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            if (intent.action != ACTION_TOGGLE) return
-            if (video.isPlaying) {
-                video.pause()
-            } else {
-                if (ended) video.seekTo(0)
-                ended = false
-                video.start()
+            when (intent.action) {
+                ACTION_TOGGLE -> if (video.isPlaying) {
+                    video.pause()
+                } else {
+                    if (ended) video.seekTo(0)
+                    ended = false
+                    video.start()
+                }
+                ACTION_BACK -> video.seekTo(maxOf(0, video.currentPosition - JUMP_MS))
+                ACTION_FORWARD -> {
+                    ended = false
+                    video.seekTo(minOf(video.duration, video.currentPosition + JUMP_MS))
+                }
+                else -> return
             }
             updateActions()
         }
@@ -57,7 +64,15 @@ class VideoPipActivity : Activity() {
                 )
             },
         )
-        registerReceiver(controls, IntentFilter(ACTION_TOGGLE), RECEIVER_NOT_EXPORTED)
+        registerReceiver(
+            controls,
+            IntentFilter().apply {
+                addAction(ACTION_TOGGLE)
+                addAction(ACTION_BACK)
+                addAction(ACTION_FORWARD)
+            },
+            RECEIVER_NOT_EXPORTED,
+        )
         play(intent)
     }
 
@@ -97,22 +112,32 @@ class VideoPipActivity : Activity() {
         video.setVideoPath(path)
     }
 
-    /** One button in the PiP window: play / pause (replay at the end). */
+    private fun action(code: Int, action: String, iconRes: Int, label: String): RemoteAction {
+        val pending = PendingIntent.getBroadcast(
+            this,
+            code,
+            Intent(action).setPackage(packageName),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        return RemoteAction(Icon.createWithResource(this, iconRes), label, label, pending)
+    }
+
+    /** PiP window buttons: 10 s back · play / pause (replay at the end) · 10 s forward. */
     private fun updateActions() {
         val builder = params ?: return
         val playing = video.isPlaying
-        val toggle = PendingIntent.getBroadcast(
-            this,
-            0,
-            Intent(ACTION_TOGGLE).setPackage(packageName),
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        builder.setActions(
+            listOf(
+                action(1, ACTION_BACK, android.R.drawable.ic_media_rew, "10 sn geri"),
+                action(
+                    0,
+                    ACTION_TOGGLE,
+                    if (playing) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play,
+                    if (playing) "Duraklat" else "Oynat",
+                ),
+                action(2, ACTION_FORWARD, android.R.drawable.ic_media_ff, "10 sn ileri"),
+            ),
         )
-        val icon = Icon.createWithResource(
-            this,
-            if (playing) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play,
-        )
-        val label = if (playing) "Duraklat" else "Oynat"
-        builder.setActions(listOf(RemoteAction(icon, label, label, toggle)))
         setPictureInPictureParams(builder.build())
     }
 
@@ -137,5 +162,8 @@ class VideoPipActivity : Activity() {
         const val EXTRA_PATH = "path"
         const val EXTRA_TITLE = "title"
         private const val ACTION_TOGGLE = "dev.deniz.local_harness_not.PIP_TOGGLE"
+        private const val ACTION_BACK = "dev.deniz.local_harness_not.PIP_BACK"
+        private const val ACTION_FORWARD = "dev.deniz.local_harness_not.PIP_FORWARD"
+        private const val JUMP_MS = 10_000
     }
 }
