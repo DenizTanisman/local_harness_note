@@ -63,14 +63,16 @@ class AttachmentsRepository {
 
   /// The small copy of a picture — or a video's poster frame — used in the
   /// note and in notifications (a picture falls back to itself).
-  Future<File> notificationFileOf(NoteAttachment a) async {
+  Future<File?> notificationFileOf(NoteAttachment a) async {
     final small = File(
       p.join(
         (await _dir()).path,
         '${p.basenameWithoutExtension(a.file)}_n.jpg',
       ),
     );
-    return await small.exists() ? small : fileOf(a);
+    if (await small.exists()) return small;
+    // A video without its poster frame has no picture to show.
+    return a.kind == 'video' ? null : fileOf(a);
   }
 
   /// Attaches the file at [src] to note [noteId]. Null when the file could

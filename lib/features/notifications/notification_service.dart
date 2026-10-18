@@ -33,7 +33,11 @@ class NotificationService {
 
   static const remindersEnabledKey = 'reminders_enabled';
   static const _baseId = 3000;
-  static const _previewId = 2990;
+
+  /// Previews use ids below the reminders' range, one per note, so two
+  /// previews can be on screen together.
+  static int _previewId(String noteId) =>
+      2000 + (noteId.hashCode & 0x7fffffff) % 900;
 
   /// Lesson review reminders (1, 3 and 5 days after a section's first
   /// recall) use ids from here on.
@@ -240,7 +244,7 @@ class NotificationService {
           body: body,
           picture: picture == null
               ? null
-              : (await files.notificationFileOf(picture)).path,
+              : (await files.notificationFileOf(picture))?.path,
           clip: clip == null ? null : (await files.fileOf(clip)).path,
           video: video?.id,
         ),
@@ -257,7 +261,7 @@ class NotificationService {
     final files = AttachmentsRepository(db);
     final r = await _reminderOf(note, await files.of(noteId), files);
     await FlutterLocalNotificationsPlugin().show(
-      id: _previewId,
+      id: _previewId(noteId),
       title: r.title,
       body: r.body,
       notificationDetails: r.details,

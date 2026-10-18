@@ -34,6 +34,12 @@ class VideoAttachmentTile extends StatefulWidget {
 class _VideoAttachmentTileState extends State<VideoAttachmentTile> {
   File? _file;
   File? _poster;
+
+  /// Width / height of the video, read from its poster before it plays.
+  double? _aspect;
+
+  /// Tallest a portrait video may get inside a note.
+  static const _maxHeight = 460.0;
   VideoPlayerController? _video;
 
   @override
@@ -45,10 +51,21 @@ class _VideoAttachmentTileState extends State<VideoAttachmentTile> {
   Future<void> _load() async {
     final file = await widget.repo.fileOf(widget.attachment);
     final poster = await widget.repo.notificationFileOf(widget.attachment);
+    double? aspect;
+    if (poster != null) {
+      try {
+        final image = await decodeImageFromList(await poster.readAsBytes());
+        aspect = image.width / image.height;
+        image.dispose();
+      } catch (_) {
+        // No size: the 16:9 box is used.
+      }
+    }
     if (!mounted) return;
     setState(() {
       _file = file;
-      _poster = poster.path == file.path ? null : poster;
+      _poster = poster;
+      _aspect = aspect;
     });
   }
 
@@ -131,78 +148,95 @@ class _VideoAttachmentTileState extends State<VideoAttachmentTile> {
         child: GestureDetector(
           onTap: _tap,
           onLongPress: _delete,
-          child: ColoredBox(
-            color: Colors.black,
-            child: AspectRatio(
-              aspectRatio: ready && video.value.aspectRatio > 0.5
+          child: LayoutBuilder(
+            builder: (context, box) {
+              // Its own shape: landscape fills the width, portrait stands
+              // up to _maxHeight tall.
+              final aspect = ready && video.value.aspectRatio > 0
                   ? video.value.aspectRatio
-                  : 16 / 9,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  if (ready)
-                    VideoPlayer(video)
-                  else if (_poster != null)
-                    Image.file(_poster!, fit: BoxFit.contain),
-                  if (!playing)
-                    Center(
-                      child: Container(
-                        width: 64,
-                        height: 64,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: AppTokens.accentGradient,
-                        ),
-                        child: video != null && !ready
-                            ? const Padding(
-                                padding: EdgeInsets.all(18),
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 3,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(
-                                Icons.play_arrow,
-                                color: Colors.white,
-                                size: 38,
-                              ),
-                      ),
-                    ),
-                  Positioned(
-                    left: 10,
-                    bottom: 8,
-                    child: _Badge(
-                      ready
-                          ? '${_clock(video.value.position)} / ${_clock(length)}'
-                          : '🎬 ${_clock(length)}',
-                    ),
-                  ),
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: IconButton(
-                      tooltip: 'Tam ekran',
-                      icon: const Icon(Icons.fullscreen, color: Colors.white),
-                      onPressed: _fullScreen,
-                    ),
-                  ),
-                  if (ready)
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      child: VideoProgressIndicator(
-                        video,
-                        allowScrubbing: true,
-                        padding: EdgeInsets.zero,
-                        colors: const VideoProgressColors(
-                          playedColor: AppTokens.accentEnd,
+                  : (_aspect ?? 16 / 9);
+              final height = (box.maxWidth / aspect).clamp(0.0, _maxHeight);
+              return ColoredBox(
+                color: Colors.black,
+                child: SizedBox(
+                  height: height,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Center(
+                        child: AspectRatio(
+                          aspectRatio: aspect,
+                          child: ready
+                              ? VideoPlayer(video)
+                              : _poster != null
+                              ? Image.file(_poster!, fit: BoxFit.cover)
+                              : const SizedBox.shrink(),
                         ),
                       ),
-                    ),
-                ],
-              ),
-            ),
+                      if (!playing)
+                        Center(
+                          child: Container(
+                            width: 64,
+                            height: 64,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: AppTokens.accentGradient,
+                            ),
+                            child: video != null && !ready
+                                ? const Padding(
+                                    padding: EdgeInsets.all(18),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 3,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.play_arrow,
+                                    color: Colors.white,
+                                    size: 38,
+                                  ),
+                          ),
+                        ),
+                      Positioned(
+                        left: 10,
+                        bottom: 8,
+                        child: _Badge(
+                          ready
+                              ? '${_clock(video.value.position)} / ${_clock(length)}'
+                              : '🎬 ${_clock(length)}',
+                        ),
+                      ),
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: IconButton(
+                          tooltip: 'Tam ekran',
+                          icon: const Icon(
+                            Icons.fullscreen,
+                            color: Colors.white,
+                          ),
+                          onPressed: _fullScreen,
+                        ),
+                      ),
+                      if (ready)
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          child: VideoProgressIndicator(
+                            video,
+                            allowScrubbing: true,
+                            padding: EdgeInsets.zero,
+                            colors: const VideoProgressColors(
+                              playedColor: AppTokens.accentEnd,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),

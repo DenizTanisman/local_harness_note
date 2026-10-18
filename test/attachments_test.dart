@@ -80,7 +80,7 @@ void main() {
     expect(pic.mime, 'image/jpeg');
     expect(await (await repo.fileOf(clip)).readAsString(), 'ogg');
     expect(
-      p.basename((await repo.notificationFileOf(pic)).path),
+      p.basename((await repo.notificationFileOf(pic))!.path),
       endsWith('_n.jpg'),
     );
 
@@ -135,7 +135,7 @@ void main() {
       'SES',
     );
     expect(
-      await (await freshRepo.notificationFileOf(restored.last)).readAsString(),
+      await (await freshRepo.notificationFileOf(restored.last))!.readAsString(),
       'GORSEL',
     );
     await fresh.close();

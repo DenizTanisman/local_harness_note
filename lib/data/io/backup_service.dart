@@ -75,7 +75,7 @@ class BackupService {
     for (final a in rows) {
       for (final f in [
         await attachments.fileOf(a),
-        await attachments.notificationFileOf(a),
+        ?await attachments.notificationFileOf(a),
       ]) {
         final name = 'attachments/${p.basename(f.path)}';
         if (archive.findFile(name) != null || !await f.exists()) continue;
