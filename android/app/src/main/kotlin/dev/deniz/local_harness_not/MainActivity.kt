@@ -6,6 +6,7 @@ import android.content.ContentValues
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.webkit.MimeTypeMap
 import android.os.Environment
@@ -70,6 +71,20 @@ class MainActivity : FlutterActivity() {
                             } else {
                                 Thread {
                                     val ok = scaleImage(src, dst, max)
+                                    runOnUiThread { result.success(ok) }
+                                }.start()
+                            }
+                        }
+                        "videoFrame" -> {
+                            val args = call.arguments as? Map<*, *>
+                            val src = args?.get("src") as? String
+                            val dst = args?.get("dst") as? String
+                            val max = (args?.get("max") as? Number)?.toInt() ?: 720
+                            if (src == null || dst == null) {
+                                result.error("bad_args", "src and dst expected", null)
+                            } else {
+                                Thread {
+                                    val ok = videoFrame(src, dst, max)
                                     runOnUiThread { result.success(ok) }
                                 }.start()
                             }
@@ -244,7 +259,8 @@ class MainActivity : FlutterActivity() {
             val type = intent.type.orEmpty()
             when {
                 stream != null && type == "text/html" -> lessonFrom(stream)
-                stream != null && (type.startsWith("audio/") || type.startsWith("image/")) ->
+                stream != null && (type.startsWith("audio/") || type.startsWith("image/") ||
+                    type.startsWith("video/")) ->
                     sharedMedia(stream, type, shareText(intent)?.get("text"))
                 else -> shareText(intent)
             }
@@ -266,7 +282,11 @@ class MainActivity : FlutterActivity() {
      */
     private fun sharedMedia(uri: Uri, type: String, text: String?): Map<String, String>? = try {
         val ext = MimeTypeMap.getSingleton().getExtensionFromMimeType(type.substringBefore(';'))
-            ?: if (type.startsWith("audio/")) "m4a" else "jpg"
+            ?: when {
+                type.startsWith("audio/") -> "m4a"
+                type.startsWith("video/") -> "mp4"
+                else -> "jpg"
+            }
         val dir = File(cacheDir, "shared").apply { mkdirs() }
         val file = File(dir, "${System.currentTimeMillis()}.$ext")
         contentResolver.openInputStream(uri)?.use { input ->
@@ -297,6 +317,33 @@ class MainActivity : FlutterActivity() {
         File(dst).outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 85, it) }
         bitmap.recycle()
         true
+    } catch (e: Exception) {
+        false
+    }
+
+    /**
+     * A frame of the video at [src] (about one second in, or the first one)
+     * as a JPEG of at most [max] px on its long side: the poster in the note
+     * and the picture in the reminder notification.
+     */
+    private fun videoFrame(src: String, dst: String, max: Int): Boolean = try {
+        MediaMetadataRetriever().use { r ->
+            r.setDataSource(src)
+            val w = r.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toIntOrNull() ?: max
+            val h = r.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toIntOrNull() ?: max
+            val rotation = r.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)?.toIntOrNull() ?: 0
+            val (vw, vh) = if (rotation % 180 == 0) w to h else h to w
+            val scale = minOf(1.0, max.toDouble() / maxOf(vw, vh))
+            val frame = r.getScaledFrameAtTime(
+                1_000_000,
+                MediaMetadataRetriever.OPTION_CLOSEST_SYNC,
+                maxOf(1, (vw * scale).toInt()),
+                maxOf(1, (vh * scale).toInt()),
+            ) ?: r.frameAtTime ?: return false
+            File(dst).outputStream().use { frame.compress(Bitmap.CompressFormat.JPEG, 85, it) }
+            frame.recycle()
+            true
+        }
     } catch (e: Exception) {
         false
     }

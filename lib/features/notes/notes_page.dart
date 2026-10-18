@@ -729,6 +729,15 @@ class _NoteTile extends StatelessWidget {
                               color: AppTokens.textSecondary,
                             ),
                           ),
+                        if (item.media.contains('video'))
+                          const Padding(
+                            padding: EdgeInsets.only(left: 4),
+                            child: Icon(
+                              Icons.videocam_outlined,
+                              size: 16,
+                              color: AppTokens.textSecondary,
+                            ),
+                          ),
                         if (item.media.contains('image'))
                           const Padding(
                             padding: EdgeInsets.only(left: 4),

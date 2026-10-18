@@ -13,7 +13,7 @@ import '../repositories/notes_repository.dart';
 
 /// Weekly encrypted backup: notes, versions, the reminder list, lessons,
 /// app_settings and attachment rows as JSON in a ZIP — with the voice clips
-/// and pictures themselves under `attachments/` — the whole ZIP encrypted
+/// and pictures themselves under `attachments/` (videos are left out) — the whole ZIP encrypted
 /// with AES-256-GCM derived from the user password via PBKDF2. Without the
 /// password the file cannot be opened.
 class BackupService {
@@ -66,7 +66,11 @@ class BackupService {
     add('lessons.json', [
       for (final l in await db.select(db.lessons).get()) l.toJson(),
     ]);
-    final rows = await db.select(db.noteAttachments).get();
+    // Videos stay out: they would make every weekly backup huge.
+    final rows = [
+      for (final a in await db.select(db.noteAttachments).get())
+        if (a.kind != 'video') a,
+    ];
     add('note_attachments.json', [for (final a in rows) a.toJson()]);
     for (final a in rows) {
       for (final f in [

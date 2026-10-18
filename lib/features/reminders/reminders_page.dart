@@ -150,6 +150,14 @@ class _RemindersPageState extends ConsumerState<RemindersPage> {
                                       padding: EdgeInsets.only(left: 6),
                                       child: Icon(Icons.mic, size: 16),
                                     ),
+                                  if (item.media.contains('video'))
+                                    const Padding(
+                                      padding: EdgeInsets.only(left: 6),
+                                      child: Icon(
+                                        Icons.videocam_outlined,
+                                        size: 16,
+                                      ),
+                                    ),
                                   if (item.media.contains('image'))
                                     const Padding(
                                       padding: EdgeInsets.only(left: 6),

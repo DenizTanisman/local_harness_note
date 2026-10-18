@@ -72,13 +72,14 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <data android:mimeType="text/html"/>
             </intent-filter>
-            <!-- A voice message or photo shared from WhatsApp / gallery
+            <!-- A voice message, photo or video shared from WhatsApp / gallery
                  becomes a new note with it attached. -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <data android:mimeType="audio/*"/>
                 <data android:mimeType="image/*"/>
+                <data android:mimeType="video/*"/>
             </intent-filter>
         </activity>
         <!-- Quick-note bubble content (Bubbles API): must be embeddable and

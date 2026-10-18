@@ -140,4 +140,28 @@ void main() {
     );
     await fresh.close();
   });
+
+  test('a video attaches as video and stays out of backups', () async {
+    expect(AttachmentsRepository.kindOf('video/mp4'), 'video');
+    final id = await notes.create('video notu');
+    final video = await repo.add(
+      id,
+      await source('klip.mp4', 'MP4'),
+      'video/mp4',
+    );
+    expect(video!.kind, 'video');
+    expect(video.file, endsWith('.mp4'));
+    expect((await notes.watchNotes().first).single.media, {'video'});
+
+    final zip = await BackupService.decryptBackup(
+      await BackupService(db, attachments: repo).createEncryptedBackup('pw'),
+      'pw',
+    );
+    final fresh = AppDatabase(NativeDatabase.memory());
+    final freshRepo = repoFor(fresh, p.join(tmp.path, 'restored-v'));
+    await BackupService(fresh, attachments: freshRepo).restoreZip(zip);
+    expect(await freshRepo.of(id), isEmpty);
+    expect(await NotesRepository(fresh).getNote(id), isNotNull);
+    await fresh.close();
+  });
 }

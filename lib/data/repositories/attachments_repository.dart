@@ -52,14 +52,17 @@ class AttachmentsRepository {
     return (ok: true, durationMs: null);
   }
 
-  static String kindOf(String mime) =>
-      mime.startsWith('image/') ? 'image' : 'audio';
+  static String kindOf(String mime) => mime.startsWith('image/')
+      ? 'image'
+      : mime.startsWith('video/')
+      ? 'video'
+      : 'audio';
 
   Future<File> fileOf(NoteAttachment a) async =>
       File(p.join((await _dir()).path, a.file));
 
-  /// The small copy of a picture used in notifications (falls back to the
-  /// picture itself).
+  /// The small copy of a picture — or a video's poster frame — used in the
+  /// note and in notifications (a picture falls back to itself).
   Future<File> notificationFileOf(NoteAttachment a) async {
     final small = File(
       p.join(
@@ -75,11 +78,12 @@ class AttachmentsRepository {
   Future<NoteAttachment?> add(String noteId, String src, String mime) async {
     final kind = kindOf(mime);
     final id = NoteText.uuid();
+    final srcExt = p.extension(src).replaceFirst('.', '').toLowerCase();
     final ext = kind == 'image'
         ? 'jpg'
-        : (p.extension(src).replaceFirst('.', '').toLowerCase().isEmpty
-              ? 'm4a'
-              : p.extension(src).replaceFirst('.', '').toLowerCase());
+        : srcExt.isNotEmpty
+        ? srcExt
+        : (kind == 'video' ? 'mp4' : 'm4a');
     final target = File(p.join((await _dir()).path, '$id.$ext'));
     final ({bool ok, int? durationMs}) imported;
     try {
@@ -107,6 +111,10 @@ class AttachmentsRepository {
     });
     return row;
   }
+
+  Future<NoteAttachment?> get(String id) => (db.select(
+    db.noteAttachments,
+  )..where((a) => a.id.equals(id))).getSingleOrNull();
 
   Future<List<NoteAttachment>> of(String noteId) =>
       (db.select(db.noteAttachments)

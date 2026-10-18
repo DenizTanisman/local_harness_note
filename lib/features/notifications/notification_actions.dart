@@ -12,6 +12,11 @@ const playActionPrefix = 'play:';
 String playActionId(String path, String title) =>
     '$playActionPrefix${jsonEncode({'p': path, 't': title})}';
 
+/// "🎬 İzle" on a reminder with a video: opens the app on the player.
+const watchActionPrefix = 'watch:';
+
+String watchActionId(String attachmentId) => '$watchActionPrefix$attachmentId';
+
 /// Handles a notification action; false when it is not one of ours.
 Future<bool> handleNotificationAction(NotificationResponse response) async {
   final id = response.actionId;

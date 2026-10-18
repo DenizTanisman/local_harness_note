@@ -54,6 +54,7 @@ class NotificationService {
     String? body,
     String? picture,
     String? clip,
+    String? video,
   }) => AndroidNotificationDetails(
     'not_reminders',
     'Hatırlatmalar',
@@ -69,14 +70,22 @@ class NotificationService {
             hideExpandedLargeIcon: true,
           ),
     largeIcon: picture == null ? null : FilePathAndroidBitmap(picture),
-    actions: clip == null
+    actions: clip == null && video == null
         ? null
         : [
-            AndroidNotificationAction(
-              playActionId(clip, title),
-              '▶ Oynat',
-              cancelNotification: false,
-            ),
+            if (clip != null)
+              AndroidNotificationAction(
+                playActionId(clip, title),
+                '▶ Oynat',
+                cancelNotification: false,
+              ),
+            if (video != null)
+              AndroidNotificationAction(
+                watchActionId(video),
+                '🎬 İzle',
+                showsUserInterface: true,
+                cancelNotification: false,
+              ),
           ],
   );
 
@@ -97,7 +106,12 @@ class NotificationService {
       ),
       onDidReceiveNotificationResponse: (response) async {
         if (await handleNotificationAction(response)) return;
-        onTapPayload?.call(response.payload ?? '');
+        final action = response.actionId;
+        onTapPayload?.call(
+          action != null && action.startsWith(watchActionPrefix)
+              ? action
+              : response.payload ?? '',
+        );
       },
       onDidReceiveBackgroundNotificationResponse: notificationActionBackground,
     );
@@ -113,7 +127,11 @@ class NotificationService {
   Future<String?> launchPayload() async {
     final details = await _plugin.getNotificationAppLaunchDetails();
     if (details?.didNotificationLaunchApp != true) return null;
-    return details!.notificationResponse?.payload;
+    final response = details!.notificationResponse;
+    final action = response?.actionId;
+    // "🎬 İzle" started the app: open the video rather than the note.
+    if (action != null && action.startsWith(watchActionPrefix)) return action;
+    return response?.payload;
   }
 
   /// Reschedules whenever notes or the reminder list change (debounced),
@@ -200,11 +218,22 @@ class NotificationService {
     final body = rest.isEmpty
         ? null
         : (rest.length > 400 ? '${rest.substring(0, 400)}…' : rest);
-    final clip = attached.where((a) => a.kind == 'audio').firstOrNull;
-    final picture = attached.where((a) => a.kind == 'image').firstOrNull;
+    final voice = attached.where((a) => a.kind == 'audio').firstOrNull;
+    final video = attached.where((a) => a.kind == 'video').firstOrNull;
+    // ▶ Oynat plays the voice clip, or else the video's sound.
+    final clip = voice ?? video;
+    // The picture, or else the video's poster frame.
+    final picture =
+        attached.where((a) => a.kind == 'image').firstOrNull ?? video;
     return (
       title: title,
-      body: body ?? (clip != null ? '🎤 Sesli not' : null),
+      body:
+          body ??
+          (voice != null
+              ? '🎤 Sesli not'
+              : video != null
+              ? '🎬 Video'
+              : null),
       details: NotificationDetails(
         android: _reminder(
           title: title,
@@ -213,6 +242,7 @@ class NotificationService {
               ? null
               : (await files.notificationFileOf(picture)).path,
           clip: clip == null ? null : (await files.fileOf(clip)).path,
+          video: video?.id,
         ),
       ),
     );

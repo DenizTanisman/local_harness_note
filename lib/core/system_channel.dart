@@ -123,6 +123,25 @@ class SystemChannel {
     }
   }
 
+  /// A frame of the video at [src] as a JPEG of at most [max] px on its
+  /// long side at [dst] (poster / notification picture).
+  static Future<bool> videoFrame(
+    String src,
+    String dst, {
+    int max = 720,
+  }) async {
+    try {
+      return await _channel.invokeMethod<bool>('videoFrame', {
+            'src': src,
+            'dst': dst,
+            'max': max,
+          }) ??
+          false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
   /// Opens the system picker in [place] ('download' | 'whatsapp' |
   /// 'lessons' | null: wherever it was last), HTML files only. Returns the
   /// file's text, '' when it could not be read, null when cancelled.

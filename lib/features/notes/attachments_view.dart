@@ -11,6 +11,7 @@ import 'package:record/record.dart';
 import 'package:voice_player/voice_player.dart';
 
 import 'attachment_importer.dart';
+import 'video_view.dart';
 import '../../data/db/app_database.dart';
 import '../../data/repositories/attachments_repository.dart';
 import '../../data/db/database_provider.dart';
@@ -28,7 +29,14 @@ String formatDuration(Duration d) {
   return '${s ~/ 60}:${(s % 60).toString().padLeft(2, '0')}';
 }
 
-enum AttachAction { record, audioFile, camera, gallery }
+enum AttachAction {
+  record,
+  audioFile,
+  camera,
+  gallery,
+  videoCamera,
+  videoGallery,
+}
 
 /// "Ekle" sheet: record a voice note, pick an audio file, take or pick a
 /// picture. Returns the file to attach with its MIME type.
@@ -64,6 +72,13 @@ Future<({String path, String mime})?> pickAttachment(
             ),
             (AttachAction.camera, Icons.photo_camera, 'Fotoğraf çek', ''),
             (AttachAction.gallery, Icons.photo_library, 'Galeriden görsel', ''),
+            (AttachAction.videoCamera, Icons.videocam, 'Video çek', ''),
+            (
+              AttachAction.videoGallery,
+              Icons.video_library,
+              'Galeriden video',
+              'İndirilen videolar da burada',
+            ),
           ])
             ListTile(
               leading: Icon(icon),
@@ -92,6 +107,14 @@ Future<({String path, String mime})?> pickAttachment(
       if (path == null) return null;
       final ext = p.extension(path).replaceFirst('.', '').toLowerCase();
       return (path: path, mime: 'audio/${ext.isEmpty ? 'mpeg' : ext}');
+    case AttachAction.videoCamera:
+    case AttachAction.videoGallery:
+      final video = await ImagePicker().pickVideo(
+        source: action == AttachAction.videoCamera
+            ? ImageSource.camera
+            : ImageSource.gallery,
+      );
+      return video == null ? null : (path: video.path, mime: 'video/mp4');
     case AttachAction.camera:
     case AttachAction.gallery:
       final image = await ImagePicker().pickImage(
@@ -260,6 +283,10 @@ class AttachmentStrip extends ConsumerWidget {
           for (final a in items)
             if (a.kind == 'image') a,
         ];
+        final videos = [
+          for (final a in items)
+            if (a.kind == 'video') a,
+        ];
         return Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           child: Column(
@@ -267,6 +294,13 @@ class AttachmentStrip extends ConsumerWidget {
             children: [
               for (final a in audio)
                 _AudioTile(attachment: a, repo: repo, title: title),
+              for (final a in videos)
+                VideoAttachmentTile(
+                  key: ValueKey(a.id),
+                  attachment: a,
+                  repo: repo,
+                  onDelete: () => repo.remove(a),
+                ),
               if (images.isNotEmpty)
                 SizedBox(
                   height: 96,
