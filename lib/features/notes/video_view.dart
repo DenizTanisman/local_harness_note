@@ -7,6 +7,7 @@ import 'package:video_player/video_player.dart';
 import '../../data/db/app_database.dart';
 import '../../data/repositories/attachments_repository.dart';
 import '../../theme/app_tokens.dart';
+import 'attachment_importer.dart';
 
 String _clock(Duration d) {
   final s = d.inSeconds;
@@ -50,7 +51,7 @@ class _VideoAttachmentTileState extends State<VideoAttachmentTile> {
 
   Future<void> _load() async {
     final file = await widget.repo.fileOf(widget.attachment);
-    final poster = await widget.repo.notificationFileOf(widget.attachment);
+    final poster = await ensurePoster(widget.repo, widget.attachment);
     double? aspect;
     if (poster != null) {
       try {

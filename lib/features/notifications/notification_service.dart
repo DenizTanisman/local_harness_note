@@ -15,6 +15,7 @@ import '../../data/repositories/attachments_repository.dart';
 import '../../data/repositories/lessons_repository.dart';
 import '../../data/repositories/notes_repository.dart';
 import '../reminders/reminder_planner.dart';
+import '../notes/attachment_importer.dart';
 import 'notification_actions.dart';
 
 /// Thin plugin layer over [ReminderPlanner]: initializes the plugin and
@@ -242,7 +243,7 @@ class NotificationService {
           body: body,
           picture: picture == null
               ? null
-              : (await files.notificationFileOf(picture))?.path,
+              : (await ensurePoster(files, picture))?.path,
           clip: clip == null ? null : (await files.fileOf(clip)).path,
           video: video == null ? null : (await files.fileOf(video)).path,
         ),

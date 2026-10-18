@@ -26,8 +26,8 @@ export interface Env {
 const TIMEOUT_MS = 25_000;
 /** Base64 characters per stored chunk (well under the value size limit). */
 const BLOB_CHUNK = 100_000;
-/** Largest clip /inbox accepts (base64 characters ≈ 15 MB of audio). */
-const BLOB_MAX = 20_000_000;
+/** Largest clip /inbox accepts (base64 characters ≈ 45 MB: short videos too). */
+const BLOB_MAX = 60_000_000;
 const WRITE_TOOLS = new Set([
   "create_note",
   "append_to_note",

@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Ses parçası + Whisper dökümü → telefondaki Not'a hatırlatma.
+"""Ses / video parçası + Whisper dökümü → telefondaki Not'a hatırlatma.
 
 Her ses dosyası için (yanında aynı adlı .txt dökümü ile):
   1. Döküm düz metne çevrilir.
   2. Claude (Claude Code CLI, bu Mac'te) kilit ifadelerin önüne/arkasına boş
      satır koyar (duzenle-prompt.md), Türkçe kısa bir başlık ve özet yazar.
      Kelimeler değişirse düzenleme kullanılmaz, düz metin gider.
-  3. Not şu düzende gider: başlık / ses / düzenlenmiş metin / "Özet: …",
+  3. Videolar 480p mp4 kopya olarak gider (asıl dosyaya dokunulmaz).
+  4. Not şu düzende gider: başlık / ses / düzenlenmiş metin / "Özet: …",
      ses ekiyle birlikte, Hatırlatmalar listesinin sonuna (aktarıcı /inbox →
      telefon uyanır, sesi indirir).
 
@@ -26,8 +27,10 @@ import base64
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.request
 from pathlib import Path
@@ -38,9 +41,13 @@ LOG = HOME / "Library/Logs/ses-bolucu-not.log"
 CLAUDE = os.environ.get("NOT_CLAUDE", str(HOME / ".local/bin/claude"))
 MODEL = os.environ.get("NOT_MODEL", "sonnet")
 PROMPT_FILE = Path(__file__).resolve().with_name("duzenle-prompt.md")
+FFMPEG = shutil.which("ffmpeg") or "/opt/homebrew/bin/ffmpeg"
 MIME = {".mp3": "audio/mpeg", ".wav": "audio/wav", ".m4a": "audio/mp4",
         ".aac": "audio/aac", ".ogg": "audio/ogg", ".opus": "audio/ogg",
-        ".flac": "audio/flac", ".webm": "audio/webm"}
+        ".flac": "audio/flac",
+        # Videos go as videos: Not shows them in the note and the reminder.
+        ".mp4": "video/mp4", ".m4v": "video/mp4", ".mov": "video/quicktime",
+        ".webm": "video/webm"}
 
 SCHEMA = {
     "type": "object",
@@ -124,6 +131,26 @@ def note_text(data: dict, fallback_title: str) -> str:
     return parts[0] + "\n" + "\n\n".join(parts[1:])
 
 
+def phone_copy(media: Path, tmp_dir: Path) -> Path:
+    """Videos travel as a small copy (480p H.264 mp4, AAC): 1080p clips
+    are 50–150 MB, the phone needs a few. The original is not touched.
+    Audio goes as it is."""
+    if not MIME.get(media.suffix.lower(), "").startswith("video/"):
+        return media
+    if media.suffix.lower() == ".mp4" and media.stat().st_size <= 10 * 1024 * 1024:
+        return media  # already a phone-sized copy
+    out = tmp_dir / (media.stem + ".mp4")
+    subprocess.run(
+        [FFMPEG, "-loglevel", "error", "-y", "-i", str(media),
+         "-vf", "scale=-2:480", "-c:v", "libx264", "-preset", "veryfast",
+         "-crf", "30", "-maxrate", "650k", "-bufsize", "1300k",
+         "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "80k",
+         "-movflags", "+faststart", str(out)],
+        check=True, capture_output=True, timeout=1800,
+    )
+    return out
+
+
 def send(cfg: dict, text: str, audio: Path, reminders: bool) -> dict:
     body = json.dumps({
         "text": text,
@@ -175,7 +202,9 @@ def main(argv: list[str]) -> int:
             if dry:
                 print(f"--- {audio.name} ---\n{text}\n")
                 continue
-            r = send(cfg, text, audio, reminders)
+            with tempfile.TemporaryDirectory(prefix="not-gonder-") as tmp:
+                copy = phone_copy(audio, Path(tmp))
+                r = send(cfg, text, copy, reminders)
             title = text.split("\n", 1)[0]
             log(f"gönderildi: {audio.name} → “{title}” ({'telefon uyandı' if r.get('woke') else 'kuyrukta'})")
             notify("Not'a gönderildi", title)
