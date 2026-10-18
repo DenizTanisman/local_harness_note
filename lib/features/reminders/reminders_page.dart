@@ -134,10 +134,31 @@ class _RemindersPageState extends ConsumerState<RemindersPage> {
                                   style: const TextStyle(fontSize: 12),
                                 ),
                               ),
-                              title: Text(
-                                item.title.isEmpty ? '(boş not)' : item.title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                              title: Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      item.title.isEmpty
+                                          ? '(boş not)'
+                                          : item.title,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  if (item.media.contains('audio'))
+                                    const Padding(
+                                      padding: EdgeInsets.only(left: 6),
+                                      child: Icon(Icons.mic, size: 16),
+                                    ),
+                                  if (item.media.contains('image'))
+                                    const Padding(
+                                      padding: EdgeInsets.only(left: 6),
+                                      child: Icon(
+                                        Icons.image_outlined,
+                                        size: 16,
+                                      ),
+                                    ),
+                                ],
                               ),
                               subtitle: isNext
                                   ? const Text(

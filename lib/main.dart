@@ -13,6 +13,7 @@ import 'data/db/database_provider.dart';
 import 'features/backup/backup_worker.dart';
 import 'features/lessons/lesson_page.dart';
 import 'features/lessons/lessons_providers.dart';
+import 'features/notes/attachments_view.dart';
 import 'features/notes/note_editor_page.dart';
 import 'features/notes/notes_providers.dart';
 import 'features/notifications/notification_service.dart';
@@ -25,14 +26,23 @@ import 'theme/app_theme.dart';
 final navigatorKey = GlobalKey<NavigatorState>();
 
 /// Opens a note (reminder tap) or a new one (widget / share sheet).
-void openEditor({String? noteId, String? text, String source = 'phone'}) {
+void openEditor({
+  String? noteId,
+  String? text,
+  ({String path, String mime})? media,
+  String source = 'phone',
+}) {
   final nav = navigatorKey.currentState;
   if (nav == null) return;
   nav.popUntil((route) => route.isFirst);
   nav.push(
     MaterialPageRoute(
-      builder: (_) =>
-          NoteEditorPage(noteId: noteId, initialText: text, source: source),
+      builder: (_) => NoteEditorPage(
+        noteId: noteId,
+        initialText: text,
+        initialMedia: media,
+        source: source,
+      ),
     ),
   );
 }
@@ -65,8 +75,15 @@ void _openPayload(String? payload) {
 
 void _openIntent(AppIntent intent) {
   final html = intent.lessonHtml;
+  final media = intent.mediaPath;
   if (html != null) {
     unawaited(_importLesson(html));
+  } else if (media != null) {
+    openEditor(
+      text: intent.sharedText,
+      media: (path: media, mime: intent.mediaMime ?? 'audio/mpeg'),
+      source: 'share',
+    );
   } else if (intent.sharedText != null) {
     openEditor(text: intent.sharedText, source: 'share');
   } else {
@@ -130,8 +147,10 @@ void main() {
           }
         }
 
-        // Archived notes older than 45 days go first.
+        // Archived notes older than 45 days go first, then files of
+        // attachments whose note is gone.
         await container.read(notesRepositoryProvider).purgeArchived();
+        unawaited(container.read(attachmentsRepositoryProvider).sweep());
         await container.read(hubSnapshotPublisherProvider).start();
         // Claude connection: register the push token and answer anything
         // that queued up while the app was closed (no-op when unpaired).

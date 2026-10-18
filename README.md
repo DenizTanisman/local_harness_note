@@ -22,6 +22,12 @@ see [`worker/setup.sh`](worker/setup.sh).
 - **✨ Gemma** — runs on the phone: *Toparla*, *Hizala* (layout only, same words) or
   your own prompt; the answer is editable before it replaces the note.
 - **Hatırlatmalar** — an ordered list delivered at 07:30 · 14:00 · 20:00, looping.
+  A note can carry voice clips and pictures (record, pick, or share a WhatsApp voice
+  message to Not); the reminder shows the picture and a **▶ Oynat** button that plays
+  the clip without opening the app.
+- **Dersler** — HTML tutorials with active recall: per-section multiple choice, reviews
+  1, 3 and 5 days later, wrong answers marked in the tutorial
+  ([format](docs/lesson-format.md)).
 - **Capture** — share sheet, home-screen widget, floating quick-note bubble.
 - **Claude (MCP)** — a Cloudflare Worker wakes the phone over FCM; tools run on the
   phone's own database (private notes are never sent, there is no delete tool).

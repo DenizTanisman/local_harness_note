@@ -118,3 +118,24 @@ class RecallAnswers extends Table {
   @override
   Set<Column> get primaryKey => {sessionId, questionId};
 }
+
+/// A voice clip or picture attached to a note. The file lives in the app's
+/// private attachments folder (AttachmentsRepository); deleting the note
+/// deletes the row, and the next sweep the file.
+class NoteAttachments extends Table {
+  TextColumn get id => text()();
+  TextColumn get noteId =>
+      text().references(Notes, #id, onDelete: KeyAction.cascade)();
+
+  /// 'audio' | 'image'
+  TextColumn get kind => text()();
+
+  /// File name inside the attachments folder.
+  TextColumn get file => text()();
+  TextColumn get mime => text()();
+  IntColumn get durationMs => integer().nullable()();
+  IntColumn get createdAt => integer()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}

@@ -14,6 +14,7 @@ part 'app_database.g.dart';
     Lessons,
     RecallSessions,
     RecallAnswers,
+    NoteAttachments,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -22,9 +23,9 @@ class AppDatabase extends _$AppDatabase {
   /// v1: daily check-in (metric tree). v2: second brain notes
   /// (docs/second-brain-spec.md) — the check-in tables are dropped.
   /// v3: notes.archived_at (archive auto-delete). v4: lessons + active
-  /// recall (docs/lesson-format.md).
+  /// recall (docs/lesson-format.md). v5: voice / picture attachments.
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   /// Settings that only the check-in used; removed by the v2 upgrade.
   static const obsoleteSettings = [
@@ -42,6 +43,7 @@ class AppDatabase extends _$AppDatabase {
     onCreate: (m) async {
       await m.createAll();
       await _createSearchIndex();
+      await _createAttachmentIndex();
     },
     onUpgrade: (m, from, to) async {
       if (from < 2) {
@@ -73,6 +75,10 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(recallSessions);
         await m.createTable(recallAnswers);
       }
+      if (from < 5) {
+        await m.createTable(noteAttachments);
+        await _createAttachmentIndex();
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -92,6 +98,13 @@ class AppDatabase extends _$AppDatabase {
     );
     await customStatement(
       'CREATE INDEX IF NOT EXISTS idx_note_tags_tag ON note_tags(tag)',
+    );
+  }
+
+  Future<void> _createAttachmentIndex() async {
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_note_attachments_note '
+      'ON note_attachments(note_id)',
     );
   }
 }

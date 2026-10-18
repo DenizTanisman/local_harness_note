@@ -720,6 +720,24 @@ class _NoteTile extends StatelessWidget {
                               color: AppTokens.textSecondary,
                             ),
                           ),
+                        if (item.media.contains('audio'))
+                          const Padding(
+                            padding: EdgeInsets.only(left: 4),
+                            child: Icon(
+                              Icons.mic,
+                              size: 16,
+                              color: AppTokens.textSecondary,
+                            ),
+                          ),
+                        if (item.media.contains('image'))
+                          const Padding(
+                            padding: EdgeInsets.only(left: 4),
+                            child: Icon(
+                              Icons.image_outlined,
+                              size: 16,
+                              color: AppTokens.textSecondary,
+                            ),
+                          ),
                         if (item.inReminders)
                           const Padding(
                             padding: EdgeInsets.only(left: 4),

@@ -4,12 +4,33 @@ import 'package:flutter/services.dart';
 /// widget), a note pre-filled with shared text (share sheet) or a lesson
 /// (an HTML file opened with / shared to Not).
 class AppIntent {
-  const AppIntent.newNote() : sharedText = null, lessonHtml = null;
-  const AppIntent.share(String text) : sharedText = text, lessonHtml = null;
-  const AppIntent.lesson(String html) : sharedText = null, lessonHtml = html;
+  const AppIntent.newNote()
+    : sharedText = null,
+      lessonHtml = null,
+      mediaPath = null,
+      mediaMime = null;
+  const AppIntent.share(String text)
+    : sharedText = text,
+      lessonHtml = null,
+      mediaPath = null,
+      mediaMime = null;
+  const AppIntent.lesson(String html)
+    : sharedText = null,
+      lessonHtml = html,
+      mediaPath = null,
+      mediaMime = null;
+
+  /// A voice message / picture shared to Not (copied into the cache).
+  const AppIntent.media(String path, String mime, {String? text})
+    : sharedText = text,
+      lessonHtml = null,
+      mediaPath = path,
+      mediaMime = mime;
 
   final String? sharedText;
   final String? lessonHtml;
+  final String? mediaPath;
+  final String? mediaMime;
 }
 
 /// Native glue (MainActivity, `local_harness_not/system`): share sheet and
@@ -26,6 +47,12 @@ class SystemChannel {
       'share'
           when raw['text'] is String && (raw['text'] as String).isNotEmpty =>
         AppIntent.share(raw['text'] as String),
+      'share_media' when raw['path'] is String && raw['mime'] is String =>
+        AppIntent.media(
+          raw['path'] as String,
+          raw['mime'] as String,
+          text: raw['text'] as String?,
+        ),
       'lesson' when raw['html'] is String => AppIntent.lesson(
         raw['html'] as String,
       ),
@@ -74,6 +101,25 @@ class SystemChannel {
       });
     } on MissingPluginException {
       return null;
+    }
+  }
+
+  /// Writes [src] as a JPEG of at most [max] px on its long side to [dst]
+  /// (rotation from EXIF applied).
+  static Future<bool> scaleImage(
+    String src,
+    String dst, {
+    int max = 1600,
+  }) async {
+    try {
+      return await _channel.invokeMethod<bool>('scaleImage', {
+            'src': src,
+            'dst': dst,
+            'max': max,
+          }) ??
+          false;
+    } on MissingPluginException {
+      return false;
     }
   }
 

@@ -4,7 +4,10 @@ import android.content.ActivityNotFoundException
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.ImageDecoder
 import android.net.Uri
+import android.webkit.MimeTypeMap
 import android.os.Environment
 import android.os.PowerManager
 import android.provider.DocumentsContract
@@ -57,6 +60,20 @@ class MainActivity : FlutterActivity() {
                             result.success(null)
                         }
                         "bubbleStatus" -> result.success(QuickNoteBubble.status(this@MainActivity))
+                        "scaleImage" -> {
+                            val args = call.arguments as? Map<*, *>
+                            val src = args?.get("src") as? String
+                            val dst = args?.get("dst") as? String
+                            val max = (args?.get("max") as? Number)?.toInt() ?: 1600
+                            if (src == null || dst == null) {
+                                result.error("bad_args", "src and dst expected", null)
+                            } else {
+                                Thread {
+                                    val ok = scaleImage(src, dst, max)
+                                    runOnUiThread { result.success(ok) }
+                                }.start()
+                            }
+                        }
                         "pickLesson" -> {
                             pendingPick?.success(null)
                             pendingPick = result
@@ -224,7 +241,13 @@ class MainActivity : FlutterActivity() {
         Intent.ACTION_SEND -> {
             @Suppress("DEPRECATION")
             val stream = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
-            if (stream != null && intent.type == "text/html") lessonFrom(stream) else shareText(intent)
+            val type = intent.type.orEmpty()
+            when {
+                stream != null && type == "text/html" -> lessonFrom(stream)
+                stream != null && (type.startsWith("audio/") || type.startsWith("image/")) ->
+                    sharedMedia(stream, type, shareText(intent)?.get("text"))
+                else -> shareText(intent)
+            }
         }
         else -> null
     }
@@ -235,6 +258,47 @@ class MainActivity : FlutterActivity() {
             intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString(),
         ).filter { it.isNotBlank() }.distinct().joinToString("\n")
         return if (text.isBlank()) null else mapOf("action" to "share", "text" to text)
+    }
+
+    /**
+     * A voice message or picture shared to Not: copied into the cache so
+     * Dart can attach it to a new note (the sender's grant ends with us).
+     */
+    private fun sharedMedia(uri: Uri, type: String, text: String?): Map<String, String>? = try {
+        val ext = MimeTypeMap.getSingleton().getExtensionFromMimeType(type.substringBefore(';'))
+            ?: if (type.startsWith("audio/")) "m4a" else "jpg"
+        val dir = File(cacheDir, "shared").apply { mkdirs() }
+        val file = File(dir, "${System.currentTimeMillis()}.$ext")
+        contentResolver.openInputStream(uri)?.use { input ->
+            file.outputStream().use { input.copyTo(it) }
+        } ?: throw IllegalStateException("unreadable")
+        buildMap {
+            put("action", "share_media")
+            put("path", file.absolutePath)
+            put("mime", type)
+            if (!text.isNullOrBlank()) put("text", text)
+        }
+    } catch (e: Exception) {
+        null
+    }
+
+    /**
+     * Decodes [src] (EXIF rotation applied), shrinks it to at most [max] px
+     * on the long side and writes a JPEG to [dst].
+     */
+    private fun scaleImage(src: String, dst: String, max: Int): Boolean = try {
+        val bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(File(src))) { decoder, info, _ ->
+            val w = info.size.width
+            val h = info.size.height
+            val scale = minOf(1.0, max.toDouble() / maxOf(w, h))
+            decoder.setTargetSize(maxOf(1, (w * scale).toInt()), maxOf(1, (h * scale).toInt()))
+            decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+        }
+        File(dst).outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 85, it) }
+        bitmap.recycle()
+        true
+    } catch (e: Exception) {
+        false
     }
 
     /** An HTML lesson opened ("Not ile aç") or shared from a file app. */

@@ -27,12 +27,16 @@ class NoteItem {
     required this.note,
     required this.tags,
     required this.inReminders,
+    this.media = const {},
     this.snippet,
   });
 
   final Note note;
   final List<String> tags;
   final bool inReminders;
+
+  /// Kinds of attachments it has: 'audio', 'image'.
+  final Set<String> media;
 
   /// Search excerpt around the first match (search results only).
   final String? snippet;
@@ -89,7 +93,7 @@ class NotesRepository {
         .customSelect(
           q.sql,
           variables: q.vars,
-          readsFrom: {db.notes, db.noteTags, db.reminders},
+          readsFrom: {db.notes, db.noteTags, db.reminders, db.noteAttachments},
         )
         .watch()
         .map((rows) {
@@ -183,19 +187,27 @@ class NotesRepository {
           "(SELECT group_concat(tag, ' ') FROM note_tags t "
           'WHERE t.note_id = n.id) AS tag_list, '
           'EXISTS (SELECT 1 FROM reminders r WHERE r.note_id = n.id) '
-          'AS in_reminders '
+          'AS in_reminders, $_mediaColumn '
           'FROM $from WHERE ${where.join(' AND ')} ORDER BY $order$page',
       vars: vars,
     );
   }
 
+  static const _mediaColumn =
+      '(SELECT group_concat(DISTINCT kind) FROM note_attachments a '
+      'WHERE a.note_id = n.id) AS media';
+
   NoteItem _item(QueryRow row, String query) {
     final note = db.notes.map(row.data);
     final tagList = row.readNullable<String>('tag_list');
+    final media = row.readNullable<String>('media');
     return NoteItem(
       note: note,
       tags: tagList == null || tagList.isEmpty ? const [] : tagList.split(' '),
       inReminders: row.read<bool>('in_reminders'),
+      media: media == null || media.isEmpty
+          ? const {}
+          : media.split(',').toSet(),
       snippet: NoteText.terms(query).isEmpty
           ? null
           : NoteText.snippet(NoteLinks.displayText(note.body), query),
@@ -492,10 +504,11 @@ class NotesRepository {
       .customSelect(
         'SELECT n.*, '
         "(SELECT group_concat(tag, ' ') FROM note_tags t "
-        'WHERE t.note_id = n.id) AS tag_list, 1 AS in_reminders '
+        'WHERE t.note_id = n.id) AS tag_list, 1 AS in_reminders, '
+        '$_mediaColumn '
         'FROM reminders r JOIN notes n ON n.id = r.note_id '
         'ORDER BY r.position',
-        readsFrom: {db.notes, db.noteTags, db.reminders},
+        readsFrom: {db.notes, db.noteTags, db.reminders, db.noteAttachments},
       )
       .watch()
       .map((rows) => rows.map((r) => _item(r, '')).toList());

@@ -8,16 +8,20 @@ import 'package:drift/drift.dart';
 import 'package:path/path.dart' as p;
 
 import '../db/app_database.dart';
+import '../repositories/attachments_repository.dart';
 import '../repositories/notes_repository.dart';
 
-/// Weekly encrypted backup: notes, versions, the reminder list and
-/// app_settings as JSON in a ZIP, the whole ZIP encrypted with AES-256-GCM
-/// derived from the user password via PBKDF2. Without the password the file
-/// cannot be opened.
+/// Weekly encrypted backup: notes, versions, the reminder list, lessons,
+/// app_settings and attachment rows as JSON in a ZIP — with the voice clips
+/// and pictures themselves under `attachments/` — the whole ZIP encrypted
+/// with AES-256-GCM derived from the user password via PBKDF2. Without the
+/// password the file cannot be opened.
 class BackupService {
-  BackupService(this.db);
+  BackupService(this.db, {AttachmentsRepository? attachments})
+    : attachments = attachments ?? AttachmentsRepository(db);
 
   final AppDatabase db;
+  final AttachmentsRepository attachments;
 
   static const keptBackups = 8;
   static const _magic = 'DTBK2'; // format marker + version (.dtbak)
@@ -59,6 +63,22 @@ class BackupService {
       for (final s in settings)
         if (!_deviceSettings.contains(s.key)) s.key: s.value,
     });
+    add('lessons.json', [
+      for (final l in await db.select(db.lessons).get()) l.toJson(),
+    ]);
+    final rows = await db.select(db.noteAttachments).get();
+    add('note_attachments.json', [for (final a in rows) a.toJson()]);
+    for (final a in rows) {
+      for (final f in [
+        await attachments.fileOf(a),
+        await attachments.notificationFileOf(a),
+      ]) {
+        final name = 'attachments/${p.basename(f.path)}';
+        if (archive.findFile(name) != null || !await f.exists()) continue;
+        final bytes = await f.readAsBytes();
+        archive.addFile(ArchiveFile(name, bytes.length, bytes));
+      }
+    }
     return Uint8List.fromList(ZipEncoder().encode(archive)!);
   }
 
@@ -66,9 +86,16 @@ class BackupService {
   /// local edits are kept), versions and settings added, and the reminder
   /// list replaced. Returns the number of notes restored.
   Future<int> restoreZip(Uint8List zip) async {
+    final entries = ZipDecoder().decodeBytes(zip).files;
     final files = {
-      for (final f in ZipDecoder().decodeBytes(zip).files)
-        f.name: jsonDecode(utf8.decode(f.content as List<int>)),
+      for (final f in entries)
+        if (f.name.endsWith('.json'))
+          f.name: jsonDecode(utf8.decode(f.content as List<int>)),
+    };
+    final media = {
+      for (final f in entries)
+        if (f.name.startsWith('attachments/'))
+          p.basename(f.name): f.content as List<int>,
     };
     final repo = NotesRepository(db);
     var restored = 0;
@@ -112,6 +139,31 @@ class BackupService {
               .into(db.reminders)
               .insert(Reminder.fromJson((raw as Map).cast<String, dynamic>()));
         }
+      }
+      for (final raw in (files['lessons.json'] as List? ?? const [])) {
+        final lesson = Lesson.fromJson((raw as Map).cast<String, dynamic>());
+        final local = await (db.select(
+          db.lessons,
+        )..where((l) => l.id.equals(lesson.id))).getSingleOrNull();
+        if (local != null && local.updatedAt >= lesson.updatedAt) continue;
+        await db.into(db.lessons).insertOnConflictUpdate(lesson);
+      }
+      for (final raw in (files['note_attachments.json'] as List? ?? const [])) {
+        final a = NoteAttachment.fromJson((raw as Map).cast<String, dynamic>());
+        final bytes = media[a.file];
+        if (bytes == null || await repo.getNote(a.noteId) == null) continue;
+        final exists = await (db.select(
+          db.noteAttachments,
+        )..where((x) => x.id.equals(a.id))).getSingleOrNull();
+        if (exists != null) continue;
+        await (await attachments.fileOf(a)).writeAsBytes(bytes);
+        final smallName = '${p.basenameWithoutExtension(a.file)}_n.jpg';
+        final small = media[smallName];
+        if (small != null) {
+          final dir = (await attachments.fileOf(a)).parent.path;
+          await File(p.join(dir, smallName)).writeAsBytes(small);
+        }
+        await db.into(db.noteAttachments).insert(a);
       }
       final settings = files['app_settings.json'] as Map? ?? const {};
       for (final e in settings.entries) {

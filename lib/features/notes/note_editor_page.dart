@@ -1,14 +1,20 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 import '../../core/note_text.dart';
 import '../../core/selection_menu.dart';
 import '../../data/db/app_database.dart';
 import '../../theme/app_tokens.dart';
+import '../../data/db/database_provider.dart';
 import '../gemma/gemma_prompt_sheet.dart';
+import '../notifications/notification_service.dart';
+import 'attachments_view.dart';
 import 'notes_providers.dart';
 import 'link_action_bar.dart';
 import 'note_body_view.dart';
@@ -21,6 +27,7 @@ class NoteEditorPage extends ConsumerStatefulWidget {
     super.key,
     this.noteId,
     this.initialText,
+    this.initialMedia,
     this.source = 'phone',
     this.addToReminders = false,
   });
@@ -28,6 +35,9 @@ class NoteEditorPage extends ConsumerStatefulWidget {
   /// null → new note.
   final String? noteId;
   final String? initialText;
+
+  /// A voice message / picture shared to Not: attached right away.
+  final ({String path, String mime})? initialMedia;
   final String source;
 
   /// New notes created from the reminders tab join the list.
@@ -73,6 +83,8 @@ class _NoteEditorPageState extends ConsumerState<NoteEditorPage> {
       if (_text.text.isNotEmpty) _scheduleSave();
     }
     setState(() => _loading = false);
+    final media = widget.initialMedia;
+    if (media != null) await _attachFile(media.path, media.mime);
     if (_id == null) {
       // After the field exists: focus it and make sure the keyboard shows
       // (a cold start from the widget focuses without raising it).
@@ -158,10 +170,48 @@ class _NoteEditorPageState extends ConsumerState<NoteEditorPage> {
   Future<void> _close() async {
     // Runs while the page is being disposed: take what we need first.
     final repo = ref.read(notesRepositoryProvider);
+    final attachments = ref.read(attachmentsRepositoryProvider);
     final emptied = _text.text.trim().isEmpty;
     await _flush();
-    // A note emptied out is not worth keeping.
-    if (_id != null && emptied) await repo.delete(_id!);
+    // A note emptied out is not worth keeping — unless it holds a voice
+    // clip or a picture.
+    if (_id != null && emptied && (await attachments.of(_id!)).isEmpty) {
+      await repo.delete(_id!);
+    }
+  }
+
+  Future<void> _attach() async {
+    final picked = await pickAttachment(context);
+    if (picked != null) await _attachFile(picked.path, picked.mime);
+  }
+
+  /// Attaches a file; a note without text yet gets a title so it can be
+  /// stored (and named in lists and notifications).
+  Future<void> _attachFile(String path, String mime) async {
+    if (_text.text.trim().isEmpty) {
+      _text.text = mime.startsWith('image/') ? 'Görsel' : 'Sesli not';
+    }
+    await _flush();
+    final id = _id;
+    if (id == null) return;
+    final added = await ref
+        .read(attachmentsRepositoryProvider)
+        .add(id, path, mime);
+    // Recordings, picker and share copies sit in the cache: the note has
+    // its own copy now.
+    final cache = await getTemporaryDirectory();
+    if (p.isWithin(cache.path, path)) {
+      try {
+        await File(path).delete();
+      } on FileSystemException {
+        // Already gone.
+      }
+    }
+    if (added == null) {
+      _snack('Dosya eklenemedi');
+    } else if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -226,6 +276,8 @@ class _NoteEditorPageState extends ConsumerState<NoteEditorPage> {
       case 'unarchive':
         await repo.unarchive(id);
         _snack('Gelen kutusuna alındı');
+      case 'preview':
+        await NotificationService.preview(ref.read(databaseProvider), id);
       case 'versions':
         await showModalBottomSheet<void>(
           context: context,
@@ -296,6 +348,12 @@ class _NoteEditorPageState extends ConsumerState<NoteEditorPage> {
               onPressed: _gemma,
             ),
             IconButton(
+              key: const Key('editor-attach'),
+              tooltip: 'Ses ya da görsel ekle',
+              icon: const Icon(Icons.attach_file),
+              onPressed: _attach,
+            ),
+            IconButton(
               key: const Key('editor-remind'),
               tooltip: _inReminders ? 'Hatırlatmadan çıkar' : 'Hatırlat',
               icon: Icon(
@@ -324,6 +382,10 @@ class _NoteEditorPageState extends ConsumerState<NoteEditorPage> {
                         value: 'archive',
                         child: Text('Arşivle'),
                       ),
+                const PopupMenuItem(
+                  value: 'preview',
+                  child: Text('Bildirimi önizle'),
+                ),
                 const PopupMenuItem(value: 'versions', child: Text('Sürümler')),
                 const PopupMenuItem(value: 'delete', child: Text('Sil')),
               ],
@@ -338,19 +400,34 @@ class _NoteEditorPageState extends ConsumerState<NoteEditorPage> {
                 behavior: HitTestBehavior.opaque,
                 onTap: () => _startEditing(_text.text.length),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: NoteBodyView(
-                      key: const Key('editor-view'),
-                      body: _text.text,
-                      onTapText: _startEditing,
-                    ),
+                  padding: const EdgeInsets.fromLTRB(0, 4, 0, 120),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (_id != null)
+                        AttachmentStrip(
+                          noteId: _id!,
+                          title: NoteText.title(_text.text, max: 60),
+                        ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: NoteBodyView(
+                          key: const Key('editor-view'),
+                          body: _text.text,
+                          onTapText: _startEditing,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               )
             : Column(
                 children: [
+                  if (_id != null)
+                    AttachmentStrip(
+                      noteId: _id!,
+                      title: NoteText.title(_text.text, max: 60),
+                    ),
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),

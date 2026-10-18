@@ -15,6 +15,10 @@
     <!-- The 2.6 GB Gemma download runs as a foreground data-sync job. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
+    <!-- Voice notes: "Ses kaydet" in a note records with the microphone
+         (asked at first use). Playback runs in voice_player's
+         mediaPlayback service. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <!-- Local Harness hub contract v1 (docs/HUB_CONTRACT.md §1): one
          signature-level permission shared by all four apps (same signing
          key) guards every HubProvider. -->
@@ -68,6 +72,14 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <data android:mimeType="text/html"/>
             </intent-filter>
+            <!-- A voice message or photo shared from WhatsApp / gallery
+                 becomes a new note with it attached. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="audio/*"/>
+                <data android:mimeType="image/*"/>
+            </intent-filter>
         </activity>
         <!-- Quick-note bubble content (Bubbles API): must be embeddable and
              resizeable; one document per bubble. -->
@@ -116,6 +128,10 @@
         <!-- Restore scheduled notifications after reboot (spec §8). -->
         <receiver
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"
+            android:exported="false" />
+        <!-- Notification action buttons (a reminder's "▶ Oynat"). -->
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver"
             android:exported="false" />
         <receiver
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"

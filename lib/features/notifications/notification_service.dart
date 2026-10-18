@@ -11,9 +11,11 @@ import '../../core/note_links.dart';
 import '../../core/note_text.dart';
 import '../../core/recall_planner.dart';
 import '../../data/db/app_database.dart';
+import '../../data/repositories/attachments_repository.dart';
 import '../../data/repositories/lessons_repository.dart';
 import '../../data/repositories/notes_repository.dart';
 import '../reminders/reminder_planner.dart';
+import 'notification_actions.dart';
 
 /// Thin plugin layer over [ReminderPlanner]: initializes the plugin and
 /// applies the plan with zonedSchedule. Tapping a reminder opens its note
@@ -31,6 +33,7 @@ class NotificationService {
 
   static const remindersEnabledKey = 'reminders_enabled';
   static const _baseId = 3000;
+  static const _previewId = 2990;
 
   /// Lesson review reminders (1, 3 and 5 days after a section's first
   /// recall) use ids from here on.
@@ -44,12 +47,37 @@ class NotificationService {
     styleInformation: BigTextStyleInformation(''),
   );
 
-  static const _channel = AndroidNotificationDetails(
+  /// A reminder: its picture (if any) shown large, and "▶ Oynat" when it
+  /// has a voice clip — tapped, the clip plays without opening the app.
+  static AndroidNotificationDetails _reminder({
+    required String title,
+    String? body,
+    String? picture,
+    String? clip,
+  }) => AndroidNotificationDetails(
     'not_reminders',
     'Hatırlatmalar',
     channelDescription: 'Hatırlatma listesinden sıradaki not',
     importance: Importance.defaultImportance,
-    styleInformation: BigTextStyleInformation(''),
+    styleInformation: picture == null
+        ? const BigTextStyleInformation('')
+        : BigPictureStyleInformation(
+            FilePathAndroidBitmap(picture),
+            largeIcon: FilePathAndroidBitmap(picture),
+            contentTitle: title,
+            summaryText: body,
+            hideExpandedLargeIcon: true,
+          ),
+    largeIcon: picture == null ? null : FilePathAndroidBitmap(picture),
+    actions: clip == null
+        ? null
+        : [
+            AndroidNotificationAction(
+              playActionId(clip, title),
+              '▶ Oynat',
+              cancelNotification: false,
+            ),
+          ],
   );
 
   NotesRepository get _repo => NotesRepository(db);
@@ -67,8 +95,11 @@ class NotificationService {
       settings: const InitializationSettings(
         android: AndroidInitializationSettings('@mipmap/ic_launcher'),
       ),
-      onDidReceiveNotificationResponse: (response) =>
-          onTapPayload?.call(response.payload ?? ''),
+      onDidReceiveNotificationResponse: (response) async {
+        if (await handleNotificationAction(response)) return;
+        onTapPayload?.call(response.payload ?? '');
+      },
+      onDidReceiveBackgroundNotificationResponse: notificationActionBackground,
     );
     await _plugin
         .resolvePlatformSpecificImplementation<
@@ -97,6 +128,7 @@ class NotificationService {
             db.lessons,
             db.recallSessions,
             db.recallAnswers,
+            db.noteAttachments,
           ]),
         )
         .listen((_) {
@@ -138,23 +170,69 @@ class NotificationService {
     await _scheduleLessons(mode);
     if (settings[remindersEnabledKey] == 'false') return;
     final byId = {for (final n in notes) n.id: n};
+    final files = AttachmentsRepository(db);
+    final media = await files.ofNotes(byId.keys);
     for (var i = 0; i < plan.length; i++) {
       final note = byId[plan[i].noteId]!;
-      final shown = NoteLinks.displayText(note.body);
-      final title = NoteText.title(shown, max: 60);
-      final rest = NoteText.rest(shown);
+      final r = await _reminderOf(note, media[note.id] ?? const [], files);
       await _plugin.zonedSchedule(
         id: _baseId + i,
-        title: '🔔 $title',
-        body: rest.isEmpty
-            ? null
-            : (rest.length > 400 ? '${rest.substring(0, 400)}…' : rest),
+        title: r.title,
+        body: r.body,
         scheduledDate: tz.TZDateTime.from(plan[i].when, tz.local),
-        notificationDetails: const NotificationDetails(android: _channel),
+        notificationDetails: r.details,
         androidScheduleMode: mode,
         payload: 'note:${note.id}',
       );
     }
+  }
+
+  /// Title, text and look of a note's reminder notification.
+  static Future<({String title, String? body, NotificationDetails details})>
+  _reminderOf(
+    Note note,
+    List<NoteAttachment> attached,
+    AttachmentsRepository files,
+  ) async {
+    final shown = NoteLinks.displayText(note.body);
+    final title = '🔔 ${NoteText.title(shown, max: 60)}';
+    final rest = NoteText.rest(shown);
+    final body = rest.isEmpty
+        ? null
+        : (rest.length > 400 ? '${rest.substring(0, 400)}…' : rest);
+    final clip = attached.where((a) => a.kind == 'audio').firstOrNull;
+    final picture = attached.where((a) => a.kind == 'image').firstOrNull;
+    return (
+      title: title,
+      body: body ?? (clip != null ? '🎤 Sesli not' : null),
+      details: NotificationDetails(
+        android: _reminder(
+          title: title,
+          body: body,
+          picture: picture == null
+              ? null
+              : (await files.notificationFileOf(picture)).path,
+          clip: clip == null ? null : (await files.fileOf(clip)).path,
+        ),
+      ),
+    );
+  }
+
+  /// Shows a note's reminder right now, exactly as it will arrive
+  /// (Not › ⋮ › Bildirimi önizle). The plugin is a singleton, initialized
+  /// at startup.
+  static Future<void> preview(AppDatabase db, String noteId) async {
+    final note = await NotesRepository(db).getNote(noteId);
+    if (note == null) return;
+    final files = AttachmentsRepository(db);
+    final r = await _reminderOf(note, await files.of(noteId), files);
+    await FlutterLocalNotificationsPlugin().show(
+      id: _previewId,
+      title: r.title,
+      body: r.body,
+      notificationDetails: r.details,
+      payload: 'note:$noteId',
+    );
   }
 
   /// One notification per started section for its 1-, 3- and 5-day

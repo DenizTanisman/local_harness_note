@@ -1,0 +1,22 @@
+name: voice_player
+description: "Plays a note's voice clip in a foreground service — also from a reminder's ▶ Oynat action, without opening the app."
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.12.1
+  flutter: '>=3.44.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: dev.deniz.voice_player
+        pluginClass: VoicePlayerPlugin
