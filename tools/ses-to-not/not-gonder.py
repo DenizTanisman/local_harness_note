@@ -88,33 +88,94 @@ def flat(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
-def ask_claude(transcript: str, retry_note: str = "") -> dict:
-    """Formats with Claude Code in a minimal, tool-less session."""
-    template = PROMPT_FILE.read_text(encoding="utf-8").split("---", 1)[1]
-    prompt = template.replace("{{metin}}", transcript) + EXTRA + retry_note
+def run_claude(prompt: str, schema: dict) -> dict:
+    """Claude Code in a minimal, tool-less session (a full one loads every
+    connector and costs ~100x more)."""
     out = subprocess.run(
         [CLAUDE, "-p", "--tools", "", "--strict-mcp-config",
          "--setting-sources", "", "--no-session-persistence",
          "--system-prompt", "Metin düzenleyicisin; kurallara harfiyen uyarsın.",
          "--model", MODEL, "--output-format", "json",
-         "--json-schema", json.dumps(SCHEMA)],
+         "--json-schema", json.dumps(schema)],
         input=prompt, capture_output=True, text=True, timeout=300,
     )
     if out.returncode != 0:
         raise RuntimeError(f"claude çıkış kodu {out.returncode}: {out.stderr[-300:]}")
     reply = json.loads(out.stdout)
-    data = reply.get("structured_output") or json.loads(reply.get("result") or "{}")
+    return reply.get("structured_output") or json.loads(reply.get("result") or "{}")
+
+
+def ask_claude(transcript: str) -> dict:
+    """The model lays the transcript out itself (duzenle-prompt.md)."""
+    template = PROMPT_FILE.read_text(encoding="utf-8").split("---", 1)[1]
+    data = run_claude(template.replace("{{metin}}", transcript) + EXTRA, SCHEMA)
     return {k: str(data.get(k, "")).strip() for k in ("baslik", "metin", "ozet")}
 
 
+KEYS_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "kilit": {"type": "array", "items": {"type": "integer"}},
+        "baslik": {"type": "string"},
+        "ozet": {"type": "string"},
+    },
+    "required": ["kilit", "baslik", "ozet"],
+}
+
+KEYS_PROMPT = """Aşağıda bir konuşmanın numaralanmış cümleleri var.
+Konuşmanın asıl mesajını taşıyan, akılda kalması gereken kilit cümlelerin
+numaralarını seç. Kilit cümle: tek başına okununca bir ilke, ders ya da sonuç
+veren, alıntılanabilecek cümle. Sorular, geçişler, örnekler ve bağlam kilit
+değildir. Bir fikir iki cümleye yayılıyorsa ikisini de seç.
+Ayrıca:
+- "baslik": konuşmanın ana fikrini veren, en fazla 6 kelimelik Türkçe başlık
+  (tırnak ve nokta yok).
+- "ozet": ana mesajın 1-2 cümlelik Türkçe özeti.
+Yalnızca bu üç alanlı JSON'u ver.
+
+Cümleler:
+"""
+
+
+def sentences(text: str) -> list[str]:
+    return [x for x in re.split(r"(?<=[.!?])\s+", text) if x]
+
+
+def by_keys(transcript: str) -> dict:
+    """Long transcripts: the model only picks the key sentences (by number)
+    and the paragraphs are built here, so not a word can change. Each run
+    of key sentences, and each run of context between them, is one
+    paragraph."""
+    sents = sentences(transcript)
+    numbered = "\n".join(f"{i + 1}. {x}" for i, x in enumerate(sents))
+    data = run_claude(KEYS_PROMPT + numbered, KEYS_SCHEMA)
+    keys = {int(k) - 1 for k in data.get("kilit", []) if str(k).lstrip("-").isdigit()}
+    paras, cur, cur_key = [], [], None
+    for i, sent in enumerate(sents):
+        is_key = i in keys
+        if cur and is_key != cur_key:
+            paras.append(" ".join(cur))
+            cur = []
+        cur.append(sent)
+        cur_key = is_key
+    if cur:
+        paras.append(" ".join(cur))
+    return {
+        "baslik": str(data.get("baslik", "")).strip(),
+        "metin": "\n\n".join(paras),
+        "ozet": str(data.get("ozet", "")).strip(),
+    }
+
+
 def tidy(transcript: str) -> dict:
-    """Title, formatted text and summary; the words are checked to be the
-    transcript's own, else the plain transcript is used."""
+    """Title, formatted text and summary. The model lays the text out
+    itself first; when that changes a word (long transcripts), it only picks
+    the key sentences and the layout is built here. The words always stay
+    the transcript's own."""
     data = ask_claude(transcript)
     if flat(data["metin"]) != transcript:
-        log("düzenleme kelimeleri değiştirdi, bir kez daha deneniyor")
-        data = ask_claude(transcript, "\nÖNEMLİ: Önceki denemede kelimeler değişti. "
-                          "Metni harfi harfine koru, yalnızca satır sonu ekle.")
+        log("düzenleme kelimeleri değiştirdi; kilit cümle seçimine geçiliyor")
+        data = by_keys(transcript)
     if flat(data["metin"]) != transcript:
         log("düzenleme yine tutmadı; düz metin kullanılıyor")
         data["metin"] = transcript
