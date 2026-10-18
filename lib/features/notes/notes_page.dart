@@ -326,6 +326,17 @@ class _FilterChipsState extends State<_FilterChips> {
   ];
 
   void _pick(TagNode node, bool hasChildren, MenuController menu) {
+    // Second tap on an open, picked tag folds its sub-tags back up (the
+    // tag stays picked).
+    if (hasChildren && widget.tag == node.path && _open.contains(node.path)) {
+      setState(
+        () => _open = {
+          for (final p in _open)
+            if (!TagTree.within(p, node.path)) p,
+        },
+      );
+      return;
+    }
     widget.onTag(node.path);
     if (hasChildren) {
       // Show what is under it; keep the menu open for an optional sub-tag.
