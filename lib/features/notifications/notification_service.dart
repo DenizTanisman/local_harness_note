@@ -8,7 +8,9 @@ import 'package:timezone/timezone.dart' as tz;
 
 import '../../core/note_links.dart';
 import '../../core/note_text.dart';
+import '../../core/recall_planner.dart';
 import '../../data/db/app_database.dart';
+import '../../data/repositories/lessons_repository.dart';
 import '../../data/repositories/notes_repository.dart';
 import '../reminders/reminder_planner.dart';
 
@@ -28,6 +30,19 @@ class NotificationService {
 
   static const remindersEnabledKey = 'reminders_enabled';
   static const _baseId = 3000;
+
+  /// Lesson stage reminders ("ertesi gün", "bir hafta sonra") use ids from
+  /// here on, at [lessonHour] o'clock of the day a stage opens.
+  static const _lessonBaseId = 6000;
+  static const lessonHour = 19;
+
+  static const _lessonChannel = AndroidNotificationDetails(
+    'not_lessons',
+    'Ders tekrarları',
+    channelDescription: 'Active recall: aşama 2 ve 3 zamanı gelince',
+    importance: Importance.defaultImportance,
+    styleInformation: BigTextStyleInformation(''),
+  );
 
   static const _channel = AndroidNotificationDetails(
     'not_reminders',
@@ -79,6 +94,9 @@ class NotificationService {
             db.notes,
             db.reminders,
             db.appSettings,
+            db.lessons,
+            db.recallSessions,
+            db.recallAnswers,
           ]),
         )
         .listen((_) {
@@ -109,7 +127,6 @@ class NotificationService {
     for (final pending in await _plugin.pendingNotificationRequests()) {
       if (pending.id >= _baseId) await _plugin.cancel(id: pending.id);
     }
-    if (settings[remindersEnabledKey] == 'false') return;
     final android = _plugin
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
@@ -118,6 +135,8 @@ class NotificationService {
     final mode = await android?.canScheduleExactNotifications() == true
         ? AndroidScheduleMode.exactAllowWhileIdle
         : AndroidScheduleMode.inexactAllowWhileIdle;
+    await _scheduleLessons(mode);
+    if (settings[remindersEnabledKey] == 'false') return;
     final byId = {for (final n in notes) n.id: n};
     for (var i = 0; i < plan.length; i++) {
       final note = byId[plan[i].noteId]!;
@@ -135,6 +154,44 @@ class NotificationService {
         androidScheduleMode: mode,
         payload: 'note:${note.id}',
       );
+    }
+  }
+
+  /// One notification per lesson and day on which a later stage of a
+  /// started section opens with questions still unanswered.
+  Future<void> _scheduleLessons(AndroidScheduleMode mode) async {
+    final now = DateTime.now();
+    var id = _lessonBaseId;
+    for (final (lesson, planner) in await LessonsRepository(db).allPlanners()) {
+      final byDay = <int, List<({String section, int stage, int count})>>{};
+      for (final u in planner.upcoming()) {
+        (byDay[u.day] ??= []).add((
+          section: u.section,
+          stage: u.stage,
+          count: u.count,
+        ));
+      }
+      for (final MapEntry(key: day, value: items) in byDay.entries) {
+        final start = RecallDay.start(day);
+        final when = DateTime(start.year, start.month, start.day, lessonHour);
+        if (!when.isAfter(now)) continue;
+        final lines = [
+          for (final i in items)
+            '${planner.pack.section(i.section)?.title ?? i.section} · '
+                'aşama ${i.stage} · ${i.count} soru',
+        ];
+        await _plugin.zonedSchedule(
+          id: id++,
+          title: '🧠 ${lesson.title}: tekrar zamanı',
+          body: lines.join('\n'),
+          scheduledDate: tz.TZDateTime.from(when, tz.local),
+          notificationDetails: const NotificationDetails(
+            android: _lessonChannel,
+          ),
+          androidScheduleMode: mode,
+          payload: 'lesson:${lesson.id}:${items.first.section}',
+        );
+      }
     }
   }
 

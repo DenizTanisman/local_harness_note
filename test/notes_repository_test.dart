@@ -181,8 +181,9 @@ void main() {
       final c = await note('Çay');
       final a = await note('Alfa');
       await repo.updateBody(b, 'Beta (düzenlendi)');
-      Future<List<String>> ids(NoteSort sort) async =>
-          [for (final n in await repo.watchNotes(sort: sort).first) n.id];
+      Future<List<String>> ids(NoteSort sort) async => [
+        for (final n in await repo.watchNotes(sort: sort).first) n.id,
+      ];
       expect(await ids(NoteSort.updated), [b, a, c]);
       expect(await ids(NoteSort.newest), [a, c, b]);
       expect(await ids(NoteSort.oldest), [b, c, a]);

@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/secure_window.dart';
 import '../../data/db/database_provider.dart';
 import '../../theme/glow_background.dart';
+import '../lessons/lesson_page.dart';
+import '../lessons/lessons_page.dart';
+import '../lessons/lessons_providers.dart';
 import '../notes/note_editor_page.dart';
 import '../notes/notes_page.dart';
 import '../notes/notes_providers.dart';
@@ -12,7 +15,8 @@ import '../settings/settings_button.dart';
 import '../settings/settings_providers.dart';
 import 'floating_nav_bar.dart';
 
-/// Two tabs — Notlar · Hatırlatmalar — with Settings in the app bar.
+/// Three tabs — Notlar · Hatırlatmalar · Dersler — with Settings in the
+/// app bar.
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
 
@@ -62,17 +66,34 @@ class _AppShellState extends ConsumerState<AppShell>
     super.dispose();
   }
 
+  void _newNote() => Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => NoteEditorPage(addToReminders: _tab == 1),
+    ),
+  );
+
+  Future<void> _addLesson() async {
+    final lesson = await pickLesson(
+      context,
+      ref.read(lessonsRepositoryProvider),
+    );
+    if (lesson == null || !mounted) return;
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => LessonPage(lessonId: lesson.id)));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_tab == 0 ? 'Notlar' : 'Hatırlatmalar'),
+        title: Text(const ['Notlar', 'Hatırlatmalar', 'Dersler'][_tab]),
         actions: const [SettingsButton()],
       ),
       body: GlowBackground(
         child: IndexedStack(
           index: _tab,
-          children: const [NotesPage(), RemindersPage()],
+          children: const [NotesPage(), RemindersPage(), LessonsPage()],
         ),
       ),
       // The floating bar sits over the content; lists pad their bottom.
@@ -87,14 +108,15 @@ class _AppShellState extends ConsumerState<AppShell>
             Icons.notifications,
             'Hatırlatmalar',
           ),
+          NavItem(Icons.school_outlined, Icons.school, 'Dersler'),
         ],
         actionIcon: Icons.add,
-        actionTooltip: _tab == 0 ? 'Yeni not' : 'Listeye yeni madde',
-        onAction: () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => NoteEditorPage(addToReminders: _tab == 1),
-          ),
-        ),
+        actionTooltip: const [
+          'Yeni not',
+          'Listeye yeni madde',
+          'Ders ekle',
+        ][_tab],
+        onAction: _tab == 2 ? _addLesson : _newNote,
       ),
     );
   }

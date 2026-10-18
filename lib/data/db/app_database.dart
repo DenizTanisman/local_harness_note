@@ -4,15 +4,27 @@ import 'tables.dart';
 
 part 'app_database.g.dart';
 
-@DriftDatabase(tables: [Notes, NoteTags, NoteVersions, Reminders, AppSettings])
+@DriftDatabase(
+  tables: [
+    Notes,
+    NoteTags,
+    NoteVersions,
+    Reminders,
+    AppSettings,
+    Lessons,
+    RecallSessions,
+    RecallAnswers,
+  ],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   /// v1: daily check-in (metric tree). v2: second brain notes
   /// (docs/second-brain-spec.md) — the check-in tables are dropped.
-  /// v3: notes.archived_at (archive auto-delete).
+  /// v3: notes.archived_at (archive auto-delete). v4: lessons + active
+  /// recall (docs/lesson-format.md).
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   /// Settings that only the check-in used; removed by the v2 upgrade.
   static const obsoleteSettings = [
@@ -55,6 +67,11 @@ class AppDatabase extends _$AppDatabase {
         await customStatement(
           "UPDATE notes SET archived_at = updated_at WHERE status = 'archived'",
         );
+      }
+      if (from < 4) {
+        await m.createTable(lessons);
+        await m.createTable(recallSessions);
+        await m.createTable(recallAnswers);
       }
     },
     beforeOpen: (details) async {

@@ -1,9 +1,13 @@
 package dev.deniz.local_harness_not
 
 import android.content.ActivityNotFoundException
+import android.content.ContentUris
+import android.content.ContentValues
 import android.content.Intent
 import android.net.Uri
+import android.os.Environment
 import android.os.PowerManager
+import android.provider.MediaStore
 import android.provider.Settings
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
@@ -16,7 +20,7 @@ import java.nio.file.StandardCopyOption
 class MainActivity : FlutterActivity() {
     private var systemChannel: MethodChannel? = null
 
-    /** Share-sheet text or widget tap that launched the app, until Dart takes it. */
+    /** Share-sheet text, lesson file or widget tap that launched the app, until Dart takes it. */
     private var launchIntent: Map<String, String>? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -49,6 +53,28 @@ class MainActivity : FlutterActivity() {
                             result.success(null)
                         }
                         "bubbleStatus" -> result.success(QuickNoteBubble.status(this@MainActivity))
+                        "saveLessonFile", "openLessonFile" -> {
+                            val args = call.arguments as? Map<*, *>
+                            val name = args?.get("name") as? String
+                            val html = args?.get("html") as? String
+                            if (name == null || html == null) {
+                                result.error("bad_args", "name and html expected", null)
+                            } else {
+                                val open = call.method == "openLessonFile"
+                                Thread {
+                                    val uri = try {
+                                        saveToDocuments(name, html)
+                                    } catch (e: Exception) {
+                                        null
+                                    }
+                                    runOnUiThread {
+                                        result.success(
+                                            if (open) uri != null && openHtml(uri) else uri?.let { LESSON_DIR + name }
+                                        )
+                                    }
+                                }.start()
+                            }
+                        }
                         "openBubbleSettings" -> {
                             QuickNoteBubble.openSettings(this@MainActivity)
                             result.success(null)
@@ -137,14 +163,69 @@ class MainActivity : FlutterActivity() {
     /** What an incoming intent asks for, as the map the Dart side parses. */
     private fun describe(intent: Intent?): Map<String, String>? = when (intent?.action) {
         NEW_NOTE_ACTION -> mapOf("action" to "new_note")
+        Intent.ACTION_VIEW -> intent.data?.let { lessonFrom(it) }
         Intent.ACTION_SEND -> {
-            val text = listOfNotNull(
-                intent.getStringExtra(Intent.EXTRA_SUBJECT),
-                intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString(),
-            ).filter { it.isNotBlank() }.distinct().joinToString("\n")
-            if (text.isBlank()) null else mapOf("action" to "share", "text" to text)
+            @Suppress("DEPRECATION")
+            val stream = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
+            if (stream != null && intent.type == "text/html") lessonFrom(stream) else shareText(intent)
         }
         else -> null
+    }
+
+    private fun shareText(intent: Intent): Map<String, String>? {
+        val text = listOfNotNull(
+            intent.getStringExtra(Intent.EXTRA_SUBJECT),
+            intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString(),
+        ).filter { it.isNotBlank() }.distinct().joinToString("\n")
+        return if (text.isBlank()) null else mapOf("action" to "share", "text" to text)
+    }
+
+    /** An HTML lesson opened ("Not ile aç") or shared from a file app. */
+    private fun lessonFrom(uri: Uri): Map<String, String>? = try {
+        contentResolver.openInputStream(uri)?.use { input ->
+            val bytes = input.readBytes()
+            if (bytes.size > MAX_LESSON_BYTES) null
+            else mapOf("action" to "lesson", "html" to String(bytes, Charsets.UTF_8))
+        }
+    } catch (e: Exception) {
+        null
+    }
+
+    /**
+     * Writes a lesson to Documents/Not/Dersler/ through MediaStore (no
+     * storage permission needed) so file managers and browsers can open
+     * it; rewrites our own copy when it is already there.
+     */
+    private fun saveToDocuments(name: String, html: String): Uri? {
+        val files = MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+        val existing = contentResolver.query(
+            files,
+            arrayOf(MediaStore.MediaColumns._ID),
+            "${MediaStore.MediaColumns.RELATIVE_PATH}=? AND ${MediaStore.MediaColumns.DISPLAY_NAME}=?",
+            arrayOf(LESSON_DIR, name),
+            null,
+        )?.use { c -> if (c.moveToFirst()) ContentUris.withAppendedId(files, c.getLong(0)) else null }
+        val uri = existing ?: contentResolver.insert(files, ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+            put(MediaStore.MediaColumns.MIME_TYPE, "text/html")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, LESSON_DIR)
+        }) ?: return null
+        contentResolver.openOutputStream(uri, "wt")?.use { it.write(html.toByteArray(Charsets.UTF_8)) }
+            ?: return null
+        return uri
+    }
+
+    /** Lets the user pick a browser / HTML viewer for a saved lesson. */
+    private fun openHtml(uri: Uri): Boolean {
+        val view = Intent(Intent.ACTION_VIEW)
+            .setDataAndType(uri, "text/html")
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        return try {
+            startActivity(Intent.createChooser(view, "Dersi aç"))
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
 
     /**
@@ -222,5 +303,7 @@ class MainActivity : FlutterActivity() {
 
     companion object {
         const val NEW_NOTE_ACTION = "dev.deniz.local_harness_not.NEW_NOTE"
+        val LESSON_DIR = Environment.DIRECTORY_DOCUMENTS + "/Not/Dersler/"
+        const val MAX_LESSON_BYTES = 16 * 1024 * 1024
     }
 }

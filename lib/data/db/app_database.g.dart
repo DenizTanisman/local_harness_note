@@ -1549,6 +1549,1309 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
   }
 }
 
+class $LessonsTable extends Lessons with TableInfo<$LessonsTable, Lesson> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LessonsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _htmlMeta = const VerificationMeta('html');
+  @override
+  late final GeneratedColumn<String> html = GeneratedColumn<String>(
+    'html',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _openedAtMeta = const VerificationMeta(
+    'openedAt',
+  );
+  @override
+  late final GeneratedColumn<int> openedAt = GeneratedColumn<int>(
+    'opened_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _scrollYMeta = const VerificationMeta(
+    'scrollY',
+  );
+  @override
+  late final GeneratedColumn<int> scrollY = GeneratedColumn<int>(
+    'scroll_y',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    title,
+    html,
+    createdAt,
+    updatedAt,
+    openedAt,
+    scrollY,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'lessons';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Lesson> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('html')) {
+      context.handle(
+        _htmlMeta,
+        html.isAcceptableOrUnknown(data['html']!, _htmlMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_htmlMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('opened_at')) {
+      context.handle(
+        _openedAtMeta,
+        openedAt.isAcceptableOrUnknown(data['opened_at']!, _openedAtMeta),
+      );
+    }
+    if (data.containsKey('scroll_y')) {
+      context.handle(
+        _scrollYMeta,
+        scrollY.isAcceptableOrUnknown(data['scroll_y']!, _scrollYMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Lesson map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Lesson(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      html: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}html'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      openedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}opened_at'],
+      ),
+      scrollY: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}scroll_y'],
+      ),
+    );
+  }
+
+  @override
+  $LessonsTable createAlias(String alias) {
+    return $LessonsTable(attachedDatabase, alias);
+  }
+}
+
+class Lesson extends DataClass implements Insertable<Lesson> {
+  final String id;
+  final String title;
+  final String html;
+  final int createdAt;
+  final int updatedAt;
+
+  /// Last time it was opened; the Dersler list puts recent ones first.
+  final int? openedAt;
+
+  /// Reading position (CSS px), restored when the lesson reopens.
+  final int? scrollY;
+  const Lesson({
+    required this.id,
+    required this.title,
+    required this.html,
+    required this.createdAt,
+    required this.updatedAt,
+    this.openedAt,
+    this.scrollY,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['title'] = Variable<String>(title);
+    map['html'] = Variable<String>(html);
+    map['created_at'] = Variable<int>(createdAt);
+    map['updated_at'] = Variable<int>(updatedAt);
+    if (!nullToAbsent || openedAt != null) {
+      map['opened_at'] = Variable<int>(openedAt);
+    }
+    if (!nullToAbsent || scrollY != null) {
+      map['scroll_y'] = Variable<int>(scrollY);
+    }
+    return map;
+  }
+
+  LessonsCompanion toCompanion(bool nullToAbsent) {
+    return LessonsCompanion(
+      id: Value(id),
+      title: Value(title),
+      html: Value(html),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      openedAt: openedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(openedAt),
+      scrollY: scrollY == null && nullToAbsent
+          ? const Value.absent()
+          : Value(scrollY),
+    );
+  }
+
+  factory Lesson.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Lesson(
+      id: serializer.fromJson<String>(json['id']),
+      title: serializer.fromJson<String>(json['title']),
+      html: serializer.fromJson<String>(json['html']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+      openedAt: serializer.fromJson<int?>(json['openedAt']),
+      scrollY: serializer.fromJson<int?>(json['scrollY']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'title': serializer.toJson<String>(title),
+      'html': serializer.toJson<String>(html),
+      'createdAt': serializer.toJson<int>(createdAt),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+      'openedAt': serializer.toJson<int?>(openedAt),
+      'scrollY': serializer.toJson<int?>(scrollY),
+    };
+  }
+
+  Lesson copyWith({
+    String? id,
+    String? title,
+    String? html,
+    int? createdAt,
+    int? updatedAt,
+    Value<int?> openedAt = const Value.absent(),
+    Value<int?> scrollY = const Value.absent(),
+  }) => Lesson(
+    id: id ?? this.id,
+    title: title ?? this.title,
+    html: html ?? this.html,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    openedAt: openedAt.present ? openedAt.value : this.openedAt,
+    scrollY: scrollY.present ? scrollY.value : this.scrollY,
+  );
+  Lesson copyWithCompanion(LessonsCompanion data) {
+    return Lesson(
+      id: data.id.present ? data.id.value : this.id,
+      title: data.title.present ? data.title.value : this.title,
+      html: data.html.present ? data.html.value : this.html,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      openedAt: data.openedAt.present ? data.openedAt.value : this.openedAt,
+      scrollY: data.scrollY.present ? data.scrollY.value : this.scrollY,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Lesson(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('html: $html, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('openedAt: $openedAt, ')
+          ..write('scrollY: $scrollY')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, title, html, createdAt, updatedAt, openedAt, scrollY);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Lesson &&
+          other.id == this.id &&
+          other.title == this.title &&
+          other.html == this.html &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.openedAt == this.openedAt &&
+          other.scrollY == this.scrollY);
+}
+
+class LessonsCompanion extends UpdateCompanion<Lesson> {
+  final Value<String> id;
+  final Value<String> title;
+  final Value<String> html;
+  final Value<int> createdAt;
+  final Value<int> updatedAt;
+  final Value<int?> openedAt;
+  final Value<int?> scrollY;
+  final Value<int> rowid;
+  const LessonsCompanion({
+    this.id = const Value.absent(),
+    this.title = const Value.absent(),
+    this.html = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.openedAt = const Value.absent(),
+    this.scrollY = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LessonsCompanion.insert({
+    required String id,
+    required String title,
+    required String html,
+    required int createdAt,
+    required int updatedAt,
+    this.openedAt = const Value.absent(),
+    this.scrollY = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       title = Value(title),
+       html = Value(html),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<Lesson> custom({
+    Expression<String>? id,
+    Expression<String>? title,
+    Expression<String>? html,
+    Expression<int>? createdAt,
+    Expression<int>? updatedAt,
+    Expression<int>? openedAt,
+    Expression<int>? scrollY,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (title != null) 'title': title,
+      if (html != null) 'html': html,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (openedAt != null) 'opened_at': openedAt,
+      if (scrollY != null) 'scroll_y': scrollY,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LessonsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? title,
+    Value<String>? html,
+    Value<int>? createdAt,
+    Value<int>? updatedAt,
+    Value<int?>? openedAt,
+    Value<int?>? scrollY,
+    Value<int>? rowid,
+  }) {
+    return LessonsCompanion(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      html: html ?? this.html,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      openedAt: openedAt ?? this.openedAt,
+      scrollY: scrollY ?? this.scrollY,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (html.present) {
+      map['html'] = Variable<String>(html.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    if (openedAt.present) {
+      map['opened_at'] = Variable<int>(openedAt.value);
+    }
+    if (scrollY.present) {
+      map['scroll_y'] = Variable<int>(scrollY.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LessonsCompanion(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('html: $html, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('openedAt: $openedAt, ')
+          ..write('scrollY: $scrollY, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $RecallSessionsTable extends RecallSessions
+    with TableInfo<$RecallSessionsTable, RecallSession> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RecallSessionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _lessonIdMeta = const VerificationMeta(
+    'lessonId',
+  );
+  @override
+  late final GeneratedColumn<String> lessonId = GeneratedColumn<String>(
+    'lesson_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES lessons (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _sectionMeta = const VerificationMeta(
+    'section',
+  );
+  @override
+  late final GeneratedColumn<String> section = GeneratedColumn<String>(
+    'section',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dayMeta = const VerificationMeta('day');
+  @override
+  late final GeneratedColumn<int> day = GeneratedColumn<int>(
+    'day',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _questionIdsMeta = const VerificationMeta(
+    'questionIds',
+  );
+  @override
+  late final GeneratedColumn<String> questionIds = GeneratedColumn<String>(
+    'question_ids',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _finishedAtMeta = const VerificationMeta(
+    'finishedAt',
+  );
+  @override
+  late final GeneratedColumn<int> finishedAt = GeneratedColumn<int>(
+    'finished_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    lessonId,
+    section,
+    day,
+    questionIds,
+    createdAt,
+    finishedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'recall_sessions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RecallSession> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('lesson_id')) {
+      context.handle(
+        _lessonIdMeta,
+        lessonId.isAcceptableOrUnknown(data['lesson_id']!, _lessonIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_lessonIdMeta);
+    }
+    if (data.containsKey('section')) {
+      context.handle(
+        _sectionMeta,
+        section.isAcceptableOrUnknown(data['section']!, _sectionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sectionMeta);
+    }
+    if (data.containsKey('day')) {
+      context.handle(
+        _dayMeta,
+        day.isAcceptableOrUnknown(data['day']!, _dayMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dayMeta);
+    }
+    if (data.containsKey('question_ids')) {
+      context.handle(
+        _questionIdsMeta,
+        questionIds.isAcceptableOrUnknown(
+          data['question_ids']!,
+          _questionIdsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_questionIdsMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('finished_at')) {
+      context.handle(
+        _finishedAtMeta,
+        finishedAt.isAcceptableOrUnknown(data['finished_at']!, _finishedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RecallSession map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RecallSession(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      lessonId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}lesson_id'],
+      )!,
+      section: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}section'],
+      )!,
+      day: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}day'],
+      )!,
+      questionIds: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}question_ids'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+      finishedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}finished_at'],
+      ),
+    );
+  }
+
+  @override
+  $RecallSessionsTable createAlias(String alias) {
+    return $RecallSessionsTable(attachedDatabase, alias);
+  }
+}
+
+class RecallSession extends DataClass implements Insertable<RecallSession> {
+  final int id;
+  final String lessonId;
+  final String section;
+
+  /// Local calendar day, as days since 1970-01-01 (RecallDay).
+  final int day;
+
+  /// Question ids in asking order, comma separated.
+  final String questionIds;
+  final int createdAt;
+  final int? finishedAt;
+  const RecallSession({
+    required this.id,
+    required this.lessonId,
+    required this.section,
+    required this.day,
+    required this.questionIds,
+    required this.createdAt,
+    this.finishedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['lesson_id'] = Variable<String>(lessonId);
+    map['section'] = Variable<String>(section);
+    map['day'] = Variable<int>(day);
+    map['question_ids'] = Variable<String>(questionIds);
+    map['created_at'] = Variable<int>(createdAt);
+    if (!nullToAbsent || finishedAt != null) {
+      map['finished_at'] = Variable<int>(finishedAt);
+    }
+    return map;
+  }
+
+  RecallSessionsCompanion toCompanion(bool nullToAbsent) {
+    return RecallSessionsCompanion(
+      id: Value(id),
+      lessonId: Value(lessonId),
+      section: Value(section),
+      day: Value(day),
+      questionIds: Value(questionIds),
+      createdAt: Value(createdAt),
+      finishedAt: finishedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(finishedAt),
+    );
+  }
+
+  factory RecallSession.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RecallSession(
+      id: serializer.fromJson<int>(json['id']),
+      lessonId: serializer.fromJson<String>(json['lessonId']),
+      section: serializer.fromJson<String>(json['section']),
+      day: serializer.fromJson<int>(json['day']),
+      questionIds: serializer.fromJson<String>(json['questionIds']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+      finishedAt: serializer.fromJson<int?>(json['finishedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'lessonId': serializer.toJson<String>(lessonId),
+      'section': serializer.toJson<String>(section),
+      'day': serializer.toJson<int>(day),
+      'questionIds': serializer.toJson<String>(questionIds),
+      'createdAt': serializer.toJson<int>(createdAt),
+      'finishedAt': serializer.toJson<int?>(finishedAt),
+    };
+  }
+
+  RecallSession copyWith({
+    int? id,
+    String? lessonId,
+    String? section,
+    int? day,
+    String? questionIds,
+    int? createdAt,
+    Value<int?> finishedAt = const Value.absent(),
+  }) => RecallSession(
+    id: id ?? this.id,
+    lessonId: lessonId ?? this.lessonId,
+    section: section ?? this.section,
+    day: day ?? this.day,
+    questionIds: questionIds ?? this.questionIds,
+    createdAt: createdAt ?? this.createdAt,
+    finishedAt: finishedAt.present ? finishedAt.value : this.finishedAt,
+  );
+  RecallSession copyWithCompanion(RecallSessionsCompanion data) {
+    return RecallSession(
+      id: data.id.present ? data.id.value : this.id,
+      lessonId: data.lessonId.present ? data.lessonId.value : this.lessonId,
+      section: data.section.present ? data.section.value : this.section,
+      day: data.day.present ? data.day.value : this.day,
+      questionIds: data.questionIds.present
+          ? data.questionIds.value
+          : this.questionIds,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      finishedAt: data.finishedAt.present
+          ? data.finishedAt.value
+          : this.finishedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecallSession(')
+          ..write('id: $id, ')
+          ..write('lessonId: $lessonId, ')
+          ..write('section: $section, ')
+          ..write('day: $day, ')
+          ..write('questionIds: $questionIds, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('finishedAt: $finishedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    lessonId,
+    section,
+    day,
+    questionIds,
+    createdAt,
+    finishedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RecallSession &&
+          other.id == this.id &&
+          other.lessonId == this.lessonId &&
+          other.section == this.section &&
+          other.day == this.day &&
+          other.questionIds == this.questionIds &&
+          other.createdAt == this.createdAt &&
+          other.finishedAt == this.finishedAt);
+}
+
+class RecallSessionsCompanion extends UpdateCompanion<RecallSession> {
+  final Value<int> id;
+  final Value<String> lessonId;
+  final Value<String> section;
+  final Value<int> day;
+  final Value<String> questionIds;
+  final Value<int> createdAt;
+  final Value<int?> finishedAt;
+  const RecallSessionsCompanion({
+    this.id = const Value.absent(),
+    this.lessonId = const Value.absent(),
+    this.section = const Value.absent(),
+    this.day = const Value.absent(),
+    this.questionIds = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.finishedAt = const Value.absent(),
+  });
+  RecallSessionsCompanion.insert({
+    this.id = const Value.absent(),
+    required String lessonId,
+    required String section,
+    required int day,
+    required String questionIds,
+    required int createdAt,
+    this.finishedAt = const Value.absent(),
+  }) : lessonId = Value(lessonId),
+       section = Value(section),
+       day = Value(day),
+       questionIds = Value(questionIds),
+       createdAt = Value(createdAt);
+  static Insertable<RecallSession> custom({
+    Expression<int>? id,
+    Expression<String>? lessonId,
+    Expression<String>? section,
+    Expression<int>? day,
+    Expression<String>? questionIds,
+    Expression<int>? createdAt,
+    Expression<int>? finishedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (lessonId != null) 'lesson_id': lessonId,
+      if (section != null) 'section': section,
+      if (day != null) 'day': day,
+      if (questionIds != null) 'question_ids': questionIds,
+      if (createdAt != null) 'created_at': createdAt,
+      if (finishedAt != null) 'finished_at': finishedAt,
+    });
+  }
+
+  RecallSessionsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? lessonId,
+    Value<String>? section,
+    Value<int>? day,
+    Value<String>? questionIds,
+    Value<int>? createdAt,
+    Value<int?>? finishedAt,
+  }) {
+    return RecallSessionsCompanion(
+      id: id ?? this.id,
+      lessonId: lessonId ?? this.lessonId,
+      section: section ?? this.section,
+      day: day ?? this.day,
+      questionIds: questionIds ?? this.questionIds,
+      createdAt: createdAt ?? this.createdAt,
+      finishedAt: finishedAt ?? this.finishedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (lessonId.present) {
+      map['lesson_id'] = Variable<String>(lessonId.value);
+    }
+    if (section.present) {
+      map['section'] = Variable<String>(section.value);
+    }
+    if (day.present) {
+      map['day'] = Variable<int>(day.value);
+    }
+    if (questionIds.present) {
+      map['question_ids'] = Variable<String>(questionIds.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (finishedAt.present) {
+      map['finished_at'] = Variable<int>(finishedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecallSessionsCompanion(')
+          ..write('id: $id, ')
+          ..write('lessonId: $lessonId, ')
+          ..write('section: $section, ')
+          ..write('day: $day, ')
+          ..write('questionIds: $questionIds, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('finishedAt: $finishedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $RecallAnswersTable extends RecallAnswers
+    with TableInfo<$RecallAnswersTable, RecallAnswer> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RecallAnswersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _sessionIdMeta = const VerificationMeta(
+    'sessionId',
+  );
+  @override
+  late final GeneratedColumn<int> sessionId = GeneratedColumn<int>(
+    'session_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES recall_sessions (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _questionIdMeta = const VerificationMeta(
+    'questionId',
+  );
+  @override
+  late final GeneratedColumn<String> questionId = GeneratedColumn<String>(
+    'question_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _chosenMeta = const VerificationMeta('chosen');
+  @override
+  late final GeneratedColumn<int> chosen = GeneratedColumn<int>(
+    'chosen',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _correctMeta = const VerificationMeta(
+    'correct',
+  );
+  @override
+  late final GeneratedColumn<bool> correct = GeneratedColumn<bool>(
+    'correct',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("correct" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _answeredAtMeta = const VerificationMeta(
+    'answeredAt',
+  );
+  @override
+  late final GeneratedColumn<int> answeredAt = GeneratedColumn<int>(
+    'answered_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    sessionId,
+    questionId,
+    chosen,
+    correct,
+    answeredAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'recall_answers';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RecallAnswer> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('session_id')) {
+      context.handle(
+        _sessionIdMeta,
+        sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sessionIdMeta);
+    }
+    if (data.containsKey('question_id')) {
+      context.handle(
+        _questionIdMeta,
+        questionId.isAcceptableOrUnknown(data['question_id']!, _questionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_questionIdMeta);
+    }
+    if (data.containsKey('chosen')) {
+      context.handle(
+        _chosenMeta,
+        chosen.isAcceptableOrUnknown(data['chosen']!, _chosenMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_chosenMeta);
+    }
+    if (data.containsKey('correct')) {
+      context.handle(
+        _correctMeta,
+        correct.isAcceptableOrUnknown(data['correct']!, _correctMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_correctMeta);
+    }
+    if (data.containsKey('answered_at')) {
+      context.handle(
+        _answeredAtMeta,
+        answeredAt.isAcceptableOrUnknown(data['answered_at']!, _answeredAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_answeredAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {sessionId, questionId};
+  @override
+  RecallAnswer map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RecallAnswer(
+      sessionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}session_id'],
+      )!,
+      questionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}question_id'],
+      )!,
+      chosen: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}chosen'],
+      )!,
+      correct: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}correct'],
+      )!,
+      answeredAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}answered_at'],
+      )!,
+    );
+  }
+
+  @override
+  $RecallAnswersTable createAlias(String alias) {
+    return $RecallAnswersTable(attachedDatabase, alias);
+  }
+}
+
+class RecallAnswer extends DataClass implements Insertable<RecallAnswer> {
+  final int sessionId;
+  final String questionId;
+
+  /// Index of the chosen option.
+  final int chosen;
+  final bool correct;
+  final int answeredAt;
+  const RecallAnswer({
+    required this.sessionId,
+    required this.questionId,
+    required this.chosen,
+    required this.correct,
+    required this.answeredAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['session_id'] = Variable<int>(sessionId);
+    map['question_id'] = Variable<String>(questionId);
+    map['chosen'] = Variable<int>(chosen);
+    map['correct'] = Variable<bool>(correct);
+    map['answered_at'] = Variable<int>(answeredAt);
+    return map;
+  }
+
+  RecallAnswersCompanion toCompanion(bool nullToAbsent) {
+    return RecallAnswersCompanion(
+      sessionId: Value(sessionId),
+      questionId: Value(questionId),
+      chosen: Value(chosen),
+      correct: Value(correct),
+      answeredAt: Value(answeredAt),
+    );
+  }
+
+  factory RecallAnswer.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RecallAnswer(
+      sessionId: serializer.fromJson<int>(json['sessionId']),
+      questionId: serializer.fromJson<String>(json['questionId']),
+      chosen: serializer.fromJson<int>(json['chosen']),
+      correct: serializer.fromJson<bool>(json['correct']),
+      answeredAt: serializer.fromJson<int>(json['answeredAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'sessionId': serializer.toJson<int>(sessionId),
+      'questionId': serializer.toJson<String>(questionId),
+      'chosen': serializer.toJson<int>(chosen),
+      'correct': serializer.toJson<bool>(correct),
+      'answeredAt': serializer.toJson<int>(answeredAt),
+    };
+  }
+
+  RecallAnswer copyWith({
+    int? sessionId,
+    String? questionId,
+    int? chosen,
+    bool? correct,
+    int? answeredAt,
+  }) => RecallAnswer(
+    sessionId: sessionId ?? this.sessionId,
+    questionId: questionId ?? this.questionId,
+    chosen: chosen ?? this.chosen,
+    correct: correct ?? this.correct,
+    answeredAt: answeredAt ?? this.answeredAt,
+  );
+  RecallAnswer copyWithCompanion(RecallAnswersCompanion data) {
+    return RecallAnswer(
+      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      questionId: data.questionId.present
+          ? data.questionId.value
+          : this.questionId,
+      chosen: data.chosen.present ? data.chosen.value : this.chosen,
+      correct: data.correct.present ? data.correct.value : this.correct,
+      answeredAt: data.answeredAt.present
+          ? data.answeredAt.value
+          : this.answeredAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecallAnswer(')
+          ..write('sessionId: $sessionId, ')
+          ..write('questionId: $questionId, ')
+          ..write('chosen: $chosen, ')
+          ..write('correct: $correct, ')
+          ..write('answeredAt: $answeredAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(sessionId, questionId, chosen, correct, answeredAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RecallAnswer &&
+          other.sessionId == this.sessionId &&
+          other.questionId == this.questionId &&
+          other.chosen == this.chosen &&
+          other.correct == this.correct &&
+          other.answeredAt == this.answeredAt);
+}
+
+class RecallAnswersCompanion extends UpdateCompanion<RecallAnswer> {
+  final Value<int> sessionId;
+  final Value<String> questionId;
+  final Value<int> chosen;
+  final Value<bool> correct;
+  final Value<int> answeredAt;
+  final Value<int> rowid;
+  const RecallAnswersCompanion({
+    this.sessionId = const Value.absent(),
+    this.questionId = const Value.absent(),
+    this.chosen = const Value.absent(),
+    this.correct = const Value.absent(),
+    this.answeredAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RecallAnswersCompanion.insert({
+    required int sessionId,
+    required String questionId,
+    required int chosen,
+    required bool correct,
+    required int answeredAt,
+    this.rowid = const Value.absent(),
+  }) : sessionId = Value(sessionId),
+       questionId = Value(questionId),
+       chosen = Value(chosen),
+       correct = Value(correct),
+       answeredAt = Value(answeredAt);
+  static Insertable<RecallAnswer> custom({
+    Expression<int>? sessionId,
+    Expression<String>? questionId,
+    Expression<int>? chosen,
+    Expression<bool>? correct,
+    Expression<int>? answeredAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (sessionId != null) 'session_id': sessionId,
+      if (questionId != null) 'question_id': questionId,
+      if (chosen != null) 'chosen': chosen,
+      if (correct != null) 'correct': correct,
+      if (answeredAt != null) 'answered_at': answeredAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RecallAnswersCompanion copyWith({
+    Value<int>? sessionId,
+    Value<String>? questionId,
+    Value<int>? chosen,
+    Value<bool>? correct,
+    Value<int>? answeredAt,
+    Value<int>? rowid,
+  }) {
+    return RecallAnswersCompanion(
+      sessionId: sessionId ?? this.sessionId,
+      questionId: questionId ?? this.questionId,
+      chosen: chosen ?? this.chosen,
+      correct: correct ?? this.correct,
+      answeredAt: answeredAt ?? this.answeredAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (sessionId.present) {
+      map['session_id'] = Variable<int>(sessionId.value);
+    }
+    if (questionId.present) {
+      map['question_id'] = Variable<String>(questionId.value);
+    }
+    if (chosen.present) {
+      map['chosen'] = Variable<int>(chosen.value);
+    }
+    if (correct.present) {
+      map['correct'] = Variable<bool>(correct.value);
+    }
+    if (answeredAt.present) {
+      map['answered_at'] = Variable<int>(answeredAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecallAnswersCompanion(')
+          ..write('sessionId: $sessionId, ')
+          ..write('questionId: $questionId, ')
+          ..write('chosen: $chosen, ')
+          ..write('correct: $correct, ')
+          ..write('answeredAt: $answeredAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1557,6 +2860,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $NoteVersionsTable noteVersions = $NoteVersionsTable(this);
   late final $RemindersTable reminders = $RemindersTable(this);
   late final $AppSettingsTable appSettings = $AppSettingsTable(this);
+  late final $LessonsTable lessons = $LessonsTable(this);
+  late final $RecallSessionsTable recallSessions = $RecallSessionsTable(this);
+  late final $RecallAnswersTable recallAnswers = $RecallAnswersTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1567,6 +2873,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     noteVersions,
     reminders,
     appSettings,
+    lessons,
+    recallSessions,
+    recallAnswers,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -1590,6 +2899,20 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('reminders', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'lessons',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('recall_sessions', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'recall_sessions',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('recall_answers', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -3128,6 +4451,1126 @@ typedef $$AppSettingsTableProcessedTableManager =
       AppSetting,
       PrefetchHooks Function()
     >;
+typedef $$LessonsTableCreateCompanionBuilder =
+    LessonsCompanion Function({
+      required String id,
+      required String title,
+      required String html,
+      required int createdAt,
+      required int updatedAt,
+      Value<int?> openedAt,
+      Value<int?> scrollY,
+      Value<int> rowid,
+    });
+typedef $$LessonsTableUpdateCompanionBuilder =
+    LessonsCompanion Function({
+      Value<String> id,
+      Value<String> title,
+      Value<String> html,
+      Value<int> createdAt,
+      Value<int> updatedAt,
+      Value<int?> openedAt,
+      Value<int?> scrollY,
+      Value<int> rowid,
+    });
+
+final class $$LessonsTableReferences
+    extends BaseReferences<_$AppDatabase, $LessonsTable, Lesson> {
+  $$LessonsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$RecallSessionsTable, List<RecallSession>>
+  _recallSessionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.recallSessions,
+    aliasName: 'lessons__id__recall_sessions__lesson_id',
+  );
+
+  $$RecallSessionsTableProcessedTableManager get recallSessionsRefs {
+    final manager = $$RecallSessionsTableTableManager(
+      $_db,
+      $_db.recallSessions,
+    ).filter((f) => f.lessonId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_recallSessionsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$LessonsTableFilterComposer
+    extends Composer<_$AppDatabase, $LessonsTable> {
+  $$LessonsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get html => $composableBuilder(
+    column: $table.html,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get openedAt => $composableBuilder(
+    column: $table.openedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get scrollY => $composableBuilder(
+    column: $table.scrollY,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> recallSessionsRefs(
+    Expression<bool> Function($$RecallSessionsTableFilterComposer f) f,
+  ) {
+    final $$RecallSessionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.recallSessions,
+      getReferencedColumn: (t) => t.lessonId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecallSessionsTableFilterComposer(
+            $db: $db,
+            $table: $db.recallSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$LessonsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LessonsTable> {
+  $$LessonsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get html => $composableBuilder(
+    column: $table.html,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get openedAt => $composableBuilder(
+    column: $table.openedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get scrollY => $composableBuilder(
+    column: $table.scrollY,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LessonsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LessonsTable> {
+  $$LessonsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get html =>
+      $composableBuilder(column: $table.html, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get openedAt =>
+      $composableBuilder(column: $table.openedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get scrollY =>
+      $composableBuilder(column: $table.scrollY, builder: (column) => column);
+
+  Expression<T> recallSessionsRefs<T extends Object>(
+    Expression<T> Function($$RecallSessionsTableAnnotationComposer a) f,
+  ) {
+    final $$RecallSessionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.recallSessions,
+      getReferencedColumn: (t) => t.lessonId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecallSessionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.recallSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$LessonsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LessonsTable,
+          Lesson,
+          $$LessonsTableFilterComposer,
+          $$LessonsTableOrderingComposer,
+          $$LessonsTableAnnotationComposer,
+          $$LessonsTableCreateCompanionBuilder,
+          $$LessonsTableUpdateCompanionBuilder,
+          (Lesson, $$LessonsTableReferences),
+          Lesson,
+          PrefetchHooks Function({bool recallSessionsRefs})
+        > {
+  $$LessonsTableTableManager(_$AppDatabase db, $LessonsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LessonsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LessonsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LessonsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> html = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> updatedAt = const Value.absent(),
+                Value<int?> openedAt = const Value.absent(),
+                Value<int?> scrollY = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LessonsCompanion(
+                id: id,
+                title: title,
+                html: html,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                openedAt: openedAt,
+                scrollY: scrollY,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String title,
+                required String html,
+                required int createdAt,
+                required int updatedAt,
+                Value<int?> openedAt = const Value.absent(),
+                Value<int?> scrollY = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LessonsCompanion.insert(
+                id: id,
+                title: title,
+                html: html,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                openedAt: openedAt,
+                scrollY: scrollY,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$LessonsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({recallSessionsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (recallSessionsRefs) db.recallSessions,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (recallSessionsRefs)
+                    await $_getPrefetchedData<
+                      Lesson,
+                      $LessonsTable,
+                      RecallSession
+                    >(
+                      currentTable: table,
+                      referencedTable: $$LessonsTableReferences
+                          ._recallSessionsRefsTable(db),
+                      managerFromTypedResult: (p0) => $$LessonsTableReferences(
+                        db,
+                        table,
+                        p0,
+                      ).recallSessionsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.lessonId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$LessonsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LessonsTable,
+      Lesson,
+      $$LessonsTableFilterComposer,
+      $$LessonsTableOrderingComposer,
+      $$LessonsTableAnnotationComposer,
+      $$LessonsTableCreateCompanionBuilder,
+      $$LessonsTableUpdateCompanionBuilder,
+      (Lesson, $$LessonsTableReferences),
+      Lesson,
+      PrefetchHooks Function({bool recallSessionsRefs})
+    >;
+typedef $$RecallSessionsTableCreateCompanionBuilder =
+    RecallSessionsCompanion Function({
+      Value<int> id,
+      required String lessonId,
+      required String section,
+      required int day,
+      required String questionIds,
+      required int createdAt,
+      Value<int?> finishedAt,
+    });
+typedef $$RecallSessionsTableUpdateCompanionBuilder =
+    RecallSessionsCompanion Function({
+      Value<int> id,
+      Value<String> lessonId,
+      Value<String> section,
+      Value<int> day,
+      Value<String> questionIds,
+      Value<int> createdAt,
+      Value<int?> finishedAt,
+    });
+
+final class $$RecallSessionsTableReferences
+    extends BaseReferences<_$AppDatabase, $RecallSessionsTable, RecallSession> {
+  $$RecallSessionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LessonsTable _lessonIdTable(_$AppDatabase db) =>
+      db.lessons.createAlias('recall_sessions__lesson_id__lessons__id');
+
+  $$LessonsTableProcessedTableManager get lessonId {
+    final $_column = $_itemColumn<String>('lesson_id')!;
+
+    final manager = $$LessonsTableTableManager(
+      $_db,
+      $_db.lessons,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_lessonIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$RecallAnswersTable, List<RecallAnswer>>
+  _recallAnswersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.recallAnswers,
+    aliasName: 'recall_sessions__id__recall_answers__session_id',
+  );
+
+  $$RecallAnswersTableProcessedTableManager get recallAnswersRefs {
+    final manager = $$RecallAnswersTableTableManager(
+      $_db,
+      $_db.recallAnswers,
+    ).filter((f) => f.sessionId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_recallAnswersRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$RecallSessionsTableFilterComposer
+    extends Composer<_$AppDatabase, $RecallSessionsTable> {
+  $$RecallSessionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get section => $composableBuilder(
+    column: $table.section,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get questionIds => $composableBuilder(
+    column: $table.questionIds,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get finishedAt => $composableBuilder(
+    column: $table.finishedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LessonsTableFilterComposer get lessonId {
+    final $$LessonsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.lessonId,
+      referencedTable: $db.lessons,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LessonsTableFilterComposer(
+            $db: $db,
+            $table: $db.lessons,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> recallAnswersRefs(
+    Expression<bool> Function($$RecallAnswersTableFilterComposer f) f,
+  ) {
+    final $$RecallAnswersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.recallAnswers,
+      getReferencedColumn: (t) => t.sessionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecallAnswersTableFilterComposer(
+            $db: $db,
+            $table: $db.recallAnswers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$RecallSessionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $RecallSessionsTable> {
+  $$RecallSessionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get section => $composableBuilder(
+    column: $table.section,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get questionIds => $composableBuilder(
+    column: $table.questionIds,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get finishedAt => $composableBuilder(
+    column: $table.finishedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LessonsTableOrderingComposer get lessonId {
+    final $$LessonsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.lessonId,
+      referencedTable: $db.lessons,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LessonsTableOrderingComposer(
+            $db: $db,
+            $table: $db.lessons,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RecallSessionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RecallSessionsTable> {
+  $$RecallSessionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get section =>
+      $composableBuilder(column: $table.section, builder: (column) => column);
+
+  GeneratedColumn<int> get day =>
+      $composableBuilder(column: $table.day, builder: (column) => column);
+
+  GeneratedColumn<String> get questionIds => $composableBuilder(
+    column: $table.questionIds,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get finishedAt => $composableBuilder(
+    column: $table.finishedAt,
+    builder: (column) => column,
+  );
+
+  $$LessonsTableAnnotationComposer get lessonId {
+    final $$LessonsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.lessonId,
+      referencedTable: $db.lessons,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LessonsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.lessons,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> recallAnswersRefs<T extends Object>(
+    Expression<T> Function($$RecallAnswersTableAnnotationComposer a) f,
+  ) {
+    final $$RecallAnswersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.recallAnswers,
+      getReferencedColumn: (t) => t.sessionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecallAnswersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.recallAnswers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$RecallSessionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RecallSessionsTable,
+          RecallSession,
+          $$RecallSessionsTableFilterComposer,
+          $$RecallSessionsTableOrderingComposer,
+          $$RecallSessionsTableAnnotationComposer,
+          $$RecallSessionsTableCreateCompanionBuilder,
+          $$RecallSessionsTableUpdateCompanionBuilder,
+          (RecallSession, $$RecallSessionsTableReferences),
+          RecallSession,
+          PrefetchHooks Function({bool lessonId, bool recallAnswersRefs})
+        > {
+  $$RecallSessionsTableTableManager(
+    _$AppDatabase db,
+    $RecallSessionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RecallSessionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RecallSessionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RecallSessionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> lessonId = const Value.absent(),
+                Value<String> section = const Value.absent(),
+                Value<int> day = const Value.absent(),
+                Value<String> questionIds = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int?> finishedAt = const Value.absent(),
+              }) => RecallSessionsCompanion(
+                id: id,
+                lessonId: lessonId,
+                section: section,
+                day: day,
+                questionIds: questionIds,
+                createdAt: createdAt,
+                finishedAt: finishedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String lessonId,
+                required String section,
+                required int day,
+                required String questionIds,
+                required int createdAt,
+                Value<int?> finishedAt = const Value.absent(),
+              }) => RecallSessionsCompanion.insert(
+                id: id,
+                lessonId: lessonId,
+                section: section,
+                day: day,
+                questionIds: questionIds,
+                createdAt: createdAt,
+                finishedAt: finishedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$RecallSessionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({lessonId = false, recallAnswersRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (recallAnswersRefs) db.recallAnswers,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (lessonId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.lessonId,
+                                    referencedTable:
+                                        $$RecallSessionsTableReferences
+                                            ._lessonIdTable(db),
+                                    referencedColumn:
+                                        $$RecallSessionsTableReferences
+                                            ._lessonIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (recallAnswersRefs)
+                        await $_getPrefetchedData<
+                          RecallSession,
+                          $RecallSessionsTable,
+                          RecallAnswer
+                        >(
+                          currentTable: table,
+                          referencedTable: $$RecallSessionsTableReferences
+                              ._recallAnswersRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$RecallSessionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).recallAnswersRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.sessionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$RecallSessionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RecallSessionsTable,
+      RecallSession,
+      $$RecallSessionsTableFilterComposer,
+      $$RecallSessionsTableOrderingComposer,
+      $$RecallSessionsTableAnnotationComposer,
+      $$RecallSessionsTableCreateCompanionBuilder,
+      $$RecallSessionsTableUpdateCompanionBuilder,
+      (RecallSession, $$RecallSessionsTableReferences),
+      RecallSession,
+      PrefetchHooks Function({bool lessonId, bool recallAnswersRefs})
+    >;
+typedef $$RecallAnswersTableCreateCompanionBuilder =
+    RecallAnswersCompanion Function({
+      required int sessionId,
+      required String questionId,
+      required int chosen,
+      required bool correct,
+      required int answeredAt,
+      Value<int> rowid,
+    });
+typedef $$RecallAnswersTableUpdateCompanionBuilder =
+    RecallAnswersCompanion Function({
+      Value<int> sessionId,
+      Value<String> questionId,
+      Value<int> chosen,
+      Value<bool> correct,
+      Value<int> answeredAt,
+      Value<int> rowid,
+    });
+
+final class $$RecallAnswersTableReferences
+    extends BaseReferences<_$AppDatabase, $RecallAnswersTable, RecallAnswer> {
+  $$RecallAnswersTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $RecallSessionsTable _sessionIdTable(_$AppDatabase db) => db
+      .recallSessions
+      .createAlias('recall_answers__session_id__recall_sessions__id');
+
+  $$RecallSessionsTableProcessedTableManager get sessionId {
+    final $_column = $_itemColumn<int>('session_id')!;
+
+    final manager = $$RecallSessionsTableTableManager(
+      $_db,
+      $_db.recallSessions,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_sessionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$RecallAnswersTableFilterComposer
+    extends Composer<_$AppDatabase, $RecallAnswersTable> {
+  $$RecallAnswersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get questionId => $composableBuilder(
+    column: $table.questionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get chosen => $composableBuilder(
+    column: $table.chosen,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get correct => $composableBuilder(
+    column: $table.correct,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get answeredAt => $composableBuilder(
+    column: $table.answeredAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$RecallSessionsTableFilterComposer get sessionId {
+    final $$RecallSessionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sessionId,
+      referencedTable: $db.recallSessions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecallSessionsTableFilterComposer(
+            $db: $db,
+            $table: $db.recallSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RecallAnswersTableOrderingComposer
+    extends Composer<_$AppDatabase, $RecallAnswersTable> {
+  $$RecallAnswersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get questionId => $composableBuilder(
+    column: $table.questionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get chosen => $composableBuilder(
+    column: $table.chosen,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get correct => $composableBuilder(
+    column: $table.correct,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get answeredAt => $composableBuilder(
+    column: $table.answeredAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$RecallSessionsTableOrderingComposer get sessionId {
+    final $$RecallSessionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sessionId,
+      referencedTable: $db.recallSessions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecallSessionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.recallSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RecallAnswersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RecallAnswersTable> {
+  $$RecallAnswersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get questionId => $composableBuilder(
+    column: $table.questionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get chosen =>
+      $composableBuilder(column: $table.chosen, builder: (column) => column);
+
+  GeneratedColumn<bool> get correct =>
+      $composableBuilder(column: $table.correct, builder: (column) => column);
+
+  GeneratedColumn<int> get answeredAt => $composableBuilder(
+    column: $table.answeredAt,
+    builder: (column) => column,
+  );
+
+  $$RecallSessionsTableAnnotationComposer get sessionId {
+    final $$RecallSessionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sessionId,
+      referencedTable: $db.recallSessions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecallSessionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.recallSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RecallAnswersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RecallAnswersTable,
+          RecallAnswer,
+          $$RecallAnswersTableFilterComposer,
+          $$RecallAnswersTableOrderingComposer,
+          $$RecallAnswersTableAnnotationComposer,
+          $$RecallAnswersTableCreateCompanionBuilder,
+          $$RecallAnswersTableUpdateCompanionBuilder,
+          (RecallAnswer, $$RecallAnswersTableReferences),
+          RecallAnswer,
+          PrefetchHooks Function({bool sessionId})
+        > {
+  $$RecallAnswersTableTableManager(_$AppDatabase db, $RecallAnswersTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RecallAnswersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RecallAnswersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RecallAnswersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> sessionId = const Value.absent(),
+                Value<String> questionId = const Value.absent(),
+                Value<int> chosen = const Value.absent(),
+                Value<bool> correct = const Value.absent(),
+                Value<int> answeredAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RecallAnswersCompanion(
+                sessionId: sessionId,
+                questionId: questionId,
+                chosen: chosen,
+                correct: correct,
+                answeredAt: answeredAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required int sessionId,
+                required String questionId,
+                required int chosen,
+                required bool correct,
+                required int answeredAt,
+                Value<int> rowid = const Value.absent(),
+              }) => RecallAnswersCompanion.insert(
+                sessionId: sessionId,
+                questionId: questionId,
+                chosen: chosen,
+                correct: correct,
+                answeredAt: answeredAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$RecallAnswersTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({sessionId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (sessionId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.sessionId,
+                                referencedTable: $$RecallAnswersTableReferences
+                                    ._sessionIdTable(db),
+                                referencedColumn: $$RecallAnswersTableReferences
+                                    ._sessionIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$RecallAnswersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RecallAnswersTable,
+      RecallAnswer,
+      $$RecallAnswersTableFilterComposer,
+      $$RecallAnswersTableOrderingComposer,
+      $$RecallAnswersTableAnnotationComposer,
+      $$RecallAnswersTableCreateCompanionBuilder,
+      $$RecallAnswersTableUpdateCompanionBuilder,
+      (RecallAnswer, $$RecallAnswersTableReferences),
+      RecallAnswer,
+      PrefetchHooks Function({bool sessionId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3142,4 +5585,10 @@ class $AppDatabaseManager {
       $$RemindersTableTableManager(_db, _db.reminders);
   $$AppSettingsTableTableManager get appSettings =>
       $$AppSettingsTableTableManager(_db, _db.appSettings);
+  $$LessonsTableTableManager get lessons =>
+      $$LessonsTableTableManager(_db, _db.lessons);
+  $$RecallSessionsTableTableManager get recallSessions =>
+      $$RecallSessionsTableTableManager(_db, _db.recallSessions);
+  $$RecallAnswersTableTableManager get recallAnswers =>
+      $$RecallAnswersTableTableManager(_db, _db.recallAnswers);
 }

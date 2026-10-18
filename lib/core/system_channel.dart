@@ -1,12 +1,15 @@
 import 'package:flutter/services.dart';
 
 /// Something Android asked the app to do: open a blank note (home-screen
-/// widget) or a note pre-filled with shared text (share sheet).
+/// widget), a note pre-filled with shared text (share sheet) or a lesson
+/// (an HTML file opened with / shared to Not).
 class AppIntent {
-  const AppIntent.newNote() : sharedText = null;
-  const AppIntent.share(String text) : sharedText = text;
+  const AppIntent.newNote() : sharedText = null, lessonHtml = null;
+  const AppIntent.share(String text) : sharedText = text, lessonHtml = null;
+  const AppIntent.lesson(String html) : sharedText = null, lessonHtml = html;
 
   final String? sharedText;
+  final String? lessonHtml;
 }
 
 /// Native glue (MainActivity, `local_harness_not/system`): share sheet and
@@ -23,6 +26,9 @@ class SystemChannel {
       'share'
           when raw['text'] is String && (raw['text'] as String).isNotEmpty =>
         AppIntent.share(raw['text'] as String),
+      'lesson' when raw['html'] is String => AppIntent.lesson(
+        raw['html'] as String,
+      ),
       _ => null,
     };
   }
@@ -52,6 +58,33 @@ class SystemChannel {
   static Future<bool> openUrl(String url) async {
     try {
       return await _channel.invokeMethod<bool>('openUrl', url) ?? false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
+  /// Copies a lesson to Documents/Not/Dersler/[name] (shared storage, so
+  /// file managers and browsers can open it). Returns the path shown to
+  /// the user, or null when it could not be written.
+  static Future<String?> saveLessonFile(String name, String html) async {
+    try {
+      return await _channel.invokeMethod<String>('saveLessonFile', {
+        'name': name,
+        'html': html,
+      });
+    } on MissingPluginException {
+      return null;
+    }
+  }
+
+  /// Saves the copy, then lets the user open it in another app.
+  static Future<bool> openLessonFile(String name, String html) async {
+    try {
+      return await _channel.invokeMethod<bool>('openLessonFile', {
+            'name': name,
+            'html': html,
+          }) ??
+          false;
     } on MissingPluginException {
       return false;
     }

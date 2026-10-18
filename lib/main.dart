@@ -11,6 +11,8 @@ import 'core/hub_snapshot_publisher.dart';
 import 'core/system_channel.dart';
 import 'data/db/database_provider.dart';
 import 'features/backup/backup_worker.dart';
+import 'features/lessons/lesson_page.dart';
+import 'features/lessons/lessons_providers.dart';
 import 'features/notes/note_editor_page.dart';
 import 'features/notes/notes_providers.dart';
 import 'features/notifications/notification_service.dart';
@@ -35,15 +37,49 @@ void openEditor({String? noteId, String? text, String source = 'phone'}) {
   );
 }
 
+/// Opens a lesson, scrolled to [section] (stage reminder tap).
+void openLesson(String lessonId, {String? section}) {
+  final nav = navigatorKey.currentState;
+  if (nav == null) return;
+  nav.popUntil((route) => route.isFirst);
+  nav.push(
+    MaterialPageRoute(
+      builder: (_) => LessonPage(lessonId: lessonId, section: section),
+    ),
+  );
+}
+
 void _openPayload(String? payload) {
-  if (payload != null && payload.startsWith('note:')) {
+  if (payload == null) return;
+  if (payload.startsWith('note:')) {
     openEditor(noteId: payload.substring(5));
+  } else if (payload.startsWith('lesson:')) {
+    final parts = payload.substring(7).split(':');
+    openLesson(parts.first, section: parts.length > 1 ? parts[1] : null);
   }
 }
 
-void _openIntent(AppIntent intent) => intent.sharedText == null
-    ? openEditor()
-    : openEditor(text: intent.sharedText, source: 'share');
+void _openIntent(AppIntent intent) {
+  final html = intent.lessonHtml;
+  if (html != null) {
+    unawaited(_importLesson(html));
+  } else if (intent.sharedText != null) {
+    openEditor(text: intent.sharedText, source: 'share');
+  } else {
+    openEditor();
+  }
+}
+
+/// An .html opened with / shared to Not: add it and open it.
+Future<void> _importLesson(String html) async {
+  final context = navigatorKey.currentContext;
+  if (context == null) return;
+  final repo = ProviderScope.containerOf(
+    context,
+  ).read(lessonsRepositoryProvider);
+  final lesson = await importLesson(context, repo, html);
+  if (lesson != null) openLesson(lesson.id);
+}
 
 final notificationServiceProvider = Provider<NotificationService>((ref) {
   final service = NotificationService(
