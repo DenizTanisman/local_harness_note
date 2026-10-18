@@ -77,6 +77,17 @@ class SystemChannel {
     }
   }
 
+  /// Opens the system picker in [place] ('download' | 'whatsapp' |
+  /// 'lessons' | null: wherever it was last), HTML files only. Returns the
+  /// file's text, '' when it could not be read, null when cancelled.
+  static Future<String?> pickLesson(String? place) async {
+    try {
+      return await _channel.invokeMethod<String>('pickLesson', place);
+    } on MissingPluginException {
+      return null;
+    }
+  }
+
   /// Saves the copy, then lets the user open it in another app.
   static Future<bool> openLessonFile(String name, String html) async {
     try {

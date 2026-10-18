@@ -183,6 +183,7 @@ class LessonsRepository {
             day: s.day,
             questionIds: _split(s.questionIds),
             finished: s.finishedAt != null,
+            createdAt: s.createdAt,
           ),
       ],
       answers: [

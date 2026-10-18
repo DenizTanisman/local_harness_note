@@ -37,13 +37,19 @@ class LessonSection {
 }
 
 /// When a question is asked, counted from the day its section's recall was
-/// first started: stage 1 that day, 2 the next day, 3 a week later.
-const recallStageOffsets = {1: 0, 2: 1, 3: 7};
+/// first started: stage 1 that day, 2 one day later, 3 three days later.
+const recallStageOffsets = {1: 0, 2: 1, 3: 3};
+
+/// Five days after the start every question of the section comes back
+/// once more (genel tekrar).
+const recallReviewOffset = 5;
+const recallReviewStage = 4;
 
 const recallStageNames = {
   1: 'Aşama 1 · hemen sonra',
-  2: 'Aşama 2 · ertesi gün',
-  3: 'Aşama 3 · bir hafta sonra',
+  2: 'Aşama 2 · 1 gün sonra',
+  3: 'Aşama 3 · 3 gün sonra',
+  recallReviewStage: 'Genel tekrar · 5 gün sonra',
 };
 
 class RecallQuestion {

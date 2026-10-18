@@ -107,7 +107,7 @@ void main() {
     });
 
     test(
-      'day 0 asks stage 1 only, then stage 2 next day, 3 a week later',
+      'stage 1 on day 0, 2 a day later, 3 three days later, all on day 5',
       () async {
         final l = await lesson();
         final run = (await repo.startOrResume(l, 's1'))!;
@@ -121,11 +121,24 @@ void main() {
         expect(day1.$2.map((q) => q.id), ['c']);
         await answerAll(day1.$1, day1.$2, {});
 
-        now = now.add(const Duration(days: 5)); // day 6: nothing yet
+        now = now.add(const Duration(days: 1)); // day 2: nothing yet
         expect(await repo.startOrResume(l, 's1'), isNull);
-        now = now.add(const Duration(days: 1)); // day 7
-        final day7 = (await repo.startOrResume(l, 's1'))!;
-        expect(day7.$2.map((q) => q.id), ['d']);
+        now = now.add(const Duration(days: 1)); // day 3
+        final day3 = (await repo.startOrResume(l, 's1'))!;
+        expect(day3.$2.map((q) => q.id), ['d']);
+        await answerAll(day3.$1, day3.$2, {});
+        expect((await planner(l)).status('s1').nextStage, recallReviewStage);
+
+        now = now.add(const Duration(days: 2)); // day 5: genel tekrar
+        final p = await planner(l);
+        expect(p.isReview('s1'), isTrue);
+        final day5 = (await repo.startOrResume(l, 's1'))!;
+        expect(day5.$2.map((q) => q.id), ['a', 'b', 'c', 'd']);
+        await answerAll(day5.$1, day5.$2, {});
+        expect(await repo.startOrResume(l, 's1'), isNull);
+        final done = (await planner(l)).status('s1');
+        expect(done.nextDay, isNull);
+        expect(done.due, 0);
       },
     );
 
@@ -194,16 +207,19 @@ void main() {
       expect(p.startDay('s1'), RecallDay.of(now));
     });
 
-    test('upcoming lists stage 2 and 3 days for reminders', () async {
+    test('the first recall sets up reminders 1, 3 and 5 days later', () async {
       final l = await lesson();
       final run = (await repo.startOrResume(l, 's1'))!;
       await answerAll(run.$1, run.$2, {});
       final today = RecallDay.of(now);
-      final up = (await planner(l)).upcoming();
-      expect(up.map((u) => (u.day - today, u.stage, u.count)), [
+      final p = await planner(l);
+      expect(p.upcoming().map((u) => (u.day - today, u.stage, u.count)), [
         (1, 2, 1),
-        (7, 3, 1),
+        (3, 3, 1),
+        (5, recallReviewStage, 4),
       ]);
+      // Reminders ring at the time of day the first recall ran.
+      expect(p.startedAt('s1'), now.millisecondsSinceEpoch);
     });
 
     test('list summary counts due questions and marks', () async {

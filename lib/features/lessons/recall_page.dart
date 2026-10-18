@@ -17,9 +17,13 @@ class RecallPage extends ConsumerStatefulWidget {
     required this.sectionTitle,
     required this.session,
     required this.questions,
+    this.review = false,
   });
 
   final Lesson lesson;
+
+  /// The 5-day genel tekrar run.
+  final bool review;
   final String sectionTitle;
   final RecallSession session;
 
@@ -83,7 +87,7 @@ class _RecallPageState extends ConsumerState<RecallPage> {
           children: [
             Text('Recall · ${widget.sectionTitle}'),
             Text(
-              recallStageNames[_q.stage]!,
+              recallStageNames[widget.review ? recallReviewStage : _q.stage]!,
               style: theme.textTheme.labelMedium?.copyWith(
                 color: AppTokens.textSecondary,
               ),

@@ -26,6 +26,7 @@ class RecallSessionData {
     required this.day,
     required this.questionIds,
     required this.finished,
+    required this.createdAt,
   });
 
   final int id;
@@ -33,6 +34,9 @@ class RecallSessionData {
   final int day;
   final List<String> questionIds;
   final bool finished;
+
+  /// Epoch ms; the first run's time of day is when stage reminders ring.
+  final int createdAt;
 
   /// Results count once every question is answered or the day is over
   /// ("o günkü tüm sorular bitince").
@@ -63,6 +67,7 @@ class SectionStatus {
     required this.resume,
     required this.wrong,
     required this.started,
+    required this.review,
     this.nextDay,
     this.nextStage,
   });
@@ -79,6 +84,9 @@ class SectionStatus {
   final int wrong;
   final bool started;
 
+  /// The genel tekrar day has come (5 days after the start).
+  final bool review;
+
   /// When a stage with unanswered questions unlocks next, if any.
   final int? nextDay;
   final int? nextStage;
@@ -86,9 +94,11 @@ class SectionStatus {
 
 /// Pure active-recall rules (docs/lesson-format.md):
 /// - a section starts the first day its Recall runs; stage 1 is asked that
-///   day, stage 2 the next day, stage 3 a week later;
+///   day, stage 2 one day later, stage 3 three days later, and five days
+///   later every question once more (genel tekrar);
 /// - a question is due once its stage is unlocked and it was never
-///   answered, or its last answer was wrong on an earlier day;
+///   answered, or its last answer was wrong on an earlier day, or — from
+///   the review day on — it was last answered before that day;
 /// - a run is evaluated when all its questions are answered or its day is
 ///   over; only evaluated wrong answers mark cards, and a later right
 ///   answer clears the mark.
@@ -107,15 +117,35 @@ class RecallPlanner {
   final Map<int, RecallSessionData> _sessions;
   final List<RecallAnswerData> _answers;
 
-  int? startDay(String section) {
-    int? first;
+  RecallSessionData? _first(String section) {
+    RecallSessionData? first;
     for (final s in _sessions.values) {
-      if (s.section == section && (first == null || s.day < first)) {
-        first = s.day;
+      if (s.section == section &&
+          (first == null || s.createdAt < first.createdAt)) {
+        first = s;
       }
     }
     return first;
   }
+
+  int? startDay(String section) => _first(section)?.day;
+
+  /// When the section's first run began (epoch ms).
+  int? startedAt(String section) => _first(section)?.createdAt;
+
+  int? _reviewDay(String section) {
+    final start = startDay(section);
+    return start == null ? null : start + recallReviewOffset;
+  }
+
+  bool isReview(String section) {
+    final day = _reviewDay(section);
+    return day != null && today >= day;
+  }
+
+  /// Not yet answered on or after the review day.
+  bool _beforeReview(RecallAnswerData? last, int reviewDay) =>
+      last == null || (_sessions[last.sessionId]?.day ?? 0) < reviewDay;
 
   bool _unlocked(RecallQuestion q, int? start) =>
       (start ?? today) + recallStageOffsets[q.stage]! <= today;
@@ -158,9 +188,13 @@ class RecallPlanner {
   List<RecallQuestion> due(String section) {
     final start = startDay(section);
     final latest = _latest(evaluatedOnly: false);
+    final review = isReview(section) ? _reviewDay(section) : null;
     return [
       for (final q in pack.ofSection(section))
-        if (_unlocked(q, start) && _isDue(latest[q.id])) q,
+        if (_unlocked(q, start) &&
+            (_isDue(latest[q.id]) ||
+                (review != null && _beforeReview(latest[q.id], review))))
+          q,
     ];
   }
 
@@ -217,6 +251,11 @@ class RecallPlanner {
           nextStage = q.stage;
         }
       }
+      final review = start + recallReviewOffset;
+      if (review > today && (nextDay == null || review < nextDay)) {
+        nextDay = review;
+        nextStage = recallReviewStage;
+      }
     }
     return SectionStatus(
       section: section,
@@ -224,30 +263,42 @@ class RecallPlanner {
       resume: resume,
       wrong: wrong(section: section).length,
       started: start != null,
+      review: isReview(section),
       nextDay: nextDay,
       nextStage: nextStage,
     );
   }
 
-  /// Days on which a later stage of a started section unlocks with
-  /// questions still unanswered: section → (day, stage, count). Feeds the
-  /// stage reminders.
+  /// The 1-, 3- and 5-day reviews of every started section still ahead
+  /// (today included) with questions waiting: feeds the stage reminders.
   List<({String section, int day, int stage, int count})> upcoming() {
     final latest = _latest(evaluatedOnly: false);
     final out = <({String section, int day, int stage, int count})>[];
     for (final s in pack.sections) {
       final start = startDay(s.id);
       if (start == null) continue;
+      final questions = pack.ofSection(s.id);
       for (final stage in const [2, 3]) {
         final day = start + recallStageOffsets[stage]!;
         if (day < today) continue;
-        final count = pack
-            .ofSection(s.id)
+        final count = questions
             .where((q) => q.stage == stage && latest[q.id] == null)
             .length;
         if (count > 0) {
           out.add((section: s.id, day: day, stage: stage, count: count));
         }
+      }
+      final review = start + recallReviewOffset;
+      final left = questions
+          .where((q) => _beforeReview(latest[q.id], review))
+          .length;
+      if (review >= today && left > 0) {
+        out.add((
+          section: s.id,
+          day: review,
+          stage: recallReviewStage,
+          count: left,
+        ));
       }
     }
     return out;

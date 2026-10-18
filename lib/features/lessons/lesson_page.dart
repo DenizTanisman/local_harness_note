@@ -19,12 +19,20 @@ import 'recall_page.dart';
 /// marks cards answered wrong and, at the bottom, a "Yanlışlar 2/5 ◀ ▶"
 /// bar jumps between them.
 class LessonPage extends ConsumerStatefulWidget {
-  const LessonPage({super.key, required this.lessonId, this.section});
+  const LessonPage({
+    super.key,
+    required this.lessonId,
+    this.section,
+    this.recall = false,
+  });
 
   final String lessonId;
 
-  /// Section to scroll to on open (stage reminder tap).
+  /// Section to scroll to on open.
   final String? section;
+
+  /// Start [section]'s recall right away (review reminder tap).
+  final bool recall;
 
   @override
   ConsumerState<LessonPage> createState() => _LessonPageState();
@@ -114,6 +122,7 @@ class _LessonPageState extends ConsumerState<LessonPage> {
     await _refresh();
     if (widget.section != null) {
       await _go(widget.section!, flash: false);
+      if (widget.recall) await _recall(widget.section!);
     } else if ((lesson.scrollY ?? 0) > 0) {
       await web.runJavaScript('window.scrollTo(0, ${lesson.scrollY});');
     }
@@ -177,9 +186,15 @@ class _LessonPageState extends ConsumerState<LessonPage> {
     if (s.resume > 0) {
       sub = 'Devam et · ${s.resume} soru kaldı';
     } else if (s.due > 0) {
-      sub = s.started ? 'Bugün ${s.due} soru' : 'Başla · ${s.due} soru';
+      sub = !s.started
+          ? 'Başla · ${s.due} soru'
+          : s.review
+          ? 'Genel tekrar · ${s.due} soru'
+          : 'Bugün ${s.due} soru';
     } else if (s.nextDay != null) {
-      sub = 'Sıradaki: aşama ${s.nextStage} · ${_dayLabel(s.nextDay!, today)}';
+      sub =
+          'Sıradaki: ${_stageShort(s.nextStage!)} · '
+          '${_dayLabel(s.nextDay!, today)}';
     } else {
       sub = 'Tamamlandı ✓';
     }
@@ -189,6 +204,9 @@ class _LessonPageState extends ConsumerState<LessonPage> {
       'due': s.due > 0,
     };
   }
+
+  static String _stageShort(int stage) =>
+      stage == recallReviewStage ? 'genel tekrar' : 'aşama $stage';
 
   static String _dayLabel(int day, int today) => switch (day - today) {
     0 => 'bugün',
@@ -230,10 +248,13 @@ class _LessonPageState extends ConsumerState<LessonPage> {
       await _nothingDue(section);
       return;
     }
+    final review = (await _planner())?.isReview(section) ?? false;
+    if (!mounted) return;
     final anchor = await Navigator.of(context).push<String>(
       MaterialPageRoute(
         builder: (_) => RecallPage(
           lesson: lesson,
+          review: review && !practice,
           sectionTitle: pack.section(section)?.title ?? section,
           session: run.$1,
           questions: run.$2,
@@ -268,7 +289,7 @@ class _LessonPageState extends ConsumerState<LessonPage> {
               const SizedBox(height: 8),
               Text(
                 s.nextDay != null
-                    ? 'Sıradaki tekrar: aşama ${s.nextStage}, '
+                    ? 'Sıradaki: ${_stageShort(s.nextStage!)}, '
                           '${_dayLabel(s.nextDay!, today)}.'
                     : 'Bu bölümün bütün aşamaları bitti.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(

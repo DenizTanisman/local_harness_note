@@ -32,7 +32,7 @@ genelde `</body>` öncesine konur):
 |---|---|
 | `title` | Dersin adı. Aynı adla yeniden eklenen ders güncellenir; ilerleme korunur. |
 | `sections[].id` | Bölümün HTML'deki `id`'si. Recall düğmesi bu elemanın içine, ilk başlığın altına konur. |
-| `questions[].stage` | `1` okuduktan hemen sonra, `2` ertesi gün, `3` bir hafta sonra. Bölümün ilk recall'u yapıldığı günden sayılır. |
+| `questions[].stage` | `1` okuduktan hemen sonra, `2` bir gün sonra, `3` üç gün sonra. Bölümün ilk recall'u yapıldığı günden sayılır. Beşinci gün bölümün bütün soruları bir kez daha sorulur (genel tekrar). |
 | `questions[].anchor` | Sorunun konusunu anlatan elemanın `id`'si (kavram kartı). Yanlış cevaplarda bu kart işaretlenir; "Yanlışlar ◀ ▶" çubuğu buraya atlar. |
 | `answer` | Doğru şıkkın `options` içindeki sırası (0'dan başlar). |
 | `why` | Sonuç ekranında gösterilen kısa açıklama. |
@@ -45,6 +45,10 @@ JSON içinde `</` geçiyorsa `<\/` yazılır.
   yanlış o an gösterilmez. Hepsi cevaplanınca (ya da gün bitince) değerlendirilir.
 - Yanlış cevaplanan soru sonraki günlerde yeniden sorulur. Doğru cevaplanınca
   kartın işareti söner.
-- Aşama 2 ve 3'ün açıldığı günlerde saat 19:00'da bildirim gelir.
+- Bir bölümün ilk recall'u yapılınca 1, 3 ve 5 gün sonrasına, ilk recall'un
+  saatinde bildirim kurulur. Bildirime dokununca o bölümün testi açılır.
 - Eklenen her dersin bir kopyası `Documents/Not/Dersler/` klasörüne yazılır.
   Dosya yöneticisinde bir `.html` dosyasına dokunup "Not" seçilirse ders eklenir.
+- Dersler sekmesindeki + önce nereden ekleneceğini sorar (İndirilenler,
+  WhatsApp, Not › Dersler, başka bir yer); sistem seçicisi o klasörde, yalnızca
+  HTML dosyalarıyla açılır.

@@ -1,6 +1,3 @@
-import 'dart:convert';
-
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -53,22 +50,58 @@ Future<Lesson?> importLesson(
   }
 }
 
-/// The + on the Dersler tab: pick an .html file.
+/// The + on the Dersler tab: lessons usually arrive in Downloads or over
+/// WhatsApp, so the system picker opens right there (HTML only, with its
+/// own search); other places stay one tap away.
 Future<Lesson?> pickLesson(BuildContext context, LessonsRepository repo) async {
-  final picked = await FilePicker.platform.pickFiles(
-    type: FileType.custom,
-    allowedExtensions: const ['html', 'htm'],
-    withData: true,
+  final place = await showModalBottomSheet<String>(
+    context: context,
+    builder: (context) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+            child: Text(
+              'Dersi nereden ekleyelim?',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
+          for (final (key, icon, title, sub) in const [
+            (
+              'download',
+              Icons.download,
+              'İndirilenler',
+              'Tarayıcıdan, Claude\'dan inenler',
+            ),
+            ('whatsapp', Icons.chat, 'WhatsApp', 'Sohbetlerden gelen belgeler'),
+            (
+              'lessons',
+              Icons.school,
+              'Not › Dersler',
+              'Daha önce eklenenlerin kopyaları',
+            ),
+            ('other', Icons.search, 'Başka bir yer', 'Telefonun tamamında ara'),
+          ])
+            ListTile(
+              leading: Icon(icon),
+              title: Text(title),
+              subtitle: Text(sub),
+              onTap: () => Navigator.pop(context, key),
+            ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    ),
   );
-  final bytes = picked?.files.single.bytes;
-  if (bytes == null || !context.mounted) return null;
-  final String html;
-  try {
-    html = const Utf8Decoder().convert(bytes);
-  } on FormatException {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Dosya okunamadı (UTF-8 değil).')),
-    );
+  if (place == null || !context.mounted) return null;
+  final html = await SystemChannel.pickLesson(place == 'other' ? null : place);
+  if (html == null || !context.mounted) return null;
+  if (html.isEmpty) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Dosya okunamadı.')));
     return null;
   }
   return importLesson(context, repo, html);

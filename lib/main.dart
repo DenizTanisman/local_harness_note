@@ -37,14 +37,16 @@ void openEditor({String? noteId, String? text, String source = 'phone'}) {
   );
 }
 
-/// Opens a lesson, scrolled to [section] (stage reminder tap).
-void openLesson(String lessonId, {String? section}) {
+/// Opens a lesson, scrolled to [section]; with [recall] straight into that
+/// section's test (review reminder tap).
+void openLesson(String lessonId, {String? section, bool recall = false}) {
   final nav = navigatorKey.currentState;
   if (nav == null) return;
   nav.popUntil((route) => route.isFirst);
   nav.push(
     MaterialPageRoute(
-      builder: (_) => LessonPage(lessonId: lessonId, section: section),
+      builder: (_) =>
+          LessonPage(lessonId: lessonId, section: section, recall: recall),
     ),
   );
 }
@@ -53,9 +55,11 @@ void _openPayload(String? payload) {
   if (payload == null) return;
   if (payload.startsWith('note:')) {
     openEditor(noteId: payload.substring(5));
-  } else if (payload.startsWith('lesson:')) {
+  } else if (payload.startsWith('recall:')) {
     final parts = payload.substring(7).split(':');
-    openLesson(parts.first, section: parts.length > 1 ? parts[1] : null);
+    if (parts.length == 2) {
+      openLesson(parts[0], section: parts[1], recall: true);
+    }
   }
 }
 

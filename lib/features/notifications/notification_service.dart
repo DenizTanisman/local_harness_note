@@ -6,6 +6,7 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../core/lesson_format.dart';
 import '../../core/note_links.dart';
 import '../../core/note_text.dart';
 import '../../core/recall_planner.dart';
@@ -31,15 +32,14 @@ class NotificationService {
   static const remindersEnabledKey = 'reminders_enabled';
   static const _baseId = 3000;
 
-  /// Lesson stage reminders ("ertesi gün", "bir hafta sonra") use ids from
-  /// here on, at [lessonHour] o'clock of the day a stage opens.
+  /// Lesson review reminders (1, 3 and 5 days after a section's first
+  /// recall) use ids from here on.
   static const _lessonBaseId = 6000;
-  static const lessonHour = 19;
 
   static const _lessonChannel = AndroidNotificationDetails(
     'not_lessons',
     'Ders tekrarları',
-    channelDescription: 'Active recall: aşama 2 ve 3 zamanı gelince',
+    channelDescription: 'Active recall: 1, 3 ve 5 gün sonraki tekrarlar',
     importance: Importance.defaultImportance,
     styleInformation: BigTextStyleInformation(''),
   );
@@ -157,39 +157,39 @@ class NotificationService {
     }
   }
 
-  /// One notification per lesson and day on which a later stage of a
-  /// started section opens with questions still unanswered.
+  /// One notification per started section for its 1-, 3- and 5-day
+  /// reviews, at the time of day its first recall ran. Tapping it opens
+  /// that section's test.
   Future<void> _scheduleLessons(AndroidScheduleMode mode) async {
     final now = DateTime.now();
     var id = _lessonBaseId;
     for (final (lesson, planner) in await LessonsRepository(db).allPlanners()) {
-      final byDay = <int, List<({String section, int stage, int count})>>{};
       for (final u in planner.upcoming()) {
-        (byDay[u.day] ??= []).add((
-          section: u.section,
-          stage: u.stage,
-          count: u.count,
-        ));
-      }
-      for (final MapEntry(key: day, value: items) in byDay.entries) {
-        final start = RecallDay.start(day);
-        final when = DateTime(start.year, start.month, start.day, lessonHour);
+        final first = DateTime.fromMillisecondsSinceEpoch(
+          planner.startedAt(u.section)!,
+        );
+        final day = RecallDay.start(u.day);
+        final when = DateTime(
+          day.year,
+          day.month,
+          day.day,
+          first.hour,
+          first.minute,
+        );
         if (!when.isAfter(now)) continue;
-        final lines = [
-          for (final i in items)
-            '${planner.pack.section(i.section)?.title ?? i.section} · '
-                'aşama ${i.stage} · ${i.count} soru',
-        ];
+        final section = planner.pack.section(u.section)?.title ?? u.section;
         await _plugin.zonedSchedule(
           id: id++,
-          title: '🧠 ${lesson.title}: tekrar zamanı',
-          body: lines.join('\n'),
+          title: '🧠 Recall: $section',
+          body:
+              '${lesson.title} · ${recallStageNames[u.stage]} · '
+              '${u.count} soru',
           scheduledDate: tz.TZDateTime.from(when, tz.local),
           notificationDetails: const NotificationDetails(
             android: _lessonChannel,
           ),
           androidScheduleMode: mode,
-          payload: 'lesson:${lesson.id}:${items.first.section}',
+          payload: 'recall:${lesson.id}:${u.section}',
         );
       }
     }

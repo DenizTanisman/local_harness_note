@@ -7,6 +7,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Environment
 import android.os.PowerManager
+import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.provider.Settings
 import android.view.WindowManager
@@ -19,6 +20,9 @@ import java.nio.file.StandardCopyOption
 
 class MainActivity : FlutterActivity() {
     private var systemChannel: MethodChannel? = null
+
+    /** Dart's pickLesson call, answered when the system picker returns. */
+    private var pendingPick: MethodChannel.Result? = null
 
     /** Share-sheet text, lesson file or widget tap that launched the app, until Dart takes it. */
     private var launchIntent: Map<String, String>? = null
@@ -53,6 +57,11 @@ class MainActivity : FlutterActivity() {
                             result.success(null)
                         }
                         "bubbleStatus" -> result.success(QuickNoteBubble.status(this@MainActivity))
+                        "pickLesson" -> {
+                            pendingPick?.success(null)
+                            pendingPick = result
+                            pickLesson(call.arguments as? String)
+                        }
                         "saveLessonFile", "openLessonFile" -> {
                             val args = call.arguments as? Map<*, *>
                             val name = args?.get("name") as? String
@@ -152,6 +161,54 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
+    }
+
+    /**
+     * The system picker, opened straight in the folder lessons usually come
+     * from ("download", "whatsapp", "lessons" — Not's own copies) and
+     * showing HTML only; its search box searches that folder. No storage
+     * permission needed.
+     */
+    private fun pickLesson(place: String?) {
+        val folder = when (place) {
+            "download" -> "Download"
+            "whatsapp" -> "Android/media/com.whatsapp/WhatsApp/Media/WhatsApp Documents"
+            "lessons" -> LESSON_DIR.trimEnd('/')
+            else -> null
+        }
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
+            .addCategory(Intent.CATEGORY_OPENABLE)
+            .setType("text/html")
+            .putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("text/html", "application/xhtml+xml"))
+        if (folder != null) {
+            intent.putExtra(
+                DocumentsContract.EXTRA_INITIAL_URI,
+                DocumentsContract.buildDocumentUri(EXTERNAL_DOCS, "primary:$folder"),
+            )
+        }
+        try {
+            startActivityForResult(intent, PICK_LESSON)
+        } catch (e: Exception) {
+            pendingPick?.success(null)
+            pendingPick = null
+        }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != PICK_LESSON) return
+        val result = pendingPick ?: return
+        pendingPick = null
+        val uri = data?.data
+        if (resultCode != RESULT_OK || uri == null) {
+            result.success(null)
+            return
+        }
+        Thread {
+            val html = lessonFrom(uri)?.get("html")
+            runOnUiThread { result.success(html ?: "") }
+        }.start()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -305,5 +362,7 @@ class MainActivity : FlutterActivity() {
         const val NEW_NOTE_ACTION = "dev.deniz.local_harness_not.NEW_NOTE"
         val LESSON_DIR = Environment.DIRECTORY_DOCUMENTS + "/Not/Dersler/"
         const val MAX_LESSON_BYTES = 16 * 1024 * 1024
+        const val PICK_LESSON = 7301
+        const val EXTERNAL_DOCS = "com.android.externalstorage.documents"
     }
 }
