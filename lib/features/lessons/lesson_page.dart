@@ -79,7 +79,9 @@ class _LessonPageState extends ConsumerState<LessonPage> {
     await repo.markOpened(lesson.id);
     final web = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(AppTokens.bgBase)
+      // A lesson without its own background is black on white, as in a
+      // browser.
+      ..setBackgroundColor(Colors.white)
       ..addJavaScriptChannel('NotRecall', onMessageReceived: _onMessage)
       ..setNavigationDelegate(
         NavigationDelegate(
