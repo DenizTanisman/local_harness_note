@@ -165,15 +165,28 @@ class NotificationService {
       for (final s in await db.select(db.appSettings).get()) s.key: s.value,
     };
     final notes = await _repo.reminderNotes();
-    final (plan, cursor) = ReminderPlanner.plan(
+    final files = AttachmentsRepository(db);
+    final media = await files.ofNotes([for (final n in notes) n.id]);
+    // Morning: clips of 3–8 min · midday: up to 3 min · evening: longer
+    // ones and notes with text only.
+    final kinds = {
+      for (final n in notes)
+        n.id: ReminderKind.ofNote(_longestClip(media[n.id])),
+    };
+    final current = await _repo.loadKindCursors();
+    final (plan, cursors) = KindPlanner.plan(
       now: DateTime.now(),
       times: await _repo.reminderTimes(),
       ids: [for (final n in notes) n.id],
-      cursor: await _repo.loadCursor(),
+      kinds: kinds,
+      cursors: current,
     );
-    final current = await _repo.loadCursor();
     // Avoid a write → tableUpdates → reschedule loop.
-    if (current != cursor) await _repo.saveCursor(cursor);
+    final changed = {
+      for (final e in cursors.entries)
+        if (current[e.key] != e.value) e.key: e.value,
+    };
+    if (changed.isNotEmpty) await _repo.saveKindCursors(changed);
 
     // Only our reminders — cancelAll() would also take down the quick-note
     // bubble's notification.
@@ -191,8 +204,6 @@ class NotificationService {
     await _scheduleLessons(mode);
     if (settings[remindersEnabledKey] == 'false') return;
     final byId = {for (final n in notes) n.id: n};
-    final files = AttachmentsRepository(db);
-    final media = await files.ofNotes(byId.keys);
     for (var i = 0; i < plan.length; i++) {
       final note = byId[plan[i].noteId]!;
       final r = await _reminderOf(note, media[note.id] ?? const [], files);
@@ -206,6 +217,16 @@ class NotificationService {
         payload: 'note:${note.id}',
       );
     }
+  }
+
+  /// Length of a note's longest voice clip / video (null: none, or unknown).
+  static int? _longestClip(List<NoteAttachment>? attached) {
+    int? longest;
+    for (final a in attached ?? const <NoteAttachment>[]) {
+      if (a.kind == 'image' || a.durationMs == null) continue;
+      if (longest == null || a.durationMs! > longest) longest = a.durationMs;
+    }
+    return longest;
   }
 
   /// Title, text and look of a note's reminder notification.

@@ -111,3 +111,79 @@ class ReminderPlanner {
     );
   }
 }
+
+/// Which daily reminder a note goes out at, by the length of its voice clip
+/// or video (the user's rule):
+/// - morning: longer than 3 min, up to 8 min;
+/// - midday: 3 min or shorter;
+/// - evening: longer than 8 min — and notes with text only.
+enum ReminderKind {
+  morning('Sabah'),
+  midday('Öğle'),
+  evening('Akşam');
+
+  const ReminderKind(this.label);
+  final String label;
+
+  static const _short = Duration(minutes: 3);
+  static const _long = Duration(minutes: 8);
+
+  /// [mediaMs]: the longest voice clip / video of the note, null when it
+  /// has none (or its length is unknown).
+  static ReminderKind ofNote(int? mediaMs) {
+    if (mediaMs == null) return evening;
+    final length = Duration(milliseconds: mediaMs);
+    if (length <= _short) return midday;
+    if (length <= _long) return morning;
+    return evening;
+  }
+
+  /// A reminder time's part of the day: before 12:00 morning, until 17:00
+  /// midday, later evening.
+  static ReminderKind ofTime(String hhmm) {
+    final hour = int.parse(hhmm.split(':')[0]);
+    if (hour < 12) return morning;
+    if (hour < 17) return midday;
+    return evening;
+  }
+}
+
+/// [ReminderPlanner] run once per [ReminderKind]: each part of the day walks
+/// its own notes, in list order, and starts over at their end.
+class KindPlanner {
+  KindPlanner._();
+
+  static (List<PlannedReminder>, Map<ReminderKind, ReminderCursor>) plan({
+    required DateTime now,
+    required List<String> times,
+    required List<String> ids,
+    required Map<String, ReminderKind> kinds,
+    required Map<ReminderKind, ReminderCursor> cursors,
+    int horizonDays = ReminderPlanner.horizonDays,
+  }) {
+    final planned = <PlannedReminder>[];
+    final next = <ReminderKind, ReminderCursor>{};
+    for (final kind in ReminderKind.values) {
+      final kindTimes = [
+        for (final t in times)
+          if (ReminderKind.ofTime(t) == kind) t,
+      ];
+      final kindIds = [
+        for (final id in ids)
+          if ((kinds[id] ?? ReminderKind.evening) == kind) id,
+      ];
+      if (kindTimes.isEmpty) continue;
+      final (list, cursor) = ReminderPlanner.plan(
+        now: now,
+        times: kindTimes,
+        ids: kindIds,
+        cursor: cursors[kind] ?? const ReminderCursor(null, null),
+        horizonDays: horizonDays,
+      );
+      planned.addAll(list);
+      next[kind] = cursor;
+    }
+    planned.sort((a, b) => a.when.compareTo(b.when));
+    return (planned, next);
+  }
+}

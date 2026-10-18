@@ -28,6 +28,7 @@ class NoteItem {
     required this.tags,
     required this.inReminders,
     this.media = const {},
+    this.mediaMs,
     this.snippet,
   });
 
@@ -35,8 +36,14 @@ class NoteItem {
   final List<String> tags;
   final bool inReminders;
 
-  /// Kinds of attachments it has: 'audio', 'image'.
+  /// Kinds of attachments it has: 'audio', 'image', 'video'.
   final Set<String> media;
+
+  /// Length of its longest voice clip / video, if any.
+  final int? mediaMs;
+
+  /// Which daily reminder it goes out at.
+  ReminderKind get reminderKind => ReminderKind.ofNote(mediaMs);
 
   /// Search excerpt around the first match (search results only).
   final String? snippet;
@@ -195,7 +202,9 @@ class NotesRepository {
 
   static const _mediaColumn =
       '(SELECT group_concat(DISTINCT kind) FROM note_attachments a '
-      'WHERE a.note_id = n.id) AS media';
+      'WHERE a.note_id = n.id) AS media, '
+      '(SELECT MAX(duration_ms) FROM note_attachments a '
+      "WHERE a.note_id = n.id AND a.kind IN ('audio', 'video')) AS media_ms";
 
   NoteItem _item(QueryRow row, String query) {
     final note = db.notes.map(row.data);
@@ -208,6 +217,7 @@ class NotesRepository {
       media: media == null || media.isEmpty
           ? const {}
           : media.split(',').toSet(),
+      mediaMs: row.readNullable<int>('media_ms'),
       snippet: NoteText.terms(query).isEmpty
           ? null
           : NoteText.snippet(NoteLinks.displayText(note.body), query),
@@ -580,18 +590,34 @@ class NotesRepository {
   static const reminderTimesKey = 'reminder_times';
   static const defaultReminderTimes = ['07:30', '14:00', '20:00'];
 
-  Future<ReminderCursor> loadCursor() async {
+  Future<ReminderCursor> loadCursor({String suffix = ''}) async {
+    final note = cursorNoteKey + suffix, slot = cursorSlotKey + suffix;
     final rows = await (db.select(
       db.appSettings,
-    )..where((s) => s.key.isIn([cursorNoteKey, cursorSlotKey]))).get();
+    )..where((s) => s.key.isIn([note, slot]))).get();
     final map = {for (final r in rows) r.key: r.value};
-    return ReminderCursor(
-      map[cursorNoteKey],
-      int.tryParse(map[cursorSlotKey] ?? ''),
-    );
+    return ReminderCursor(map[note], int.tryParse(map[slot] ?? ''));
   }
 
-  Future<void> saveCursor(ReminderCursor cursor) async {
+  /// Settings key of the next note of one part of the day.
+  static String kindNoteKey(ReminderKind kind) =>
+      '${cursorNoteKey}_${kind.name}';
+
+  /// Each part of the day (morning · midday · evening) walks its own notes.
+  Future<Map<ReminderKind, ReminderCursor>> loadKindCursors() async => {
+    for (final kind in ReminderKind.values)
+      kind: await loadCursor(suffix: '_${kind.name}'),
+  };
+
+  Future<void> saveKindCursors(
+    Map<ReminderKind, ReminderCursor> cursors,
+  ) async {
+    for (final MapEntry(key: kind, value: cursor) in cursors.entries) {
+      await saveCursor(cursor, suffix: '_${kind.name}');
+    }
+  }
+
+  Future<void> saveCursor(ReminderCursor cursor, {String suffix = ''}) async {
     Future<void> put(String key, String? value) async {
       if (value == null) {
         await (db.delete(db.appSettings)..where((s) => s.key.equals(key))).go();
@@ -604,8 +630,8 @@ class NotesRepository {
       }
     }
 
-    await put(cursorNoteKey, cursor.noteId);
-    await put(cursorSlotKey, cursor.slot?.toString());
+    await put(cursorNoteKey + suffix, cursor.noteId);
+    await put(cursorSlotKey + suffix, cursor.slot?.toString());
   }
 
   Future<List<String>> reminderTimes() async {

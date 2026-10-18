@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/repositories/notes_repository.dart';
+import 'reminder_planner.dart';
 import '../../theme/app_tokens.dart';
 import '../notes/note_editor_page.dart';
 import '../notes/notes_providers.dart';
@@ -29,7 +30,13 @@ class _RemindersPageState extends ConsumerState<RemindersPage> {
                 NotesRepository.defaultReminderTimes.join(','))
             .split(',');
     final enabled = settings['reminders_enabled'] != 'false';
-    final next = settings[NotesRepository.cursorNoteKey];
+    // Each part of the day walks its own notes: its next one is marked.
+    final nextOf = {
+      for (final k in ReminderKind.values)
+        k: settings[NotesRepository.kindNoteKey(k)],
+    };
+    String timesOf(ReminderKind k) =>
+        times.where((t) => ReminderKind.ofTime(t) == k).join(' · ');
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -47,8 +54,12 @@ class _RemindersPageState extends ConsumerState<RemindersPage> {
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
                   child: Text(
                     enabled
-                        ? 'Her gün ${times.join(' · ')} — listeden sıradaki '
-                              'gelir, bitince başa döner.'
+                        ? 'Sabah ${timesOf(ReminderKind.morning)}: 3–8 dk '
+                              'video/ses · Öğle ${timesOf(ReminderKind.midday)}: '
+                              '3 dk ve altı · Akşam '
+                              '${timesOf(ReminderKind.evening)}: 8 dk üstü ve '
+                              'yalnız metin. Her biri kendi sırasıyla gelir, '
+                              'bitince başa döner.'
                         : 'Hatırlatma bildirimleri kapalı (Ayarlar).',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
@@ -79,8 +90,18 @@ class _RemindersPageState extends ConsumerState<RemindersPage> {
                       },
                       itemBuilder: (context, i) {
                         final item = items[i];
+                        final kind = item.reminderKind;
+                        final next = nextOf[kind];
                         final isNext =
-                            item.id == next || (next == null && i == 0);
+                            item.id == next ||
+                            (next == null &&
+                                items.firstWhere(
+                                      (x) => x.reminderKind == kind,
+                                    ) ==
+                                    item);
+                        final length = item.mediaMs == null
+                            ? ''
+                            : ' · ${_clock(item.mediaMs!)}';
                         return Dismissible(
                           key: ValueKey(item.id),
                           direction: DismissDirection.endToStart,
@@ -92,7 +113,7 @@ class _RemindersPageState extends ConsumerState<RemindersPage> {
                           onDismissed: (_) async {
                             final messenger = ScaffoldMessenger.of(context);
                             // Undo must also give back "Sıradaki".
-                            final cursor = await repo.loadCursor();
+                            final cursors = await repo.loadKindCursors();
                             await repo.removeFromReminders(item.id);
                             messenger.showSnackBar(
                               SnackBar(
@@ -104,7 +125,7 @@ class _RemindersPageState extends ConsumerState<RemindersPage> {
                                     await repo.addToReminders(item.id);
                                     final ids = [for (final x in items) x.id];
                                     await repo.reorderReminders(ids);
-                                    await repo.saveCursor(cursor);
+                                    await repo.saveKindCursors(cursors);
                                   },
                                 ),
                               ),
@@ -168,14 +189,15 @@ class _RemindersPageState extends ConsumerState<RemindersPage> {
                                     ),
                                 ],
                               ),
-                              subtitle: isNext
-                                  ? const Text(
-                                      'Sıradaki',
-                                      style: TextStyle(
-                                        color: AppTokens.textAccent,
-                                      ),
-                                    )
-                                  : null,
+                              subtitle: Text(
+                                '${kind.label}$length'
+                                '${isNext ? ' · Sıradaki' : ''}',
+                                style: TextStyle(
+                                  color: isNext
+                                      ? AppTokens.textAccent
+                                      : AppTokens.textSecondary,
+                                ),
+                              ),
                               trailing: ReorderableDragStartListener(
                                 index: i,
                                 child: const Icon(Icons.drag_handle),
@@ -199,4 +221,9 @@ class _RemindersPageState extends ConsumerState<RemindersPage> {
       ),
     );
   }
+}
+
+String _clock(int ms) {
+  final s = ms ~/ 1000;
+  return '${s ~/ 60}:${(s % 60).toString().padLeft(2, '0')}';
 }

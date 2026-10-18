@@ -122,4 +122,77 @@ void main() {
     expect(plan.take(4).map((p) => p.noteId), [ids[2], ids[0], ids[1], ids[3]]);
     await db.close();
   });
+
+  group('reminders by length', () {
+    const min = 60 * 1000;
+
+    test('a note goes out by its clip: 3–8 min morning, shorter midday, '
+        'longer or text only evening', () {
+      expect(ReminderKind.ofNote(null), ReminderKind.evening);
+      expect(ReminderKind.ofNote(2 * min), ReminderKind.midday);
+      expect(ReminderKind.ofNote(3 * min), ReminderKind.midday);
+      expect(ReminderKind.ofNote(3 * min + 1000), ReminderKind.morning);
+      expect(ReminderKind.ofNote(8 * min), ReminderKind.morning);
+      expect(ReminderKind.ofNote(8 * min + 1000), ReminderKind.evening);
+      expect(ReminderKind.ofTime('07:30'), ReminderKind.morning);
+      expect(ReminderKind.ofTime('14:00'), ReminderKind.midday);
+      expect(ReminderKind.ofTime('20:00'), ReminderKind.evening);
+    });
+
+    test('each part of the day walks its own notes and loops', () {
+      final kinds = {
+        'm1': ReminderKind.morning,
+        'm2': ReminderKind.morning,
+        'd1': ReminderKind.midday,
+        'e1': ReminderKind.evening,
+        'e2': ReminderKind.evening,
+        'e3': ReminderKind.evening,
+      };
+      final (plan, cursors) = KindPlanner.plan(
+        now: DateTime(2026, 10, 19, 6),
+        times: const ['07:30', '14:00', '20:00'],
+        ids: const ['e1', 'm1', 'd1', 'e2', 'm2', 'e3'],
+        kinds: kinds,
+        cursors: const {},
+        horizonDays: 3,
+      );
+      String at(int day, int hour) => plan
+          .firstWhere((p) => p.when.day == 19 + day && p.when.hour == hour)
+          .noteId;
+      expect([at(0, 7), at(0, 14), at(0, 20)], ['m1', 'd1', 'e1']);
+      expect([at(1, 7), at(1, 14), at(1, 20)], ['m2', 'd1', 'e2']);
+      expect([at(2, 7), at(2, 14), at(2, 20)], ['m1', 'd1', 'e3']);
+      expect(cursors[ReminderKind.morning]!.noteId, 'm1');
+
+      // A day later, each picks up where it was.
+      final (later, _) = KindPlanner.plan(
+        now: DateTime(2026, 10, 20, 6),
+        times: const ['07:30', '14:00', '20:00'],
+        ids: const ['e1', 'm1', 'd1', 'e2', 'm2', 'e3'],
+        kinds: kinds,
+        cursors: cursors,
+        horizonDays: 1,
+      );
+      expect(later.where((p) => p.when.day == 20).map((p) => p.noteId), [
+        'm2',
+        'd1',
+        'e2',
+      ]);
+    });
+
+    test('a part of the day with no notes sends nothing', () {
+      final (plan, _) = KindPlanner.plan(
+        now: DateTime(2026, 10, 19, 6),
+        times: const ['07:30', '14:00', '20:00'],
+        ids: const ['e1'],
+        kinds: const {'e1': ReminderKind.evening},
+        cursors: const {},
+        horizonDays: 1,
+      );
+      expect(
+        plan.where((p) => p.when.day == 19).map((p) => p.when.hour),
+        [20],
+      );
+    });
+  });
 }
